@@ -210,87 +210,60 @@ function guardarConductores() { localStorage.setItem('bd_conductores_smcv', JSON
 function guardarUnidades() { localStorage.setItem('bd_unidades_smcv', JSON.stringify(unidades)); actualizarDashboard(); }
 function guardarZonas() { localStorage.setItem('bd_zonas_oficial_smcv', JSON.stringify(zonasBD)); renderizarZonas(); }
 
-// CONDUCTORES
-function procesarArchivoConductores(e) { 
-    let file = e.target.files[0]; 
-    if (!file) return; 
-    let r = new FileReader(); 
-    r.onload = function(evt) { 
-        try { 
-            let wb = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'}); 
-            let json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval: ""}); 
-            let nuevos = []; 
-            json.forEach(row => { 
-                let keys = Object.keys(row); 
-                let kDni = keys.find(k => k.toUpperCase().includes("DNI")); 
-                let kNom = keys.find(k => k.toUpperCase().includes("CONDUCTOR") || k.toUpperCase().includes("NOMBRE")); 
-                let kNac = keys.find(k => k.toUpperCase().includes("NAC")); 
-                let kIng = keys.find(k => k.toUpperCase().includes("ING")); 
-                let kCont = keys.find(k => k.toUpperCase().includes("CONTRATO")); 
-                
-                if (kDni && String(row[kDni]).trim()) {
-                    nuevos.push({ 
-                        dni: String(row[kDni]).trim(), 
-                        nombre: String(row[kNom]||'').trim().toUpperCase(), 
-                        nac: formatearFechaExcelOS(row[kNac]), 
-                        ing: formatearFechaExcelOS(row[kIng]), 
-                        contrato: String(row[kCont]||'CONDUCTOR VAN').trim().toUpperCase(), 
-                        estado: 'ACTIVO' 
-                    }); 
-                }
-            }); 
-            if (nuevos.length && confirm(`¿Importar ${nuevos.length} conductores?`)) { 
-                conductores = nuevos; 
-                guardarConductores(); 
-                renderizarConductores(); 
-            } 
-        } catch(err) { alert("Error: " + err.message); } 
-        e.target.value = ''; 
-    }; 
-    r.readAsArrayBuffer(file); 
+// CONDUCTORES (Sincronización con Google Sheets)
+const URL_API_CONDUCTORES = "https://script.google.com/macros/s/AKfycbwYiiV2_-zSTcLUft_xcPTXl03LxcyTNcZ2l2u8RfTtPsrvyrzOcPR9NVJCd4AxhLfR/exec"; // <-- PEGA TU ENLACE AQUÍ
+
+async function sincronizarConductores() {
+    let btn = document.getElementById('btnSyncConductores');
+    if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+    
+    try {
+        let response = await fetch(URL_API_CONDUCTORES);
+        let data = await response.json();
+        
+        conductores = data; // Reemplaza la base local con la de Sheets
+        guardarConductores();
+        renderizarConductores();
+        alert("✓ Base de conductores sincronizada desde Google Sheets.");
+    } catch(e) {
+        alert("Error de conexión: " + e.message);
+    } finally {
+        if(btn) btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Sheets';
+    }
 }
 
 function renderizarConductores() { 
     let tbody = document.getElementById('tbodyConductores'); 
+    if(!tbody) return;
     tbody.innerHTML = ''; 
-    let f = document.getElementById('filtroEstadoConductores').value;
     let txt = document.getElementById('searchConductores').value.toUpperCase().trim(); 
     
-    conductores.forEach((c, idx) => { 
-        if (f !== 'TODOS' && c.estado !== f) return; 
+    conductores.forEach((c) => { 
         if (txt && !c.dni.includes(txt) && !c.nombre.toUpperCase().includes(txt)) return; 
         
         let cat = determinarTipoConductor(c.contrato);
         let edad = obtenerEdadProcesada(c.nac); 
         let badgeClass = cat === 'BUS' ? 'badge-bus' : (cat === 'MINIBUS' ? 'badge-minibus' : 'badge-van');
-        let statusClass = c.estado === 'ACTIVO' ? 'status-activo' : 'status-retirado';
         
+        // Colores Dinámicos según el Estado (A, B, ADI, V, AL, etc.)
+        let est = (c.estadoAbrev || '').toUpperCase();
+        let colorText = '#1e293b', colorBg = '#e2e8f0'; // Gris por defecto (Descansos)
+        
+        if (est === 'A' || est === 'B') { colorText = '#065f46'; colorBg = '#d1fae5'; } // Verde: Operación Normal
+        else if (est === 'ADI' || est === 'PA' || est === 'MO') { colorText = '#b45309'; colorBg = '#fef3c7'; } // Naranja: Adicional / Partido / Mantto
+        else if (est === 'AL') { colorText = '#1d4ed8'; colorBg = '#dbeafe'; } // Azul: Alata
+        else if (est === 'V' || est === 'DT' || est === 'I') { colorText = '#991b1b'; colorBg = '#fee2e2'; } // Rojo: Vacaciones / Descanso Médico / Inducción
+
         tbody.insertAdjacentHTML('beforeend', `<tr>
             <td>${c.dni}</td>
             <td>${c.nombre}</td>
             <td>${edad.texto}</td>
             <td>${obtenerTiempoLaborandoExacto(c.ing)}</td>
-            <td><span class="badge-unit ${badgeClass}">${c.contrato}</span></td>
-            <td><span class="badge-status ${statusClass}">${c.estado}</span></td>
-            <td><button class="btn btn-outline" onclick="abrirModalEditConductor(${idx})"><i class="fa-solid fa-pen"></i></button></td>
+            <td><span class="badge-unit ${badgeClass}">${c.contrato || c.tipo}</span></td>
+            <td><span style="background:${colorBg}; color:${colorText}; padding:4px 8px; border-radius:4px; font-weight:700; font-size:0.75rem; cursor:help;" title="${c.estadoDesc}">${est}</span></td>
+            <td><i class="fa-solid fa-lock" style="color:var(--text-muted); opacity:0.4;" title="Controlado desde Google Sheets"></i></td>
         </tr>`); 
     }); 
-}
-
-function abrirModalEditConductor(idx) { 
-    idxConductorEdit = idx; 
-    document.getElementById('editNombreConductor').value = conductores[idx].nombre; 
-    document.getElementById('editContratoConductor').value = conductores[idx].contrato; 
-    document.getElementById('editEstadoConductor').value = conductores[idx].estado; 
-    abrirModal('modalEditConductor'); 
-}
-
-function guardarCambiosConductor() { 
-    conductores[idxConductorEdit].contrato = document.getElementById('editContratoConductor').value; 
-    conductores[idxConductorEdit].estado = document.getElementById('editEstadoConductor').value; 
-    guardarConductores(); 
-    renderizarConductores(); 
-    cerrarModal('modalEditConductor'); 
 }
 
 // UNIDADES

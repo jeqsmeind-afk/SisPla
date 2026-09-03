@@ -86,8 +86,14 @@
 
         <!-- VISTA CONDUCTORES -->
         <div id="vistaConductores" class="view-section">
-            <div class="page-header"><h2>Fuerza Laboral</h2><div style="display:flex; gap:10px;"><button class="btn btn-outline" onclick="descargarPlantillaConductores()"><i class="fa-solid fa-file-arrow-down"></i> Bajar Plantilla</button><input type="file" id="fileInputConductores" accept=".xlsx" style="display: none;" onchange="procesarArchivoConductores(event)"><button class="btn btn-success" onclick="document.getElementById('fileInputConductores').click()"><i class="fa-solid fa-upload"></i> Importar Excel</button><button class="btn-hidden-admin" onclick="abrirModalVaciarSeguro('conductores')"><i class="fa-solid fa-shield-halved"></i></button></div></div>
-            <div class="card"><div class="toolbar"><div class="search-container"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="searchConductores" placeholder="Buscar DNI o Nombre..." onkeyup="renderizarConductores()"></div><select id="filtroEstadoConductores" onchange="renderizarConductores()" style="padding: 6px; border-radius: 6px;"><option value="TODOS">Todos</option><option value="ACTIVO" selected>Solo Activo</option><option value="RETIRADO">Retirado</option></select></div><div class="table-container"><table><thead><tr><th>DNI</th><th>Conductor</th><th>Edad</th><th>Tiempo Laborando</th><th>Contrato</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="tbodyConductores"></tbody></table></div></div>
+            <div class="page-header">
+                <h2>Fuerza Laboral</h2>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-success" id="btnSyncConductores" onclick="sincronizarConductores()"><i class="fa-solid fa-rotate"></i> Sincronizar Sheets</button>
+                    <button class="btn-hidden-admin" onclick="abrirModalVaciarSeguro('conductores')"><i class="fa-solid fa-shield-halved"></i></button>
+                </div>
+            </div>
+            <div class="card"><div class="toolbar"><div class="search-container"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="searchConductores" placeholder="Buscar DNI o Nombre..." onkeyup="renderizarConductores()"></div></div><div class="table-container"><table><thead><tr><th>DNI</th><th>Conductor</th><th>Edad</th><th>Tiempo Laborando</th><th>Contrato</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="tbodyConductores"></tbody></table></div></div>
         </div>
 
         <!-- VISTA UNIDADES -->

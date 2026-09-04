@@ -236,23 +236,36 @@ function renderizarConductores() {
     let tbody = document.getElementById('tbodyConductores'); 
     if(!tbody) return;
     tbody.innerHTML = ''; 
+    
+    // Capturamos los valores de los filtros
     let txt = document.getElementById('searchConductores').value.toUpperCase().trim(); 
+    let fCargo = document.getElementById('filtroCargoCond') ? document.getElementById('filtroCargoCond').value : 'TODOS';
+    let fServicio = document.getElementById('filtroServicioCond') ? document.getElementById('filtroServicioCond').value : 'TODOS';
     
     conductores.forEach((c) => { 
+        // 1. Filtro de Texto (Buscador)
         if (txt && !c.dni.includes(txt) && !c.nombre.toUpperCase().includes(txt)) return; 
         
         let cat = determinarTipoConductor(c.contrato);
+        
+        // 2. Filtro de Cargo (VAN, MINIBUS, BUS)
+        if (fCargo !== 'TODOS' && cat !== fCargo) return;
+        
+        // 3. Filtro de Servicio (REGULAR, DOMICILIOS)
+        let serv = (c.servicio || '').toUpperCase();
+        if (fServicio !== 'TODOS' && !serv.includes(fServicio)) return;
+        
         let edad = obtenerEdadProcesada(c.nac); 
         let badgeClass = cat === 'BUS' ? 'badge-bus' : (cat === 'MINIBUS' ? 'badge-minibus' : 'badge-van');
         
-        // Colores Dinámicos según el Estado (A, B, ADI, V, AL, etc.)
         let est = (c.estadoAbrev || '').toUpperCase();
-        let colorText = '#1e293b', colorBg = '#e2e8f0'; // Gris por defecto (Descansos)
+        let colorText = '#1e293b', colorBg = '#e2e8f0'; 
         
-        if (est === 'A' || est === 'B') { colorText = '#065f46'; colorBg = '#d1fae5'; } // Verde: Operación Normal
-        else if (est === 'ADI' || est === 'PA' || est === 'MO') { colorText = '#b45309'; colorBg = '#fef3c7'; } // Naranja: Adicional / Partido / Mantto
-        else if (est === 'AL') { colorText = '#1d4ed8'; colorBg = '#dbeafe'; } // Azul: Alata
-        else if (est === 'V' || est === 'DT' || est === 'I') { colorText = '#991b1b'; colorBg = '#fee2e2'; } // Rojo: Vacaciones / Descanso Médico / Inducción
+        // Colores mejorados basados en tus estados
+        if (est === 'A' || est === 'B') { colorText = '#065f46'; colorBg = '#d1fae5'; } 
+        else if (est === 'ADI' || est === 'PA' || est === 'MO' || est === 'MT') { colorText = '#b45309'; colorBg = '#fef3c7'; } 
+        else if (est === 'AL') { colorText = '#1d4ed8'; colorBg = '#dbeafe'; } 
+        else if (est === 'V' || est === 'DT' || est === 'I' || est === 'D') { colorText = '#991b1b'; colorBg = '#fee2e2'; } 
 
         tbody.insertAdjacentHTML('beforeend', `<tr>
             <td>${c.dni}</td>
@@ -260,6 +273,7 @@ function renderizarConductores() {
             <td>${edad.texto}</td>
             <td>${obtenerTiempoLaborandoExacto(c.ing)}</td>
             <td><span class="badge-unit ${badgeClass}">${c.contrato || c.tipo}</span></td>
+            <td style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted);">${c.servicio || '-'}</td>
             <td><span style="background:${colorBg}; color:${colorText}; padding:4px 8px; border-radius:4px; font-weight:700; font-size:0.75rem; cursor:help;" title="${c.estadoDesc}">${est}</span></td>
             <td><i class="fa-solid fa-lock" style="color:var(--text-muted); opacity:0.4;" title="Controlado desde Google Sheets"></i></td>
         </tr>`); 

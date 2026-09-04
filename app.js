@@ -221,8 +221,9 @@ async function sincronizarConductores() {
         let response = await fetch(URL_API_CONDUCTORES);
         let data = await response.json();
         
-        conductores = data; // Reemplaza la base local con la de Sheets
+        conductores = data; 
         guardarConductores();
+        actualizarFiltrosDinamicos(); // <-- Actualiza el menú desplegable automáticamente
         renderizarConductores();
         alert("✓ Base de conductores sincronizada desde Google Sheets.");
     } catch(e) {
@@ -413,6 +414,27 @@ function renderizarZonas() {
             <td><button class="btn btn-outline" onclick="abrirModalEditZona(${idx})"><i class="fa-solid fa-pen"></i> 360°</button></td>
         </tr>`); 
     }); 
+}
+
+function actualizarFiltrosDinamicos() {
+    let selectServicio = document.getElementById('filtroServicioCond');
+    if (!selectServicio) return;
+    
+    // Guardamos el valor actual seleccionado para no perderlo al re-sincronizar
+    let valorActual = selectServicio.value;
+    
+    // Obtenemos una lista única de servicios desde los datos de Sheets
+    let serviciosUnicos = [...new Set(conductores.map(c => (c.servicio || '').toUpperCase().trim()))].filter(s => s !== '');
+    serviciosUnicos.sort();
+    
+    // Reconstruimos las opciones del selector
+    let html = '<option value="TODOS">Todos los Servicios</option>';
+    serviciosUnicos.forEach(serv => {
+        let selected = (serv === valorActual) ? 'selected' : '';
+        html += `<option value="${serv}" ${selected}>${serv}</option>`;
+    });
+    
+    selectServicio.innerHTML = html;
 }
 
 function abrirModalEditZona(idx) {
@@ -978,5 +1000,6 @@ function importarRespaldoSistema(e) {
 // INICIO AUTOMÁTICO
 window.onload = function() { 
     aplicarTema(localStorage.getItem('planner_theme') || 'cerro-verde'); 
+    actualizarFiltrosDinamicos(); // <-- Carga los servicios guardados localmente al iniciar
     cambiarVista('dashboard'); 
 };

@@ -93,7 +93,45 @@
                     <button class="btn-hidden-admin" onclick="abrirModalVaciarSeguro('conductores')"><i class="fa-solid fa-shield-halved"></i></button>
                 </div>
             </div>
-            <div class="card"><div class="toolbar"><div class="search-container"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="searchConductores" placeholder="Buscar DNI o Nombre..." onkeyup="renderizarConductores()"></div></div><div class="table-container"><table><thead><tr><th>DNI</th><th>Conductor</th><th>Edad</th><th>Tiempo Laborando</th><th>Contrato</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="tbodyConductores"></tbody></table></div></div>
+            <div class="card">
+                <div class="toolbar">
+                    <div class="search-container">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="searchConductores" placeholder="Buscar DNI o Nombre..." onkeyup="renderizarConductores()">
+                    </div>
+                    <!-- NUEVOS FILTROS TIPO EXCEL -->
+                    <div style="display:flex; gap:10px;">
+                        <select id="filtroCargoCond" onchange="renderizarConductores()" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main);">
+                            <option value="TODOS">Todos los Cargos</option>
+                            <option value="VAN">Conductores VAN</option>
+                            <option value="MINIBUS">Conductores MINIBÚS</option>
+                            <option value="BUS">Conductores BUS</option>
+                        </select>
+                        <select id="filtroServicioCond" onchange="renderizarConductores()" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main);">
+                            <option value="TODOS">Todos los Servicios</option>
+                            <option value="REGULAR">REGULAR</option>
+                            <option value="DOMICILIOS">DOMICILIOS</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>DNI</th>
+                                <th>Conductor</th>
+                                <th>Edad</th>
+                                <th>Tiempo Laborando</th>
+                                <th>Contrato</th>
+                                <th>Servicio</th> <!-- NUEVA COLUMNA -->
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyConductores"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- VISTA UNIDADES -->

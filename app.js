@@ -420,15 +420,13 @@ function actualizarFiltrosDinamicos() {
     let selectServicio = document.getElementById('filtroServicioCond');
     if (!selectServicio) return;
     
-    // Guardamos el valor actual seleccionado para no perderlo al re-sincronizar
     let valorActual = selectServicio.value;
     
-    // Obtenemos una lista única de servicios desde los datos de Sheets
+    // Obtenemos los servicios tal cual están en el Excel (solo ignoramos celdas en blanco)
     let serviciosUnicos = [...new Set(conductores.map(c => (c.servicio || '').toUpperCase().trim()))].filter(s => s !== '');
     serviciosUnicos.sort();
     
-    // Reconstruimos las opciones del selector
-    let html = '<option value="TODOS">Todos los Servicios</option>';
+    let html = '<option value="TODOS">Todos</option>';
     serviciosUnicos.forEach(serv => {
         let selected = (serv === valorActual) ? 'selected' : '';
         html += `<option value="${serv}" ${selected}>${serv}</option>`;

@@ -237,23 +237,24 @@ function renderizarConductores() {
     if(!tbody) return;
     tbody.innerHTML = ''; 
     
-    // Capturamos los valores de los filtros
+    // Capturamos los valores
     let txt = document.getElementById('searchConductores').value.toUpperCase().trim(); 
-    let fCargo = document.getElementById('filtroCargoCond') ? document.getElementById('filtroCargoCond').value : 'TODOS';
-    let fServicio = document.getElementById('filtroServicioCond') ? document.getElementById('filtroServicioCond').value : 'TODOS';
+    let selectCargo = document.getElementById('filtroCargoCond');
+    let fCargo = selectCargo ? selectCargo.value : 'TODOS';
+    let selectServicio = document.getElementById('filtroServicioCond');
+    let fServicio = selectServicio ? selectServicio.value : 'TODOS';
     
     conductores.forEach((c) => { 
-        // 1. Filtro de Texto (Buscador)
+        // 1. Filtro Buscador
         if (txt && !c.dni.includes(txt) && !c.nombre.toUpperCase().includes(txt)) return; 
         
+        // 2. Filtro Cargo
         let cat = determinarTipoConductor(c.contrato);
-        
-        // 2. Filtro de Cargo (VAN, MINIBUS, BUS)
         if (fCargo !== 'TODOS' && cat !== fCargo) return;
         
-        // 3. Filtro de Servicio (REGULAR, DOMICILIOS)
+        // 3. Filtro Servicio (Exacto)
         let serv = (c.servicio || '').toUpperCase();
-        if (fServicio !== 'TODOS' && !serv.includes(fServicio)) return;
+        if (fServicio !== 'TODOS' && serv !== fServicio) return;
         
         let edad = obtenerEdadProcesada(c.nac); 
         let badgeClass = cat === 'BUS' ? 'badge-bus' : (cat === 'MINIBUS' ? 'badge-minibus' : 'badge-van');
@@ -261,11 +262,11 @@ function renderizarConductores() {
         let est = (c.estadoAbrev || '').toUpperCase();
         let colorText = '#1e293b', colorBg = '#e2e8f0'; 
         
-        // Colores mejorados basados en tus estados
+        // Colores de Estados extendidos según tu Excel
         if (est === 'A' || est === 'B') { colorText = '#065f46'; colorBg = '#d1fae5'; } 
         else if (est === 'ADI' || est === 'PA' || est === 'MO' || est === 'MT') { colorText = '#b45309'; colorBg = '#fef3c7'; } 
         else if (est === 'AL') { colorText = '#1d4ed8'; colorBg = '#dbeafe'; } 
-        else if (est === 'V' || est === 'DT' || est === 'I' || est === 'D') { colorText = '#991b1b'; colorBg = '#fee2e2'; } 
+        else if (est === 'V' || est === 'DT' || est === 'I' || est === 'D' || est === 'NC') { colorText = '#991b1b'; colorBg = '#fee2e2'; } 
 
         tbody.insertAdjacentHTML('beforeend', `<tr>
             <td>${c.dni}</td>
@@ -273,7 +274,7 @@ function renderizarConductores() {
             <td>${edad.texto}</td>
             <td>${obtenerTiempoLaborandoExacto(c.ing)}</td>
             <td><span class="badge-unit ${badgeClass}">${c.contrato || c.tipo}</span></td>
-            <td style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted);">${c.servicio || '-'}</td>
+            <td style="font-weight: 700; font-size: 0.75rem; color: #0284c7;">${serv || '-'}</td>
             <td><span style="background:${colorBg}; color:${colorText}; padding:4px 8px; border-radius:4px; font-weight:700; font-size:0.75rem; cursor:help;" title="${c.estadoDesc}">${est}</span></td>
             <td><i class="fa-solid fa-lock" style="color:var(--text-muted); opacity:0.4;" title="Controlado desde Google Sheets"></i></td>
         </tr>`); 

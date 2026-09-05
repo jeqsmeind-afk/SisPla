@@ -129,19 +129,36 @@ function actualizarDashboard() {
     let elInd = document.getElementById('dashInduccion');
     if (elInd) elInd.innerText = induccionCount;
 
-    // 3. CUMPLEAÑOS HOY
+    // 3. CUMPLEAÑOS HOY CON NOMBRES (TOOLTIP)
     let hoy = new Date();
     let dia = String(hoy.getDate()).padStart(2, '0');
     let mes = String(hoy.getMonth() + 1).padStart(2, '0');
     let fechaHoy = dia + '/' + mes; 
     
-    let cumpleCount = conductores.filter(c => {
+    // Filtramos para obtener a los conductores que cumplen hoy
+    let cumpleaneros = conductores.filter(c => {
         if(!c.nac) return false;
         return c.nac.substring(0, 5) === fechaHoy; 
-    }).length;
+    });
     
     let elCumple = document.getElementById('dashCumpleanos');
-    if (elCumple) elCumple.innerText = cumpleCount;
+    if (elCumple) {
+        elCumple.innerText = cumpleaneros.length; // Ponemos el número
+        
+        // Buscamos la tarjeta (el div) que contiene el cumpleaños
+        let cardElement = elCumple.closest('.card');
+        if(cardElement) {
+            if(cumpleaneros.length > 0) {
+                // Si hay cumpleañeros, armamos la lista con sus nombres
+                let listaNombres = cumpleaneros.map(c => "🎂 " + c.nombre).join('\n');
+                cardElement.title = "Cumpleañeros de hoy:\n" + listaNombres;
+                cardElement.style.cursor = "help";
+            } else {
+                cardElement.title = "No hay cumpleaños el día de hoy";
+                cardElement.style.cursor = "default";
+            }
+        }
+    }
 
     // 4. ACREDITACIONES (Contratos)
     let cVan = 0, cMinibus = 0, cBus = 0;
@@ -243,7 +260,7 @@ function renderizarConductores() {
     let selectServicio = document.getElementById('filtroServicioCond');
     let fServicio = selectServicio ? selectServicio.value : 'TODOS';
     
-    let correlativo = 1; // Inicializamos el contador dinámico
+    let correlativo = 1; // Contador dinámico
     
     conductores.forEach((c) => { 
         if (txt && !c.dni.includes(txt) && !c.nombre.toUpperCase().includes(txt)) return; 
@@ -264,8 +281,9 @@ function renderizarConductores() {
         else if (est === 'AL') { colorText = '#1d4ed8'; colorBg = '#dbeafe'; } 
         else if (est === 'V' || est === 'DT' || est === 'I' || est === 'D' || est === 'NC') { colorText = '#991b1b'; colorBg = '#fee2e2'; } 
 
+        // ¡AQUÍ ESTÁ LA CORRECCIÓN! Las 9 columnas exactas para que nada se mueva:
         tbody.insertAdjacentHTML('beforeend', `<tr>
-            <td style="color:var(--text-muted); font-weight:bold;">${correlativo++}</td> <!-- NÚMERO DINÁMICO -->
+            <td style="color:var(--text-muted); font-weight:bold;">${correlativo++}</td>
             <td>${c.dni}</td>
             <td>${c.nombre}</td>
             <td>${edad.texto}</td>

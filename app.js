@@ -121,12 +121,11 @@ function actualizarDashboard() {
     if (!conductores || conductores.length === 0) return;
 
     // 1. TOTAL CONDUCTORES
-    let totalCond = conductores.length;
     let elTotal = document.getElementById('dashTotalConductores');
-    if (elTotal) elTotal.innerText = totalCond;
+    if (elTotal) elTotal.innerText = conductores.length;
 
-    // 2. EN INDUCCIÓN (Busca el estado "I")
-    let induccionCount = conductores.filter(c => (c.estadoAbrev || '').toUpperCase() === 'I').length;
+    // 2. EN INDUCCIÓN (Lee la columna SERVICIO)
+    let induccionCount = conductores.filter(c => (c.servicio || '').toUpperCase().trim() === 'INDUCCION').length;
     let elInd = document.getElementById('dashInduccion');
     if (elInd) elInd.innerText = induccionCount;
 
@@ -134,17 +133,17 @@ function actualizarDashboard() {
     let hoy = new Date();
     let dia = String(hoy.getDate()).padStart(2, '0');
     let mes = String(hoy.getMonth() + 1).padStart(2, '0');
-    let fechaHoy = dia + '/' + mes; // Formato DD/MM
+    let fechaHoy = dia + '/' + mes; 
     
     let cumpleCount = conductores.filter(c => {
         if(!c.nac) return false;
-        return c.nac.substring(0, 5) === fechaHoy; // Compara DD/MM del Excel con hoy
+        return c.nac.substring(0, 5) === fechaHoy; 
     }).length;
     
     let elCumple = document.getElementById('dashCumpleanos');
     if (elCumple) elCumple.innerText = cumpleCount;
 
-    // 4. ACREDITACIONES (Conteo por tipo de contrato)
+    // 4. ACREDITACIONES (Contratos)
     let cVan = 0, cMinibus = 0, cBus = 0;
     conductores.forEach(c => {
         let cat = determinarTipoConductor(c.contrato);
@@ -157,7 +156,6 @@ function actualizarDashboard() {
     if(document.getElementById('dashAcredMinibus')) document.getElementById('dashAcredMinibus').innerText = cMinibus;
     if(document.getElementById('dashAcredBus')) document.getElementById('dashAcredBus').innerText = cBus;
 }
-
 // FORMATOS Y MAESTROS
 function formatearFechaExcelOS(val) { 
     if (!val) return ''; 
@@ -239,38 +237,35 @@ function renderizarConductores() {
     if(!tbody) return;
     tbody.innerHTML = ''; 
     
-    // Capturamos los valores
     let txt = document.getElementById('searchConductores').value.toUpperCase().trim(); 
     let selectCargo = document.getElementById('filtroCargoCond');
     let fCargo = selectCargo ? selectCargo.value : 'TODOS';
     let selectServicio = document.getElementById('filtroServicioCond');
     let fServicio = selectServicio ? selectServicio.value : 'TODOS';
     
+    let correlativo = 1; // Inicializamos el contador dinámico
+    
     conductores.forEach((c) => { 
-        // 1. Filtro Buscador
         if (txt && !c.dni.includes(txt) && !c.nombre.toUpperCase().includes(txt)) return; 
         
-        // 2. Filtro Cargo
         let cat = determinarTipoConductor(c.contrato);
         if (fCargo !== 'TODOS' && cat !== fCargo) return;
         
-        // 3. Filtro Servicio (Exacto)
         let serv = (c.servicio || '').toUpperCase();
         if (fServicio !== 'TODOS' && serv !== fServicio) return;
         
         let edad = obtenerEdadProcesada(c.nac); 
         let badgeClass = cat === 'BUS' ? 'badge-bus' : (cat === 'MINIBUS' ? 'badge-minibus' : 'badge-van');
-        
         let est = (c.estadoAbrev || '').toUpperCase();
         let colorText = '#1e293b', colorBg = '#e2e8f0'; 
         
-        // Colores de Estados extendidos según tu Excel
         if (est === 'A' || est === 'B') { colorText = '#065f46'; colorBg = '#d1fae5'; } 
         else if (est === 'ADI' || est === 'PA' || est === 'MO' || est === 'MT') { colorText = '#b45309'; colorBg = '#fef3c7'; } 
         else if (est === 'AL') { colorText = '#1d4ed8'; colorBg = '#dbeafe'; } 
         else if (est === 'V' || est === 'DT' || est === 'I' || est === 'D' || est === 'NC') { colorText = '#991b1b'; colorBg = '#fee2e2'; } 
 
         tbody.insertAdjacentHTML('beforeend', `<tr>
+            <td style="color:var(--text-muted); font-weight:bold;">${correlativo++}</td> <!-- NÚMERO DINÁMICO -->
             <td>${c.dni}</td>
             <td>${c.nombre}</td>
             <td>${edad.texto}</td>

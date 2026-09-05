@@ -94,23 +94,41 @@
                 </div>
             </div>
             <div class="card">
-                <div class="toolbar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <div class="search-container" style="flex: 1; min-width: 250px;">
+                <div class="toolbar">
+                    <div class="search-container">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <input type="text" id="searchConductores" placeholder="Buscar DNI o Nombre..." onkeyup="renderizarConductores()">
                     </div>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <select id="filtroCargoCond" onchange="renderizarConductores()" class="select-prog" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main); font-size: 0.85rem;">
-                            <option value="TODOS">Cargo: Todos</option>
-                            <option value="VAN">VAN</option>
-                            <option value="MINIBUS">MINIBÚS</option>
-                            <option value="BUS">BUS</option>
+                    <div style="display:flex; gap:10px;">
+                        <select id="filtroCargoCond" onchange="renderizarConductores()" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main);">
+                            <option value="TODOS">Todos los Cargos</option>
+                            <option value="VAN">Conductores VAN</option>
+                            <option value="MINIBUS">Conductores MINIBÚS</option>
+                            <option value="BUS">Conductores BUS</option>
                         </select>
-                        <select id="filtroServicioCond" onchange="renderizarConductores()" class="select-prog" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main); font-size: 0.85rem;">
-                            <option value="TODOS">Servicio: Todos</option>
+                        <select id="filtroServicioCond" onchange="renderizarConductores()" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main);">
+                            <option value="TODOS">Todos los Servicios</option>
                         </select>
                     </div>
                 </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>DNI</th>
+                                <th>Conductor</th>
+                                <th>Edad</th>
+                                <th>Tiempo Laborando</th>
+                                <th>Contrato</th>
+                                <th>Servicio</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyConductores"></tbody>
+                    </table>
+                </div>
+            </div>
                 <div class="table-container">
                     <table>
                         <thead>

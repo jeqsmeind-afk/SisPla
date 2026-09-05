@@ -131,14 +131,16 @@ function actualizarDashboard() {
 
     // 3. CUMPLEAÑOS HOY CON NOMBRES (TOOLTIP)
     let hoy = new Date();
+    // Forzamos el formato usando la fecha local del dispositivo
     let dia = String(hoy.getDate()).padStart(2, '0');
     let mes = String(hoy.getMonth() + 1).padStart(2, '0');
     let fechaHoy = dia + '/' + mes; 
     
-    // Filtramos para obtener a los conductores que cumplen hoy
     let cumpleaneros = conductores.filter(c => {
-        if(!c.nac) return false;
-        return c.nac.substring(0, 5) === fechaHoy; 
+        if (!c.nac) return false;
+        // Limpiamos cualquier espacio y tomamos estrictamente los primeros 5 caracteres (DD/MM)
+        let fechaNacLimpieza = String(c.nac).trim().substring(0, 5);
+        return fechaNacLimpieza === fechaHoy; 
     });
     
     let elCumple = document.getElementById('dashCumpleanos');
@@ -256,23 +258,36 @@ async function sincronizarConductores() {
 // Función para sincronizar desde el botón del Dashboard
 async function sincronizarConductoresDesdeDashboard() {
     let btn = document.getElementById('btnSyncDashboard');
-    if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+    }
     
     try {
         let urlFresca = URL_API_CONDUCTORES + "?t=" + new Date().getTime();
         let response = await fetch(urlFresca);
+        
+        if (!response.ok) throw new Error("No se pudo conectar con el servidor de Google.");
+        
         let data = await response.json();
         
-        conductores = data; 
-        guardarConductores();
-        actualizarFiltrosDinamicos(); 
-        actualizarDashboard(); // Refresca las tarjetas al instante
-        
-        alert("✓ Base sincronizada con éxito desde Google Sheets.");
-    } catch(e) {
-        alert("Error de conexión: " + e.message);
+        if (data && data.length > 0) {
+            conductores = data; 
+            guardarConductores();
+            actualizarFiltrosDinamicos(); 
+            actualizarDashboard();
+            alert("✓ ¡Base de datos sincronizada correctamente desde Google Sheets!");
+        } else {
+            alert("⚠️ La API respondió pero no devolvió registros.");
+        }
+    } catch (e) {
+        alert("Error al sincronizar: " + e.message);
+        console.error(e);
     } finally {
-        if(btn) btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Sheets';
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Sheets';
+        }
     }
 }
 

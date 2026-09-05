@@ -73,6 +73,10 @@
         <div id="vistaDashboard" class="view-section active">
             <div class="page-header">
                 <h2>Panel de Control Operativo</h2>
+                <!-- BOTÓN DE REFRESCO DIRECTO EN EL DASHBOARD -->
+                <button class="btn btn-success" id="btnSyncDashboard" onclick="sincronizarConductoresDesdeDashboard()">
+                    <i class="fa-solid fa-rotate"></i> Sincronizar Sheets
+                </button>
             </div>
             
             <!-- TARJETAS SUPERIORES -->
@@ -119,7 +123,7 @@
                     </div>
                 </div>
                 
-                <!-- Panel de Flota (Temporalmente vacío para después) -->
+                <!-- Panel de Flota -->
                 <div class="card">
                     <h3 style="margin-bottom: 15px; font-size: 1.1rem;">Composición de Flota</h3>
                     <p style="color: var(--text-muted); font-size: 0.85rem;">Próximamente...</p>

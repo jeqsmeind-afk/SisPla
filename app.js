@@ -118,28 +118,44 @@ function cambiarVista(v) {
 
 // DASHBOARD
 function actualizarDashboard() {
-    // 1. TOTAL DE CONDUCTORES
-    let totalCond = conductores.length;
-    let elemTotalCond = document.getElementById('dashTotalConductores');
-    if(elemTotalCond) elemTotalCond.innerText = totalCond;
+    if (!conductores || conductores.length === 0) return;
 
-    // 2. CONDUCTORES DISPONIBLES / ACTIVOS
-    // Identificamos las siglas que significan que NO están disponibles hoy
-    let estadosInactivos = ['V', 'D', 'DM', 'DT', 'I', 'NC']; 
+    // 1. TOTAL CONDUCTORES
+    let totalCond = conductores.length;
+    let elTotal = document.getElementById('dashTotalConductores');
+    if (elTotal) elTotal.innerText = totalCond;
+
+    // 2. EN INDUCCIÓN (Busca el estado "I")
+    let induccionCount = conductores.filter(c => (c.estadoAbrev || '').toUpperCase() === 'I').length;
+    let elInd = document.getElementById('dashInduccion');
+    if (elInd) elInd.innerText = induccionCount;
+
+    // 3. CUMPLEAÑOS HOY
+    let hoy = new Date();
+    let dia = String(hoy.getDate()).padStart(2, '0');
+    let mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    let fechaHoy = dia + '/' + mes; // Formato DD/MM
     
-    let activosCond = conductores.filter(c => {
-        let est = (c.estadoAbrev || '').toUpperCase().trim();
-        return est !== '' && !estadosInactivos.includes(est);
+    let cumpleCount = conductores.filter(c => {
+        if(!c.nac) return false;
+        return c.nac.substring(0, 5) === fechaHoy; // Compara DD/MM del Excel con hoy
     }).length;
     
-    let elemActivosCond = document.getElementById('dashConductoresActivos');
-    if(elemActivosCond) elemActivosCond.innerText = activosCond;
+    let elCumple = document.getElementById('dashCumpleanos');
+    if (elCumple) elCumple.innerText = cumpleCount;
 
-    // (Conserva aquí debajo el código que ya tenías para contar Unidades)
-    let totalUni = unidades.length;
-    let elemTotalUni = document.getElementById('dashTotalUnidades');
-    if(elemTotalUni) elemTotalUni.innerText = totalUni;
-    // ... resto de tu código de unidades ...
+    // 4. ACREDITACIONES (Conteo por tipo de contrato)
+    let cVan = 0, cMinibus = 0, cBus = 0;
+    conductores.forEach(c => {
+        let cat = determinarTipoConductor(c.contrato);
+        if(cat === 'VAN') cVan++;
+        else if(cat === 'MINIBUS') cMinibus++;
+        else if(cat === 'BUS') cBus++;
+    });
+
+    if(document.getElementById('dashAcredVan')) document.getElementById('dashAcredVan').innerText = cVan;
+    if(document.getElementById('dashAcredMinibus')) document.getElementById('dashAcredMinibus').innerText = cMinibus;
+    if(document.getElementById('dashAcredBus')) document.getElementById('dashAcredBus').innerText = cBus;
 }
 
 // FORMATOS Y MAESTROS
@@ -181,11 +197,13 @@ function obtenerTiempoLaborandoExacto(f) {
     return a < 0 ? '0 a / 0 m' : `${a} a / ${m} m`; 
 }
 
-function determinarTipoConductor(contrato) { 
-    let t = (contrato || '').toUpperCase().trim(); 
-    if (t.endsWith(' M') || t.includes('MINI') || t.includes('MINIBUS')) return 'MINIBUS'; 
-    if (t.includes('PROFESIONAL') || t.includes('BUS')) return 'BUS'; 
-    return 'VAN'; 
+// Función auxiliar para clasificar los contratos
+function determinarTipoConductor(contrato) {
+    if(!contrato) return 'VAN';
+    let txt = contrato.toUpperCase();
+    if (txt.includes('ESPECIALIZADO M')) return 'MINIBUS';
+    if (txt.includes('ESPECIALIZADO')) return 'BUS';
+    return 'VAN';
 }
 
 // GUARDADOS

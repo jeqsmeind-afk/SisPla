@@ -71,19 +71,61 @@
     <div class="main-content">
         <!-- VISTA DASHBOARD -->
         <div id="vistaDashboard" class="view-section active">
-            <div class="page-header"><h2>Panel de Control Operativo</h2><span id="dashFechaActual" style="font-weight: bold; color: var(--text-muted);"></span></div>
-            <div class="kpi-grid">
-                <div class="kpi-card"><div class="kpi-icon" style="background:#e0f2fe; color:#0284c7;"><i class="fa-solid fa-users"></i></div><div class="kpi-info"><h4>Conductores Activos</h4><div class="kpi-value" id="kpiConductoresActivos">0</div></div></div>
-                <div class="kpi-card"><div class="kpi-icon" style="background:#d1fae5; color:#059669;"><i class="fa-solid fa-bus"></i></div><div class="kpi-info"><h4>Flota Operativa</h4><div class="kpi-value" id="kpiUnidadesOperativas">0</div></div></div>
-                <div class="kpi-card"><div class="kpi-icon" style="background:#fef3c7; color:#d97706;"><i class="fa-solid fa-cake-candles"></i></div><div class="kpi-info"><h4>Cumpleaños Hoy</h4><div class="kpi-value" id="kpiCumpleanos">0</div></div></div>
-                <div class="kpi-card"><div class="kpi-icon" style="background:#f3e8ff; color:#7e22ce;"><i class="fa-solid fa-gauge-high"></i></div><div class="kpi-info"><h4>Disp. Flota</h4><div class="kpi-value" id="kpiPorcentajeFlota">0%</div></div></div>
+            <div class="page-header">
+                <h2>Panel de Control Operativo</h2>
             </div>
-            <div class="dashboard-grid">
-                <div class="card"><h3 style="font-size: 1.1rem; margin-bottom: 15px;">Composición Flota</h3><div class="progress-bar-container" id="barComposicionFlota"><div class="progress-bar-segment" style="width: 0%; background: #0369a1;"></div><div class="progress-bar-segment" style="width: 0%; background: #b45309;"></div></div><div style="display:flex; gap:20px; margin-top:20px;"><div style="font-size: 0.85rem;"><span style="color:#0369a1; font-weight:bold;">VANs: <span id="cntVans">0</span></span></div><div style="font-size: 0.85rem;"><span style="color:#b45309; font-weight:bold;">BUSES: <span id="cntBuses">0</span></span></div></div></div>
-                <div class="card"><h3 style="font-size: 1.1rem; margin-bottom: 15px;">Acreditaciones</h3><div class="stat-row"><span>VAN:</span><strong id="cntAcredVan">0</strong></div><div class="stat-row"><span>MINIBÚS:</span><strong id="cntAcredMinibus">0</strong></div><div class="stat-row"><span>BUS:</span><strong id="cntAcredBus">0</strong></div></div>
+            
+            <!-- TARJETAS SUPERIORES -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                <div class="card" style="display: flex; align-items: center; gap: 15px; padding: 20px;">
+                    <div style="background: #e0f2fe; color: #0284c7; padding: 15px; border-radius: 10px; font-size: 1.5rem;"><i class="fa-solid fa-users"></i></div>
+                    <div>
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">TOTAL CONDUCTORES</span>
+                        <h3 id="dashTotalConductores" style="font-size: 1.8rem; margin: 0; color: var(--text-main);">0</h3>
+                    </div>
+                </div>
+                <div class="card" style="display: flex; align-items: center; gap: 15px; padding: 20px;">
+                    <div style="background: #fef3c7; color: #b45309; padding: 15px; border-radius: 10px; font-size: 1.5rem;"><i class="fa-solid fa-graduation-cap"></i></div>
+                    <div>
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">EN INDUCCIÓN</span>
+                        <h3 id="dashInduccion" style="font-size: 1.8rem; margin: 0; color: var(--text-main);">0</h3>
+                    </div>
+                </div>
+                <div class="card" style="display: flex; align-items: center; gap: 15px; padding: 20px;">
+                    <div style="background: #ffedd5; color: #ea580c; padding: 15px; border-radius: 10px; font-size: 1.5rem;"><i class="fa-solid fa-cake-candles"></i></div>
+                    <div>
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">CUMPLEAÑOS HOY</span>
+                        <h3 id="dashCumpleanos" style="font-size: 1.8rem; margin: 0; color: var(--text-main);">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANELES INFERIORES -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <!-- Panel de Acreditaciones -->
+                <div class="card">
+                    <h3 style="margin-bottom: 15px; font-size: 1.1rem;">Acreditaciones (Contratos)</h3>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                        <span style="color: var(--text-muted); font-weight: 600;">VAN:</span>
+                        <strong id="dashAcredVan">0</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                        <span style="color: var(--text-muted); font-weight: 600;">MINIBÚS:</span>
+                        <strong id="dashAcredMinibus">0</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0;">
+                        <span style="color: var(--text-muted); font-weight: 600;">BUS:</span>
+                        <strong id="dashAcredBus">0</strong>
+                    </div>
+                </div>
+                
+                <!-- Panel de Flota (Temporalmente vacío para después) -->
+                <div class="card">
+                    <h3 style="margin-bottom: 15px; font-size: 1.1rem;">Composición de Flota</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem;">Próximamente...</p>
+                </div>
             </div>
         </div>
-
         <!-- VISTA CONDUCTORES -->
         <div id="vistaConductores" class="view-section">
             <div class="page-header">

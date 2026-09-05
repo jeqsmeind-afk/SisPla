@@ -422,11 +422,11 @@ function actualizarFiltrosDinamicos() {
     
     let valorActual = selectServicio.value;
     
-    // Extrae los servicios únicos de la data sincronizada de Sheets
+    // Simplemente extrae lo que viene de la columna "SERVICIO ASIG"
     let serviciosUnicos = [...new Set(conductores.map(c => (c.servicio || '').toUpperCase().trim()))].filter(s => s !== '');
     serviciosUnicos.sort();
     
-    let html = '<option value="TODOS">Servicio: Todos</option>';
+    let html = '<option value="TODOS">Todos los Servicios</option>';
     serviciosUnicos.forEach(serv => {
         let selected = (serv === valorActual) ? 'selected' : '';
         html += `<option value="${serv}" ${selected}>${serv}</option>`;
@@ -434,7 +434,6 @@ function actualizarFiltrosDinamicos() {
     
     selectServicio.innerHTML = html;
 }
-
 function abrirModalEditZona(idx) {
     idxZonaEdit = idx; 
     let z = zonasBD[idx]; 

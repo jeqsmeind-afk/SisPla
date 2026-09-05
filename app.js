@@ -422,11 +422,11 @@ function actualizarFiltrosDinamicos() {
     
     let valorActual = selectServicio.value;
     
-    // Obtenemos los servicios tal cual están en el Excel (solo ignoramos celdas en blanco)
+    // Extrae los servicios únicos de la data sincronizada de Sheets
     let serviciosUnicos = [...new Set(conductores.map(c => (c.servicio || '').toUpperCase().trim()))].filter(s => s !== '');
     serviciosUnicos.sort();
     
-    let html = '<option value="TODOS">Todos</option>';
+    let html = '<option value="TODOS">Servicio: Todos</option>';
     serviciosUnicos.forEach(serv => {
         let selected = (serv === valorActual) ? 'selected' : '';
         html += `<option value="${serv}" ${selected}>${serv}</option>`;

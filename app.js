@@ -253,6 +253,29 @@ async function sincronizarConductores() {
     }
 }
 
+// Función para sincronizar desde el botón del Dashboard
+async function sincronizarConductoresDesdeDashboard() {
+    let btn = document.getElementById('btnSyncDashboard');
+    if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+    
+    try {
+        let urlFresca = URL_API_CONDUCTORES + "?t=" + new Date().getTime();
+        let response = await fetch(urlFresca);
+        let data = await response.json();
+        
+        conductores = data; 
+        guardarConductores();
+        actualizarFiltrosDinamicos(); 
+        actualizarDashboard(); // Refresca las tarjetas al instante
+        
+        alert("✓ Base sincronizada con éxito desde Google Sheets.");
+    } catch(e) {
+        alert("Error de conexión: " + e.message);
+    } finally {
+        if(btn) btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Sheets';
+    }
+}
+
 function renderizarConductores() { 
     let tbody = document.getElementById('tbodyConductores'); 
     if(!tbody) return;
@@ -1012,9 +1035,24 @@ function importarRespaldoSistema(e) {
     r.readAsText(file);
 }
 
-// INICIO AUTOMÁTICO
-window.onload = function() { 
+// Carga automática al iniciar la web
+window.onload = async function() { 
     aplicarTema(localStorage.getItem('planner_theme') || 'cerro-verde'); 
-    actualizarFiltrosDinamicos(); // <-- Carga los servicios guardados localmente al iniciar
+    
+    // Al abrir la web, intentamos descargar de Google Sheets de inmediato en segundo plano
+    try {
+        let urlFresca = URL_API_CONDUCTORES + "?t=" + new Date().getTime();
+        let response = await fetch(urlFresca);
+        let data = await response.json();
+        if(data && data.length > 0) {
+            conductores = data;
+            guardarConductores();
+        }
+    } catch(e) {
+        console.log("Usando datos locales guardados (sin conexión a internet).");
+    }
+
+    actualizarFiltrosDinamicos();
+    actualizarDashboard();
     cambiarVista('dashboard'); 
 };

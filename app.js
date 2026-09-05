@@ -118,45 +118,28 @@ function cambiarVista(v) {
 
 // DASHBOARD
 function actualizarDashboard() {
-    let hoy = new Date(); 
-    document.getElementById('dashFechaActual').innerText = hoy.toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    // 1. TOTAL DE CONDUCTORES
+    let totalCond = conductores.length;
+    let elemTotalCond = document.getElementById('dashTotalConductores');
+    if(elemTotalCond) elemTotalCond.innerText = totalCond;
+
+    // 2. CONDUCTORES DISPONIBLES / ACTIVOS
+    // Identificamos las siglas que significan que NO están disponibles hoy
+    let estadosInactivos = ['V', 'D', 'DM', 'DT', 'I', 'NC']; 
     
-    let act = conductores.filter(c => c.estado === 'ACTIVO').length; 
-    document.getElementById('kpiConductoresActivos').innerText = act;
+    let activosCond = conductores.filter(c => {
+        let est = (c.estadoAbrev || '').toUpperCase().trim();
+        return est !== '' && !estadosInactivos.includes(est);
+    }).length;
     
-    let op = unidades.filter(u => u.estado === 'OPERATIVO').length; 
-    document.getElementById('kpiUnidadesOperativas').innerText = op;
-    
-    document.getElementById('kpiPorcentajeFlota').innerText = `${unidades.length > 0 ? Math.round((op / unidades.length) * 100) : 0}%`;
-    
-    let vans = 0, buses = 0; 
-    unidades.forEach(u => { 
-        let t = (u.tipoVehiculo || '').toUpperCase(); 
-        if(t.includes('VAN')) vans++; 
-        else if(t.includes('BUS')) buses++; 
-    });
-    
-    document.getElementById('cntVans').innerText = vans; 
-    document.getElementById('cntBuses').innerText = buses;
-    
-    let seg = document.querySelectorAll('#barComposicionFlota .progress-bar-segment');
-    let totalUni = unidades.length || 1;
-    if(seg.length >= 2){ 
-        seg[0].style.width = `${(vans/totalUni)*100}%`; 
-        seg[1].style.width = `${(buses/totalUni)*100}%`; 
-    }
-    
-    let acV = 0, acM = 0, acB = 0;
-    conductores.filter(c => c.estado === 'ACTIVO').forEach(c => { 
-        let t = determinarTipoConductor(c.contrato); 
-        if(t === 'VAN') acV++; 
-        else if(t === 'MINIBUS') acM++; 
-        else if(t === 'BUS') acB++; 
-    });
-    
-    document.getElementById('cntAcredVan').innerText = acV; 
-    document.getElementById('cntAcredMinibus').innerText = acM; 
-    document.getElementById('cntAcredBus').innerText = acB;
+    let elemActivosCond = document.getElementById('dashConductoresActivos');
+    if(elemActivosCond) elemActivosCond.innerText = activosCond;
+
+    // (Conserva aquí debajo el código que ya tenías para contar Unidades)
+    let totalUni = unidades.length;
+    let elemTotalUni = document.getElementById('dashTotalUnidades');
+    if(elemTotalUni) elemTotalUni.innerText = totalUni;
+    // ... resto de tu código de unidades ...
 }
 
 // FORMATOS Y MAESTROS

@@ -234,13 +234,17 @@ async function sincronizarConductores() {
     if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
     
     try {
-        let response = await fetch(URL_API_CONDUCTORES);
+        // TRUCO ANTI-CACHÉ: Le pegamos la hora actual al enlace para que el navegador lo vea como una URL "nueva"
+        let urlFresca = URL_API_CONDUCTORES + "?t=" + new Date().getTime();
+        
+        let response = await fetch(urlFresca);
         let data = await response.json();
         
         conductores = data; 
         guardarConductores();
-        actualizarFiltrosDinamicos(); // <-- Actualiza el menú desplegable automáticamente
+        actualizarFiltrosDinamicos(); 
         renderizarConductores();
+        
         alert("✓ Base de conductores sincronizada desde Google Sheets.");
     } catch(e) {
         alert("Error de conexión: " + e.message);

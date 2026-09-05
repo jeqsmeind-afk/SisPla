@@ -94,37 +94,35 @@
                 </div>
             </div>
             <div class="card">
-                <div class="toolbar">
-                    <div class="search-container">
+                <div class="toolbar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div class="search-container" style="flex: 1; min-width: 250px;">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <input type="text" id="searchConductores" placeholder="Buscar DNI o Nombre..." onkeyup="renderizarConductores()">
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <select id="filtroCargoCond" onchange="renderizarConductores()" class="select-prog" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main); font-size: 0.85rem;">
+                            <option value="TODOS">Cargo: Todos</option>
+                            <option value="VAN">VAN</option>
+                            <option value="MINIBUS">MINIBÚS</option>
+                            <option value="BUS">BUS</option>
+                        </select>
+                        <select id="filtroServicioCond" onchange="renderizarConductores()" class="select-prog" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main); font-size: 0.85rem;">
+                            <option value="TODOS">Servicio: Todos</option>
+                        </select>
                     </div>
                 </div>
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
-                                <th style="vertical-align: top;">DNI</th>
-                                <th style="vertical-align: top;">Conductor</th>
-                                <th style="vertical-align: top;">Edad</th>
-                                <th style="vertical-align: top;">Tiempo Laborando</th>
-                                <th style="vertical-align: top;">
-                                    Contrato <br>
-                                    <select id="filtroCargoCond" onchange="renderizarConductores()" style="width:100%; margin-top:6px; padding:4px; font-size:0.75rem; border-radius:4px; border:1px solid var(--border-color); background:var(--main-bg); color:var(--text-main); font-weight:normal; outline:none;">
-                                        <option value="TODOS">Todos</option>
-                                        <option value="VAN">VAN</option>
-                                        <option value="MINIBUS">MINIBÚS</option>
-                                        <option value="BUS">BUS</option>
-                                    </select>
-                                </th>
-                                <th style="vertical-align: top;">
-                                    Servicio <br>
-                                    <select id="filtroServicioCond" onchange="renderizarConductores()" style="width:100%; margin-top:6px; padding:4px; font-size:0.75rem; border-radius:4px; border:1px solid var(--border-color); background:var(--main-bg); color:var(--text-main); font-weight:normal; outline:none;">
-                                        <option value="TODOS">Todos</option>
-                                    </select>
-                                </th>
-                                <th style="vertical-align: top;">Estado</th>
-                                <th style="vertical-align: top;">Acción</th>
+                                <th>DNI</th>
+                                <th>Conductor</th>
+                                <th>Edad</th>
+                                <th>Tiempo Laborando</th>
+                                <th>Contrato</th>
+                                <th>Servicio</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyConductores"></tbody>

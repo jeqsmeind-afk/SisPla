@@ -5,49 +5,32 @@ let idxConductorEdit = null, idxUnidadEdit = null, idxZonaEdit = null;
 // LA BASE COMPLETA DE ZONAS
 const ZONAS_FABRICA = [
     {"zona":"1","rec_a1_ofic":"OVALO CCORITOS (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"OVALO CCORITOS (CONF. DESVIO SUPERVISOR)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"OVALO CCORITOS (CONFIRMA DESVIO SUPERVISOR)","rec_b1_desv1":"","rec_b2_ofic":"OVALO CCORITOS (CONFIRMA DESVIO SUPERVISOR)","rec_b2_desv1":"","rec_b2p_ofic":"OVALO CCORITOS (CONF. DESVIO SUPERVISOR)","rec_b2p_desv1":"","a1":"04:55:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:45:00","b2":"17:40:00","b2p":"17:40:00"},
-    {"zona":"1A","rec_a1_ofic":"COLEGIO HORACIO ZEBALLOS (RETOMA GODOFREDO MANRIQUE)(RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_a1_desv1":"","rec_a2_ofic":"COLEGIO HORACIO ZEB (SI INGRESA A 04 DE OCTUBRE)(RETOMA GODOFREDO MANRIQUE)(RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_a2_desv1":"COLEGIO HORACIO ZEB (NO INGRESA A 04 DE OCTUBRE)(RETOMA GODOFREDO MANRIQUE)(RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"COLEGIO HORACIO ZEB (RETOMA GODOFREDO MANRIQUE)(RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_b1_desv1":"","rec_b2_ofic":"COLEGIO HORACIO ZEB (SI INGRESA A 04 DE OCTUBRE)(RETOMA GODOFREDO MANRIQUE)(RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_b2_desv1":"COLEGIO HORACIO ZEB (NO INGRESA A 04 DE OCTUBRE)(RETOMA GODOFREDO MANRIQUE)(RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_b2p_ofic":"COLEGIO HORACIO ZEB (SI INGRESA A 04 DE OCTUBRE)(RETOMA GODOFREDO MANRIQUE)(RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_b2p_desv1":"COLEGIO HORACIO ZEB (NO INGRESA A 04 DE OCTUBRE)(RETOMA GODOFREDO MANRIQUE)(RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","a1":"04:40:00","a2_lv":"05:39:30","a2_sd":"05:40:00","a2p_lv":"05:39:30","a2p_sd":"05:40:00","b1":"16:35:00","b2":"17:35:00","b2p":"17:35:00"},
-    {"zona":"1B","rec_a1_ofic":"PLAZA DE CHARACATO (RUTA REGULAR) (RECOJE AV. PAISAJISTA SI LEVENTAN LA MANO)","rec_a1_desv1":"PLAZA DE CHARACATO (RECOJO HASTA GRIFO SABANDIA)","rec_a2_ofic":"PLAZA DE CHARACATO (RECOJO HASTA GRIFO SABANDIA)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"PLAZA DE CHARACATO (RECOJE AV. PAISAJISTA SI LEVENTAN LA MANO)","rec_b1_desv1":"PLAZA DE CHARACATO (RECOJO HASTA GRIFO SABANDIA)","rec_b2_ofic":"PLAZA DE CHARACATO (RECOJO HASTA GRIFO SABANDIA)","rec_b2_desv1":"","rec_b2p_ofic":"PLAZA DE CHARACATO (RECOJO HASTA GRIFO SABANDIA)","rec_b2p_desv1":"","a1":"04:45:00","a2_lv":"05:44:30","a2_sd":"05:45:00","a2p_lv":"05:44:30","a2p_sd":"05:45:00","b1":"16:35:00","b2":"17:35:00","b2p":"17:35:00"},
-    {"zona":"1B SB","rec_a1_ofic":"GRIFO SABANDIA (CONTINUA RECOJO DE ZONA) (RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_a1_desv1":"","rec_a2_ofic":"GRIFO SABANDIA (CONTINUA RECOJO DE ZONA) (RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"GRIFO SABANDIA (CONTINUA RECOJO DE ZONA) (RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_b1_desv1":"","rec_b2_ofic":"GRIFO SABANDIA (CONTINUA RECOJO DE ZONA) (RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_b2_desv1":"","rec_b2p_ofic":"GRIFO SABANDIA (CONTINUA RECOJO DE ZONA) (RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"05:47:30","a2_sd":"05:48:00","a2p_lv":"05:47:30","a2p_sd":"05:48:00","b1":"16:55:00","b2":"17:38:00","b2p":"17:38:00"},
+    {"zona":"1A","rec_a1_ofic":"COLEGIO HORACIO ZEBALLOS (RETOMA GODOFREDO MANRIQUE)","rec_a1_desv1":"","rec_a2_ofic":"COLEGIO HORACIO ZEB (SI INGRESA A 04 DE OCTUBRE)","rec_a2_desv1":"COLEGIO HORACIO ZEB (NO INGRESA A 04 DE OCTUBRE)","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"COLEGIO HORACIO ZEB (RETOMA GODOFREDO MANRIQUE)","rec_b1_desv1":"","rec_b2_ofic":"COLEGIO HORACIO ZEB (SI INGRESA A 04 DE OCTUBRE)","rec_b2_desv1":"COLEGIO HORACIO ZEB (NO INGRESA A 04 DE OCTUBRE)","rec_b2p_ofic":"COLEGIO HORACIO ZEB (SI INGRESA A 04 DE OCTUBRE)","rec_b2p_desv1":"COLEGIO HORACIO ZEB (NO INGRESA A 04 DE OCTUBRE)","a1":"04:40:00","a2_lv":"05:39:30","a2_sd":"05:40:00","a2p_lv":"05:39:30","a2p_sd":"05:40:00","b1":"16:35:00","b2":"17:35:00","b2p":"17:35:00"},
+    {"zona":"1B","rec_a1_ofic":"PLAZA DE CHARACATO (RUTA REGULAR)","rec_a1_desv1":"PLAZA DE CHARACATO (RECOJO HASTA GRIFO SABANDIA)","rec_a2_ofic":"PLAZA DE CHARACATO (RECOJO HASTA GRIFO SABANDIA)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"PLAZA DE CHARACATO","rec_b1_desv1":"PLAZA DE CHARACATO (RECOJO HASTA GRIFO SABANDIA)","rec_b2_ofic":"PLAZA DE CHARACATO (RECOJO HASTA GRIFO SABANDIA)","rec_b2_desv1":"","rec_b2p_ofic":"PLAZA DE CHARACATO (RECOJO HASTA GRIFO SABANDIA)","rec_b2p_desv1":"","a1":"04:45:00","a2_lv":"05:44:30","a2_sd":"05:45:00","a2p_lv":"05:44:30","a2p_sd":"05:45:00","b1":"16:35:00","b2":"17:35:00","b2p":"17:35:00"},
+    {"zona":"1B SB","rec_a1_ofic":"GRIFO SABANDIA (CONTINUA RECOJO DE ZONA)","rec_a1_desv1":"","rec_a2_ofic":"GRIFO SABANDIA (CONTINUA RECOJO DE ZONA)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"GRIFO SABANDIA","rec_b1_desv1":"","rec_b2_ofic":"GRIFO SABANDIA","rec_b2_desv1":"","rec_b2p_ofic":"GRIFO SABANDIA","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"05:47:30","a2_sd":"05:48:00","a2p_lv":"05:47:30","a2p_sd":"05:48:00","b1":"16:55:00","b2":"17:38:00","b2p":"17:38:00"},
     {"zona":"1C","rec_a1_ofic":"COLISEO DE GALLOS","rec_a1_desv1":"","rec_a2_ofic":"COLISEO DE GALLOS  (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"COLISEO DE GALLOS (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"COLISEO DE GALLOS (RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"COLISEO DE GALLOS  (RUTA REGULAR)","rec_b2p_desv1":"","a1":"05:00:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:45:00","b2":"17:35:00","b2p":"17:35:00"},
-    {"zona":"1D","rec_a1_ofic":"LA CAMPIÑA (DESVIA AV UNION - CALLE HUACHO - CALLE OROLLA - AV SOCABAYA)","rec_a1_desv1":"LA CAMPIÑA (DESVIA UNION, HUACHO, OROYA, PAISAJISTA, PTE. NUEVO) (RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_a2_ofic":"LA CAMPIÑA (DESVIA UNION, HUACHO, OROYA, PAISAJISTA, PTE. NUEVO) (RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"LA CAMPIÑA (DESVIA AV UNION - CALLE HUACHO - CALLE OROLLA - AV SOCABAYA)","rec_b1_desv1":"LA CAMPIÑA (DESVIA UNION, HUACHO, OROYA, PAISAJISTA, PTE. NUEVO) (RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_b2_ofic":"LA CAMPIÑA (DESVIA UNION, CALLE HUACHO, OROYA,  PAISAJISTA, PTE. NUEVO) (RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_b2_desv1":"","rec_b2p_ofic":"LA CAMPIÑA (DESVIA UNION, HUACHO, OROYA, PAISAJISTA, PTE. NUEVO) (RECOJE AV. PAISAJISTA SI LEVANTAN LA MANO)","rec_b2p_desv1":"","a1":"04:50:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:40:00","b2":"17:35:00","b2p":"17:35:00"},
-    {"zona":"1D CJ","rec_a1_ofic":"CALLE JULY / AV. CARACAS (S. M. SOCABAYA, CONVENCIONES)","rec_a1_desv1":"","rec_a2_ofic":"CALLE JULY / AV. CARACAS (AV. FRANCISCO MOSTAJO  - AV. BELLAVISTA - AV. AREQUIPA - AV. BRASILIA)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"CALLE JULY / AV. CARACAS (AV. FRANCISCO MOSTAJO  - AV. BELLAVISTA - AV. AREQUIPA - AV. BRASILIA)","rec_b1_desv1":"","rec_b2_ofic":"CALLE JULY / AV. CARACAS (AV. FRANCISCO MOSTAJO  - AV. BELLAVISTA - AV. AREQUIPA - AV. BRASILIA)","rec_b2_desv1":"","rec_b2p_ofic":"CALLE JULY / AV. CARACAS (AV. FRANCISCO MOSTAJO  - AV. BELLAVISTA - AV. AREQUIPA - AV. BRASILIA)","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"05:54:30","a2_sd":"05:55:00","a2p_lv":"05:54:30","a2p_sd":"05:55:00","b1":"NO HAY","b2":"17:45:00","b2p":"17:45:00"},
-    {"zona":"2A","rec_a1_ofic":"POSTA SAN JUAN (INGRESA CASA LAGO)","rec_a1_desv1":"","rec_a2_ofic":"POSTA SAN JUAN ( O. TERMINAL - M. FORGA - PT. SAN ISIDRO)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"POSTA SAN JUAN (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"POSTA SAN JUAN (RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"POSTA SAN JUAN ( O. TERMINAL - M. FORGA - PT. SAN ISIDRO)","rec_b2p_desv1":"","a1":"04:50:00","a2_lv":"05:44:30","a2_sd":"05:45:00","a2p_lv":"05:44:30","a2p_sd":"05:45:00","b1":"16:35:00","b2":"17:35:00","b2p":"17:35:00"},
-    {"zona":"2B","rec_a1_ofic":"MCDO. INMACULADA (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"MCDO. INMACULADA (RUTA REGULAR  X ENCIMA TODOS BYPASS)","rec_a2_desv1":"MCDO. INMACULADA (RUTA REGULAR  X ENCIMA TODOS BYPASS) (INGRESA A CASA LAGO)","rec_a2p_ofic":"MCDO. INMACULADA (RUTA REGULAR  X ENCIMA TODOS BYPASS)(INGRESA CASA LAGO)","rec_a2p_desv1":"","rec_b1_ofic":"MCDO. INMACULADA (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"MCDO. INMACULADA (RUTA REGULAR  X ENCIMA TODOS BYPASS)","rec_b2_desv1":"","rec_b2p_ofic":"MCDO. INMACULADA (RUTA REGULAR  X ENCIMA TODOS BYPASS)","rec_b2p_desv1":"MCDO. INMACULADA (RUTA REGULAR  X ENCIMA TODOS BYPASS) (INGRESA A CASA LAGO)","a1":"04:50:00","a2_lv":"05:44:30","a2_sd":"05:45:00","a2p_lv":"05:44:30","a2p_sd":"05:45:00","b1":"16:35:00","b2":"17:35:00","b2p":"17:35:00"},
-    {"zona":"2B (MANITOS)","rec_a1_ofic":"AV. DOLORES / AV. LOS INCAS (MANITOS) INGRESA CASA LAGO","rec_a1_desv1":"","rec_a2_ofic":"AV. DOLORES / AV. LOS INCAS (MANITOS) INGRESA CASA LAGO","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"AV. DOLORES / AV. LOS INCAS (MANITOS) INGRESA CASA LAGO","rec_b1_desv1":"","rec_b2_ofic":"AV. DOLORES / AV. LOS INCAS (MANITOS) INGRESA CASA LAGO","rec_b2_desv1":"","rec_b2p_ofic":"AV. DOLORES / AV. LOS INCAS (MANITOS) INGRESA CASA LAGO","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"NO HAY","a2_sd":"NO HAY","a2p_lv":"NO HAY","a2p_sd":"NO HAY","b1":"16:55:00","b2":"NO HAY","b2p":"NO HAY"},
-    {"zona":"3","rec_a1_ofic":"AV LIMA (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"AV LIMA (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"AV LIMA (RECOJE TODA AV. VENEZUELA)","rec_b1_desv1":"","rec_b2_ofic":"AV LIMA (RECOJE TODA AV. VENEZUELA)","rec_b2_desv1":"","rec_b2p_ofic":"AV LIMA (RUTA REGULAR)","rec_b2p_desv1":"","a1":"04:50:00","a2_lv":"05:44:30","a2_sd":"05:45:00","a2p_lv":"05:44:30","a2p_sd":"05:45:00","b1":"16:40:00","b2":"17:35:00","b2p":"17:35:00"},
-    {"zona":"3A","rec_a1_ofic":"PARQUE 1ERO DE MAYO(COMANDANTE CANGA - PARIS-AV LOS INCAS)","rec_a1_desv1":"","rec_a2_ofic":"PARQUE 1ERO DE MAYO (COMANDANTE CANGA - PARIS-AV LOS INCAS)","rec_a2_desv1":"","rec_a2p_ofic":"PARQUE 1ERO DE MAYO(COMANDANTE CANGA - PARIS-AV LOS INCAS)","rec_a2p_desv1":"","rec_b1_ofic":"PARQUE 1ERO DE MAYO (COMANDANTE CANGA - PARIS - AV LOS INCAS - DOLORES - VENEZUELA) (DEVIA FERNANDINI)","rec_b1_desv1":"","rec_b2_ofic":"PARQUE 1ERO DE MAYO (COMANDANTE CANGA - PARIS - AV LOS INCAS - DOLORES - VENEZUELA) (DEVIA FERNANDINI)","rec_b2_desv1":"","rec_b2p_ofic":"PARQUE 1ERO DE MAYO (COMANDANTE CANGA - PARIS-AV LOS INCAS)","rec_b2p_desv1":"","a1":"04:50:00","a2_lv":"05:39:30","a2_sd":"05:40:00","a2p_lv":"05:39:30","a2p_sd":"05:40:00","b1":"16:40:00","b2":"17:30:00","b2p":"17:30:00"},
-    {"zona":"3B","rec_a1_ofic":"ALAMEDA DOLORES ( LAMBRAMANI - INCAS)","rec_a1_desv1":"","rec_a2_ofic":"ALAMEDA DOLORES ( LAMBRAMANI - INCAS)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"ALAMEDA DOLORES (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"ALAMEDA DOLORES (RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"ALAMEDA DOLORES ( LAMBRAMANI - INCAS)","rec_b2p_desv1":"","a1":"04:55:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:40:00","b2":"17:35:00","b2p":"17:35:00"},
-    {"zona":"4","rec_a1_ofic":"PLAZA EL PORVENIR (RUTA REGULAR)","rec_a1_desv1":"PLAZA EL PORVENIR (DESVIA POR TENIENTE RODRIGUEZ / PROGRESO/ VENEZUELA)","rec_a2_ofic":"PLAZA EL PORVENIR (DESVIA POR TENIENTE RODRIGUEZ / PROGRESO/ VENEZUELA)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"PLAZA EL PORVENIR (RUTA REGULAR)","rec_b1_desv1":"PLAZA EL PORVENIR (DESVIA POR TENIENTE RODRIGUEZ / PROGRESO/ VENEZUELA)","rec_b2_ofic":"PLAZA EL PORVENIR (DESVIA POR TENIENTE RODRIGUEZ / PROGRESO/ VENEZUELA)","rec_b2_desv1":"","rec_b2p_ofic":"PLAZA EL PORVENIR (DESVIA POR TENIENTE RODRIGUEZ / PROGRESO/ VENEZUELA)","rec_b2p_desv1":"","a1":"04:55:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:40:00","b2":"17:35:00","b2p":"17:35:00"},
-    {"zona":"4 TE","rec_a1_ofic":"TENIENTE RODRIGUEZ CON RAMON CASTILLA (CONTINUA RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"TENIENTE RODRIGUEZ CON RAMON CASTILLA (COMPLETA RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"TENIENTE RODRIGUEZ CON RAMON CASTILLA (RUTA REGULAR)","rec_a2p_desv1":"","rec_b1_ofic":"TENIENTE RODRIGUEZ CON RAMON CASTILLA (COMPLETA RUTA REGULAR)","rec_b1_desv1":"TENIENTE RODRIGUEZ CON RAMON CASTILLA (COMPLETA RUTA REGULAR)","rec_b2_ofic":"TENIENTE RODRIGUEZ CON RAMON CASTILLA (COMPLETA RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"TENIENTE RODRIGUEZ CON RAMON CASTILLA (COMPLETA RUTA REGULAR)","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"NO HAY","b2":"17:35:00","b2p":"17:35:00"},
-    {"zona":"5","rec_a1_ofic":"MDO. APURIMAC (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"MDO. APURIMAC (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"MDO. APURIMAC (RUTA REGULAR) (RECOJO DETRÁS DE CDS)","rec_a2p_desv1":"","rec_b1_ofic":"MDO. APURIMAC  (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"MDO. APURIMAC  (RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"MDO. APURIMAC (RUTA REGULAR)","rec_b2p_desv1":"","a1":"04:55:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:40:00","b2":"17:35:00","b2p":"17:35:00"},
-    {"zona":"5A","rec_a1_ofic":"CALLE UGARTE / JR. LEONCIO PRADO (RUTA REGULAR )","rec_a1_desv1":"","rec_a2_ofic":"CALLE UGARTE / JR. LEONCIO PRADO (RUTA REGULAR )","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"CALLE UGARTE / JR. LEONCIO PRADO (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"CALLE UGARTE / JR. LEONCIO PRADO (RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"CALLE UGARTE / JR. LEONCIO PRADO (RUTA REGULAR )","rec_b2p_desv1":"","a1":"04:55:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:45:00","b2":"17:35:00","b2p":"17:35:00"},
+    {"zona":"1D","rec_a1_ofic":"LA CAMPIÑA","rec_a1_desv1":"LA CAMPIÑA (DESVIA)","rec_a2_ofic":"LA CAMPIÑA (DESVIA)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"LA CAMPIÑA","rec_b1_desv1":"LA CAMPIÑA (DESVIA)","rec_b2_ofic":"LA CAMPIÑA (DESVIA)","rec_b2_desv1":"","rec_b2p_ofic":"LA CAMPIÑA (DESVIA)","rec_b2p_desv1":"","a1":"04:50:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:40:00","b2":"17:35:00","b2p":"17:35:00"},
+    {"zona":"1D CJ","rec_a1_ofic":"CALLE JULY / AV. CARACAS","rec_a1_desv1":"","rec_a2_ofic":"CALLE JULY / AV. CARACAS","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"CALLE JULY / AV. CARACAS","rec_b1_desv1":"","rec_b2_ofic":"CALLE JULY / AV. CARACAS","rec_b2_desv1":"","rec_b2p_ofic":"CALLE JULY / AV. CARACAS","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"05:54:30","a2_sd":"05:55:00","a2p_lv":"05:54:30","a2p_sd":"05:55:00","b1":"NO HAY","b2":"17:45:00","b2p":"17:45:00"},
+    {"zona":"2A","rec_a1_ofic":"POSTA SAN JUAN (INGRESA CASA LAGO)","rec_a1_desv1":"","rec_a2_ofic":"POSTA SAN JUAN","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"POSTA SAN JUAN","rec_b1_desv1":"","rec_b2_ofic":"POSTA SAN JUAN","rec_b2_desv1":"","rec_b2p_ofic":"POSTA SAN JUAN","rec_b2p_desv1":"","a1":"04:50:00","a2_lv":"05:44:30","a2_sd":"05:45:00","a2p_lv":"05:44:30","a2p_sd":"05:45:00","b1":"16:35:00","b2":"17:35:00","b2p":"17:35:00"},
+    {"zona":"2B","rec_a1_ofic":"MCDO. INMACULADA (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"MCDO. INMACULADA","rec_a2_desv1":"","rec_a2p_ofic":"MCDO. INMACULADA","rec_a2p_desv1":"","rec_b1_ofic":"MCDO. INMACULADA","rec_b1_desv1":"","rec_b2_ofic":"MCDO. INMACULADA","rec_b2_desv1":"","rec_b2p_ofic":"MCDO. INMACULADA","rec_b2p_desv1":"","a1":"04:50:00","a2_lv":"05:44:30","a2_sd":"05:45:00","a2p_lv":"05:44:30","a2p_sd":"05:45:00","b1":"16:35:00","b2":"17:35:00","b2p":"17:35:00"},
+    {"zona":"3","rec_a1_ofic":"AV LIMA (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"AV LIMA (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"AV LIMA","rec_b1_desv1":"","rec_b2_ofic":"AV LIMA","rec_b2_desv1":"","rec_b2p_ofic":"AV LIMA (RUTA REGULAR)","rec_b2p_desv1":"","a1":"04:50:00","a2_lv":"05:44:30","a2_sd":"05:45:00","a2p_lv":"05:44:30","a2p_sd":"05:45:00","b1":"16:40:00","b2":"17:35:00","b2p":"17:35:00"},
+    {"zona":"3A","rec_a1_ofic":"PARQUE 1ERO DE MAYO","rec_a1_desv1":"","rec_a2_ofic":"PARQUE 1ERO DE MAYO","rec_a2_desv1":"","rec_a2p_ofic":"PARQUE 1ERO DE MAYO","rec_a2p_desv1":"","rec_b1_ofic":"PARQUE 1ERO DE MAYO","rec_b1_desv1":"","rec_b2_ofic":"PARQUE 1ERO DE MAYO","rec_b2_desv1":"","rec_b2p_ofic":"PARQUE 1ERO DE MAYO","rec_b2p_desv1":"","a1":"04:50:00","a2_lv":"05:39:30","a2_sd":"05:40:00","a2p_lv":"05:39:30","a2p_sd":"05:40:00","b1":"16:40:00","b2":"17:30:00","b2p":"17:30:00"},
+    {"zona":"3B","rec_a1_ofic":"ALAMEDA DOLORES","rec_a1_desv1":"","rec_a2_ofic":"ALAMEDA DOLORES","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"ALAMEDA DOLORES","rec_b1_desv1":"","rec_b2_ofic":"ALAMEDA DOLORES","rec_b2_desv1":"","rec_b2p_ofic":"ALAMEDA DOLORES","rec_b2p_desv1":"","a1":"04:55:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:40:00","b2":"17:35:00","b2p":"17:35:00"},
+    {"zona":"4","rec_a1_ofic":"PLAZA EL PORVENIR (RUTA REGULAR)","rec_a1_desv1":"PLAZA EL PORVENIR","rec_a2_ofic":"PLAZA EL PORVENIR","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"PLAZA EL PORVENIR (RUTA REGULAR)","rec_b1_desv1":"PLAZA EL PORVENIR","rec_b2_ofic":"PLAZA EL PORVENIR","rec_b2_desv1":"","rec_b2p_ofic":"PLAZA EL PORVENIR","rec_b2p_desv1":"","a1":"04:55:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:40:00","b2":"17:35:00","b2p":"17:35:00"},
+    {"zona":"5","rec_a1_ofic":"MDO. APURIMAC (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"MDO. APURIMAC (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"MDO. APURIMAC","rec_a2p_desv1":"","rec_b1_ofic":"MDO. APURIMAC  (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"MDO. APURIMAC  (RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"MDO. APURIMAC (RUTA REGULAR)","rec_b2p_desv1":"","a1":"04:55:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:40:00","b2":"17:35:00","b2p":"17:35:00"},
+    {"zona":"5A","rec_a1_ofic":"CALLE UGARTE / JR. LEONCIO PRADO","rec_a1_desv1":"","rec_a2_ofic":"CALLE UGARTE / JR. LEONCIO PRADO","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"CALLE UGARTE / JR. LEONCIO PRADO","rec_b1_desv1":"","rec_b2_ofic":"CALLE UGARTE / JR. LEONCIO PRADO","rec_b2_desv1":"","rec_b2p_ofic":"CALLE UGARTE / JR. LEONCIO PRADO","rec_b2p_desv1":"","a1":"04:55:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:45:00","b2":"17:35:00","b2p":"17:35:00"},
     {"zona":"5B","rec_a1_ofic":"PARQUE FRANCISCO MOSTAJO (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"PARQUE FRANCISCO MOSTAJO (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"PARQUE FRANCISCO MOSTAJO (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"PARQUE FRANCISCO MOSTAJO (RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"PARQUE FRANCISCO MOSTAJO (RUTA REGULAR)","rec_b2p_desv1":"","a1":"04:55:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:40:00","b2":"17:35:00","b2p":"17:35:00"},
-    {"zona":"6/7 Y","rec_a1_ofic":"CLINICA AREQUIPA (EMMEL - J. S. CHOCANO - PEUNTE BOLIVAR - FERNANDINI)","rec_a1_desv1":"","rec_a2_ofic":"CLINICA AREQUIPA (EMMEL - J. S. CHOCANO - PUENTE BOLIVAR - FERNANDINI)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"CLINICA AREQUIPA (EMMEL - J. S. CHOCANO - PUENTE BOLIVAR - FERNANDINI)","rec_b1_desv1":"","rec_b2_ofic":"CLINICA AREQUIPA (EMMEL - J. S. CHOCANO - PUENTE BOLIVAR - FERNANDINI)","rec_b2_desv1":"","rec_b2p_ofic":"CLINICA AREQUIPA (EMMEL - J. S. CHOCANO - PUENTE BOLIVAR - FERNANDINI)","rec_b2p_desv1":"","a1":"05:00:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:45:00","b2":"17:40:00","b2p":"17:40:00"},
-    {"zona":"6/7 E","rec_a1_ofic":"SECTOR 13 (COLEGIO CIRCA)","rec_a1_desv1":"","rec_a2_ofic":"SECTOR 13 (COLEGIO CIRCA)","rec_a2_desv1":"","rec_a2p_ofic":"AV. AMAZONAS CON AV. RAMON CASTILLA (ALTURA DE ESTADIO BOLOGNESI) (RECOJO DETRÁS DE CDS) (CONTINUA RECOJO HASTA MAX UHLE","rec_a2p_desv1":"","rec_b1_ofic":"SECTOR 13 (COLEGIO CIRCA)","rec_b1_desv1":"","rec_b2_ofic":"SECTOR 13 (COLEGIO CIRCA)","rec_b2_desv1":"","rec_b2p_ofic":"SECTOR 13 (COLEGIO CIRCA)","rec_b2p_desv1":"","a1":"04:50:00","a2_lv":"05:44:30","a2_sd":"05:45:00","a2p_lv":"5:52 REF","a2p_sd":"05:45:00","b1":"16:40:00","b2":"17:35:00","b2p":"17:35:00"},
+    {"zona":"6/7 Y","rec_a1_ofic":"CLINICA AREQUIPA","rec_a1_desv1":"","rec_a2_ofic":"CLINICA AREQUIPA","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"CLINICA AREQUIPA","rec_b1_desv1":"","rec_b2_ofic":"CLINICA AREQUIPA","rec_b2_desv1":"","rec_b2p_ofic":"CLINICA AREQUIPA","rec_b2p_desv1":"","a1":"05:00:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:45:00","b2":"17:40:00","b2p":"17:40:00"},
+    {"zona":"6/7 E","rec_a1_ofic":"SECTOR 13 (COLEGIO CIRCA)","rec_a1_desv1":"","rec_a2_ofic":"SECTOR 13 (COLEGIO CIRCA)","rec_a2_desv1":"","rec_a2p_ofic":"AV. AMAZONAS","rec_a2p_desv1":"","rec_b1_ofic":"SECTOR 13 (COLEGIO CIRCA)","rec_b1_desv1":"","rec_b2_ofic":"SECTOR 13 (COLEGIO CIRCA)","rec_b2_desv1":"","rec_b2p_ofic":"SECTOR 13 (COLEGIO CIRCA)","rec_b2p_desv1":"","a1":"04:50:00","a2_lv":"05:44:30","a2_sd":"05:45:00","a2p_lv":"5:52 REF","a2p_sd":"05:45:00","b1":"16:40:00","b2":"17:35:00","b2p":"17:35:00"},
     {"zona":"6/7 BA","rec_a1_ofic":"EL AZUFRAL (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"EL AZUFRAL (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"EL AZUFRAL (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"EL AZUFRAL (RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"EL AZUFRAL (RUTA REGULAR)","rec_b2p_desv1":"","a1":"04:45:00","a2_lv":"05:39:30","a2_sd":"05:40:00","a2p_lv":"05:39:30","a2p_sd":"05:40:00","b1":"16:35:00","b2":"17:30:00","b2p":"17:30:00"},
-    {"zona":"8","rec_a1_ofic":"VIA 54 / SOR ANA (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"VIA 54 / SOR ANA - RECOJO HASTA AVIACION - (DESVIA AV AEROPUERTO) (DESVIA TABOADA - PERALES)","rec_a2_desv1":"INKAFARMA - (INGRESA UCAYALI)  (RECOJO HASTA AVIACION) (DESVIA TABOADA - PERALES)","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"VIA 54 / SOR ANA (RUTA REGULAR)","rec_b1_desv1":"VIA 54 / SOR ANA - RECOJO HASTA AVIACION -  (DESVIA TABOADA - PERALES)","rec_b2_ofic":"VIA 54 / SOR ANA (RUTA REGULAR)","rec_b2_desv1":"VIA 54 / SOR ANA - RECOJO HASTA AVIACION -  (DESVIA TABOADA - PERALES)","rec_b2p_ofic":"VIA 54 / SOR ANA - RECOJO HASTA AVIACION - (DESVIA AV AEROPUERTO) (DESVIA TABOADA - PERALES)","rec_b2p_desv1":"INKAFARMA - (INGRESA UCAYALI)  (RECOJO HASTA AVIACION) (DESVIA TABOADA - PERALES)","a1":"04:40:00","a2_lv":"05:39:30","a2_sd":"05:40:00","a2p_lv":"05:39:30","a2p_sd":"05:40:00","b1":"16:25:00","b2":"17:20:00","b2p":"17:20:00"},
-    {"zona":"8 CE","rec_a1_ofic":"GRIFO CERREÑO (CONTINUA RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"GRIFO CERREÑO (COMPLETA RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"GRIFO CERREÑO (COMPLETA RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"GRIFO CERREÑO (COMPLETA RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"GRIFO CERREÑO (COMPLETA RUTA REGULAR)","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"05:52:30","a2_sd":"05:53:00","a2p_lv":"05:52:30","a2p_sd":"05:53:00","b1":"NO HAY","b2":"NO HAY","b2p":"NO HAY"},
-    {"zona":"8A 17","rec_a1_ofic":"KM 17 (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"KM 17 ( DESVIA EVITAMIENTO, SOL OESTE, AV PUNO , INCAS, ROMANCERO, KOLA REAL, HUARANGUILLO)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"KM 17 (RUTA REGULAR)","rec_b1_desv1":"KM 17 ( DESVIA EVITAMIENTO, SOL OESTE, AV PUNO , INCAS, ROMANCERO, KOLA REAL, HUARANGUILLO)","rec_b2_ofic":"KM 17 (RECOJO REGULAR HASTA CRUCE EVITAMIENTO (DESVIA TUMBES - JOSE OLAYA - RECORR. 8B)","rec_b2_desv1":"KM 17 (ENTR. APIPA - PARALELA VIA YURA - PTE AÑASHUAYCO 2 - TUMBES - JOSE OLAYA - RECORR. 8B)","rec_b2p_ofic":"KM 17 ( DESVIA EVITAMIENTO, SOL OESTE, AV PUNO , INCAS, ROMANCERO, KOLA REAL, HUARANGUILLO)","rec_b2p_desv1":"","a1":"04:40:00","a2_lv":"05:39:30","a2_sd":"05:40:00","a2p_lv":"05:39:30","a2p_sd":"05:40:00","b1":"16:20:00","b2":"17:15:00","b2p":"17:15:00"},
-    {"zona":"8A 17 (CORITOS)","rec_a1_ofic":"PARQUE CCORITOS II (AV.TUMBES-JOSE OLAYA-RECORR 8B) (RECOJO SOLO C.EVITAMIENTO)","rec_a1_desv1":"","rec_a2_ofic":"PARQUE CCORITOS II (AV.TUMBES-JOSE OLAYA-RECORR 8B) (RECOJO SOLO C.EVITAMIENTO)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"PARQUE CCORITOS II (AV.TUMBES-JOSE OLAYA-RECORR 8B) (RECOJO SOLO C.EVITAMIENTO)","rec_b1_desv1":"","rec_b2_ofic":"PARQUE CCORITOS II (AV.TUMBES-JOSE OLAYA-RECORR 8B) (RECOJO SOLO C.EVITAMIENTO)","rec_b2_desv1":"","rec_b2p_ofic":"PARQUE CCORITOS II (AV.TUMBES-JOSE OLAYA-RECORR 8B) (RECOJO SOLO C.EVITAMIENTO)","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"NO HAY","a2_sd":"NO HAY","a2p_lv":"NO HAY","a2p_sd":"NO HAY","b1":"NO HAY","b2":"17:25:00","b2p":"17:25:00"},
-    {"zona":"8A EV","rec_a1_ofic":"AVIACION / EVITAMIENTO (COMPLETA RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"AVIACION / EVITAMIENTO (COMPLETA RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"AVIACION / EVITAMIENTO (COMPLETA RUTA REGULAR)","rec_a2p_desv1":"AVIACION / EVITAMIENTO (RECOGE TRIANGULO - CONF. GPS)","rec_b1_ofic":"AVIACION / EVITAMIENTO (COMPLETA RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"AVIACION / EVITAMIENTO (COMPLETA RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"AVIACION / EVITAMIENTO (COMPLETA RUTA REGULAR)","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"05:39:30","a2_sd":"05:40:00","a2p_lv":"05:39:30","a2p_sd":"05:40:00","b1":"NO HAY","b2":"17:40:00","b2p":"17:40:00"},
-    {"zona":"8B","rec_a1_ofic":"27 DE NOVIEMBRE (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"27 DE NOVIEMBRE (RUTA REGULAR) (RECOJO HASTA AV AREQUIPA / TIABAYA)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"27 DE NOVIEMBRE (RUTA REGULAR - 27 DE NOVIEMBRE CON ALFONSO UGARTE)","rec_b1_desv1":"","rec_b2_ofic":"27 DE NOVIEMBRE (RUTA REGULAR - 27 DE NOVIEMBRE CON ALFONSO UGARTE)","rec_b2_desv1":"","rec_b2p_ofic":"27 DE NOVIEMBRE (RUTA REGULAR) (RECOJO HASTA AV AREQUIPA / TIABAYA)","rec_b2p_desv1":"","a1":"04:55:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:45:00","b2":"17:40:00","b2p":"17:40:00"},
+    {"zona":"8","rec_a1_ofic":"VIA 54 / SOR ANA (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"VIA 54 / SOR ANA","rec_a2_desv1":"INKAFARMA","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"VIA 54 / SOR ANA (RUTA REGULAR)","rec_b1_desv1":"VIA 54 / SOR ANA","rec_b2_ofic":"VIA 54 / SOR ANA (RUTA REGULAR)","rec_b2_desv1":"VIA 54 / SOR ANA","rec_b2p_ofic":"VIA 54 / SOR ANA","rec_b2p_desv1":"INKAFARMA","a1":"04:40:00","a2_lv":"05:39:30","a2_sd":"05:40:00","a2p_lv":"05:39:30","a2p_sd":"05:40:00","b1":"16:25:00","b2":"17:20:00","b2p":"17:20:00"},
+    {"zona":"8A 17","rec_a1_ofic":"KM 17 (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"KM 17 ( DESVIA)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"KM 17 (RUTA REGULAR)","rec_b1_desv1":"KM 17 ( DESVIA)","rec_b2_ofic":"KM 17 (RECOJO REGULAR)","rec_b2_desv1":"KM 17 (ENTR. APIPA)","rec_b2p_ofic":"KM 17 ( DESVIA)","rec_b2p_desv1":"","a1":"04:40:00","a2_lv":"05:39:30","a2_sd":"05:40:00","a2p_lv":"05:39:30","a2p_sd":"05:40:00","b1":"16:20:00","b2":"17:15:00","b2p":"17:15:00"},
+    {"zona":"8A EV","rec_a1_ofic":"AVIACION / EVITAMIENTO","rec_a1_desv1":"","rec_a2_ofic":"AVIACION / EVITAMIENTO","rec_a2_desv1":"","rec_a2p_ofic":"AVIACION / EVITAMIENTO","rec_a2p_desv1":"AVIACION / EVITAMIENTO","rec_b1_ofic":"AVIACION / EVITAMIENTO","rec_b1_desv1":"","rec_b2_ofic":"AVIACION / EVITAMIENTO","rec_b2_desv1":"","rec_b2p_ofic":"AVIACION / EVITAMIENTO","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"05:39:30","a2_sd":"05:40:00","a2p_lv":"05:39:30","a2p_sd":"05:40:00","b1":"NO HAY","b2":"17:40:00","b2p":"17:40:00"},
+    {"zona":"8B","rec_a1_ofic":"27 DE NOVIEMBRE (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"27 DE NOVIEMBRE (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"27 DE NOVIEMBRE (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"27 DE NOVIEMBRE (RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"27 DE NOVIEMBRE (RUTA REGULAR)","rec_b2p_desv1":"","a1":"04:55:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:45:00","b2":"17:40:00","b2p":"17:40:00"},
     {"zona":"8B VB","rec_a1_ofic":"VALLE BLANCO (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"VALLE BLANCO (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"VALLE BLANCO (RUTA REGULAR)","rec_a2p_desv1":"","rec_b1_ofic":"VALLE BLANCO (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"VALLE BLANCO (RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"VALLE BLANCO (RUTA REGULAR)","rec_b2p_desv1":"","a1":"05:05:00","a2_lv":"05:54:30","a2_sd":"05:55:00","a2p_lv":"05:54:30","a2p_sd":"05:55:00","b1":"16:50:00","b2":"17:45:00","b2p":"17:45:00"},
-    {"zona":"8C","rec_a1_ofic":"CASA CAMPO (INGRESA A ALTO CERRO VERDE)","rec_a1_desv1":"","rec_a2_ofic":"CASA CAMPO (RECOJE ARANCOTA)","rec_a2_desv1":"","rec_a2p_ofic":"CASA CAMPO (RECOJE ARANCOTA) (SOLO TRIANGULO) APOYO A CDS (COMO ULTIMA UNIDAD)","rec_a2p_desv1":"","rec_b1_ofic":"CASA CAMPO (RECOJE ARANCOTA)","rec_b1_desv1":"","rec_b2_ofic":"CASA CAMPO (RECOJE ARANCOTA)","rec_b2_desv1":"","rec_b2p_ofic":"CASA CAMPO (RECOJE ARANCOTA)","rec_b2p_desv1":"","a1":"05:05:00","a2_lv":"06:00:00","a2_sd":"06:00:00","a2p_lv":"06:00:00","a2p_sd":"06:00:00","b1":"17:05:00","b2":"18:00:00","b2p":"18:00:00"},
-    {"zona":"8P","rec_a1_ofic":"ANGELES DE CAYMA (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"ANGELES DE CAYMA (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"ANGELES DE CAYMA (RUTA REGULAR)","rec_a2p_desv1":"","rec_b1_ofic":"ANGELES DE CAYMA (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"ANGELES DE CAYMA (RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"ANGELES DE CAYMA (RUTA REGULAR)","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"05:54:30","a2_sd":"05:55:00","a2p_lv":"05:54:30","a2p_sd":"05:55:00","b1":"NO HAY","b2":"NO HAY","b2p":"NO HAY"},
-    {"zona":"11/12 H","rec_a1_ofic":"OVALO HUNTER (NO INGRESA A TIABAYA)","rec_a1_desv1":"","rec_a2_ofic":"OVALO HUNTER (NO INGRESA A TIABAYA)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"OVALO HUNTER (NO INGRESA A TIABAYA)","rec_b1_desv1":"","rec_b2_ofic":"OVALO HUNTER (NO INGRESA A TIABAYA)","rec_b2_desv1":"","rec_b2p_ofic":"OVALO HUNTER (NO INGRESA A TIABAYA)","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"05:59:30","a2_sd":"06:00:00","a2p_lv":"05:59:30","a2p_sd":"06:00:00","b1":"NO HAY","b2":"NO HAY","b2p":"NO HAY"},
-    {"zona":"11/12 HT","rec_a1_ofic":"OVALO HUNTER (INGRESA A TIABAYA) (RUTA REGULAR)","rec_a1_desv1":"OVALO HUNTER (RUTA REGULAR) (INGRESA A ALTO CERRO VERDE)","rec_a2_ofic":"OVALO HUNTER (INGRESA A TIABAYA) (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"OVALO HUNTER (INGRESA A TIABAYA) (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"OVALO HUNTER (INGRESA A TIABAYA) (RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"OVALO HUNTER (INGRESA A TIABAYA) (RUTA REGULAR)","rec_b2p_desv1":"","a1":"05:00:00","a2_lv":"05:59:30","a2_sd":"06:00:00","a2p_lv":"05:59:30","a2p_sd":"06:00:00","b1":"16:50:00","b2":"17:45:00","b2p":"17:45:00"},
-    {"zona":"11/12 T","rec_a1_ofic":"COCA COLA / TIABAYA","rec_a1_desv1":"","rec_a2_ofic":"COCA COLA - TIABAYA (SUR - TRIANGULO) (DETENERSE EN TRIANGULO Y PREGUNTAR SI BAJAN O NO)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"COCA COLA / TIABAYA","rec_b1_desv1":"","rec_b2_ofic":"COCA COLA / TIABAYA","rec_b2_desv1":"","rec_b2p_ofic":"COCA COLA - TIABAYA (SUR - TRIANGULO) (DETENERSE EN TRIANGULO Y PREGUNTAR SI BAJAN O NO)","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"06:20:00","a2_sd":"06:20:00","a2p_lv":"06:20:00","a2p_sd":"06:20:00","b1":"NO HAY","b2":"NO HAY","b2p":"NO HAY"},
-    {"zona":"11/12 C","rec_a1_ofic":"ESTADIO CONGATA","rec_a1_desv1":"","rec_a2_ofic":"ESTADIO CONGATA (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"ESTADIO CONGATA (SUR Y TRIANGULO) - INGRESA A ALTO CERRO VERDE / APOYA A CDS","rec_a2p_desv1":"","rec_b1_ofic":"ESTADIO CONGATA","rec_b1_desv1":"","rec_b2_ofic":"ESTADIO CONGATA","rec_b2_desv1":"","rec_b2p_ofic":"ESTADIO CONGATA (RUTA REGULAR)","rec_b2p_desv1":"","a1":"05:20:00","a2_lv":"06:20:00","a2_sd":"06:20:00","a2p_lv":"06:20:00","a2p_sd":"06:20:00","b1":"17:20:00","b2":"18:20:00","b2p":"18:20:00"},
-    {"zona":"VAN AUXILIAR SUR","rec_a1_ofic":"GRIFO MONTERREY (CONFIRMAR SUPERVISOR) / Termino de recojo '0' Esperar en Grifo Alata","rec_a1_desv1":"","rec_a2_ofic":"GRIFO MONTERREY (CONFIRMAR SUPERVISOR) / Termino de recojo '0' Esperar en Grifo Alata","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"GRIFO MONTERREY (CONFIRMAR SUPERVISOR) / Termino de recojo '0' Esperar en Grifo Alata","rec_b1_desv1":"","rec_b2_ofic":"GRIFO MONTERREY (CONFIRMAR SUPERVISOR) / Termino de recojo '0' Esperar en Grifo Alata","rec_b2_desv1":"","rec_b2p_ofic":"GRIFO MONTERREY (CONFIRMAR SUPERVISOR) / Termino de recojo '0' Esperar en Grifo Alata","rec_b2p_desv1":"","a1":"SUP.","a2_lv":"SUP.","a2_sd":"SUP.","a2p_lv":"SUP.","a2p_sd":"SUP.","b1":"SUP.","b2":"SUP.","b2p":"SUP."},
-    {"zona":"VAN AUXILIAR NORTE","rec_a1_ofic":"GRIFO CERREÑO (CONFIRMAR SUPERVISOR) / Termino de recojo '0' Esperar en Grifo Alata","rec_a1_desv1":"","rec_a2_ofic":"GRIFO CERREÑO (CONFIRMAR SUPERVISOR) / Termino de recojo '0' Esperar en Grifo Alata","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"GRIFO CERREÑO (CONFIRMAR SUPERVISOR) / Termino de recojo '0' Esperar en Grifo Alata","rec_b1_desv1":"","rec_b2_ofic":"GRIFO CERREÑO (CONFIRMAR SUPERVISOR) / Termino de recojo '0' Esperar en Grifo Alata","rec_b2_desv1":"","rec_b2p_ofic":"GRIFO CERREÑO (CONFIRMAR SUPERVISOR) / Termino de recojo '0' Esperar en Grifo Alata","rec_b2p_desv1":"","a1":"SUP.","a2_lv":"SUP.","a2_sd":"SUP.","a2p_lv":"SUP.","a2p_sd":"SUP.","b1":"SUP.","b2":"SUP.","b2p":"SUP."},
-    {"zona":"RRBB COMPLEJO","rec_a1_ofic":"Complejo / Relaves Bajos / Apoyo 11/12 Cong. (A2)","rec_a1_desv1":"","rec_a2_ofic":"","rec_a2_desv1":"","rec_a2p_ofic":"Complejo (Recoge usuarios Bombas y transborda en puente Tiabaya con van de DOM, solo lleva usuarios Relaves Bajos y Proyectos Drenes)","rec_a2p_desv1":"","rec_b1_ofic":"Complejo / Relaves Bajos","rec_b1_desv1":"Ap. Administrativo (Almancen 1 / Triangulo / Zona  /  Rel. Bajos","rec_b2_ofic":"","rec_b2_desv1":"","rec_b2p_ofic":"","rec_b2p_desv1":"","a1":"5:25 (REF)","a2_lv":"NO HAY","a2_sd":"NO HAY","a2p_lv":"GPS","a2p_sd":"NO HAY","b1":"17:20:00","b2":"NO HAY","b2p":"NO HAY"},
-    {"zona":"RRBB TIABAYA","rec_a1_ofic":"Posta Tiabaya / Relaves Bajos / Apoyo 11/12 Cong. (A2)","rec_a1_desv1":"Posta Tiabaya / Relaves Bajos / Apoyo 11/12 Cong. (A2P)","rec_a2_ofic":"","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"Posta Tiabaya / Relaves Bajos","rec_b1_desv1":"Tiabaya (Coca Cola) / Relaves Bajos","rec_b2_ofic":"","rec_b2_desv1":"","rec_b2p_ofic":"","rec_b2p_desv1":"","a1":"5:35 (REF)","a2_lv":"NO HAY","a2_sd":"NO HAY","a2p_lv":"NO HAY","a2p_sd":"NO HAY","b1":"17:30 (PT) / 17:40 (CC)","b2":"NO HAY","b2p":"NO HAY"},
-    {"zona":"RRBB TAHUAYCANI","rec_a1_ofic":"Tahuaycani / Relaves Bajos","rec_a1_desv1":"Apoyo Zona 8 (LETRERO LUMINOS OBLIGATORIO) / Tahuaycani / Relaves Bajos","rec_a2_ofic":"","rec_a2_desv1":"","rec_a2p_ofic":"Tahuaycani (Recoge usuarios Bombas y transborda en puente Tiabaya con van de DOM, solo lleva usuarios Relaves Bajos y Proyectos Drenes)","rec_a2p_desv1":"","rec_b1_ofic":"Tahuaycani / Relaves Bajos","rec_b1_desv1":"","rec_b2_ofic":"","rec_b2_desv1":"","rec_b2p_ofic":"","rec_b2p_desv1":"","a1":"5:25 (REF)","a2_lv":"NO HAY","a2_sd":"NO HAY","a2p_lv":"GPS","a2p_sd":"NO HAY","b1":"17:20:00","b2":"NO HAY","b2p":"NO HAY"},
-    {"zona":"RRBB TINGO","rec_a1_ofic":"Alameda Tingo / Tiabaya / Alto Cerro Verde / Relaves Bajos","rec_a1_desv1":"Apoyo Zona 1D (LETRERO LUMINOSO OBLIGATORIO) / Alam. Tingo / Tiabaya / Alto Cerro Verde / Relaves Bajos","rec_a2_ofic":"","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"Alameda Tingo / Relaves Bajos","rec_b1_desv1":"","rec_b2_ofic":"","rec_b2_desv1":"","rec_b2p_ofic":"","rec_b2p_desv1":"","a1":"5:30 (REF)","a2_lv":"NO HAY","a2_sd":"NO HAY","a2p_lv":"NO HAY","a2p_sd":"NO HAY","b1":"17:25:00","b2":"NO HAY","b2p":"NO HAY"},
-    {"zona":"RRBB CONGATA","rec_a1_ofic":"Estadio Congata / Relaves Bajos","rec_a1_desv1":"","rec_a2_ofic":"","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"Estadio Congata / Relaves Bajos","rec_b1_desv1":"","rec_b2_ofic":"","rec_b2_desv1":"","rec_b2p_ofic":"","rec_b2p_desv1":"","a1":"05:45:00","a2_lv":"NO HAY","a2_sd":"NO HAY","a2p_lv":"NO HAY","a2p_sd":"NO HAY","b1":"17:45:00","b2":"NO HAY","b2p":"NO HAY"},
-    {"zona":"TAJO","rec_a1_ofic":"Operaciones Mina (confirmar si sube con adicional)","rec_a1_desv1":"","rec_a2_ofic":"","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"Operaciones Mina (confirmar si sube con adicional)","rec_b1_desv1":"","rec_b2_ofic":"","rec_b2_desv1":"","rec_b2p_ofic":"","rec_b2p_desv1":"","a1":"SUP.","a2_lv":"NO HAY","a2_sd":"NO HAY","a2p_lv":"NO HAY","a2p_sd":"NO HAY","b1":"SUP.","b2":"NO HAY","b2p":"NO HAY"},
-    {"zona":"Triangulo - Mina","rec_a1_ofic":"Triangulo (confirmar recorrido con coordinador Adicionales)","rec_a1_desv1":"Apoyo Domicilios - Base 2 (confirmar Coordinador Domicilios)","rec_a2_ofic":"Triangulo (confirmar recorrido con coordinador Adicionales)","rec_a2_desv1":"","rec_a2p_ofic":"Triangulo (confirmar recorrido con coordinador Adicionales)","rec_a2p_desv1":"","rec_b1_ofic":"Triangulo (confirmar recorrido con coordinador Adicionales)","rec_b1_desv1":"","rec_b2_ofic":"Triangulo (confirmar recorrido con coordinador Adicionales)","rec_b2_desv1":"","rec_b2p_ofic":"Triangulo (confirmar recorrido con coordinador Adicionales)","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"NO HAY","a2_sd":"NO HAY","a2p_lv":"05:30:00","a2p_sd":"05:30:00","b1":"NO HAY","b2":"NO HAY","b2p":"16:30:00"},
-    {"zona":"BOMBAS","rec_a1_ofic":"","rec_a1_desv1":"","rec_a2_ofic":"","rec_a2_desv1":"","rec_a2p_ofic":"Puente Tiabaya a Bombas / Salida de Bombas 07:40 a Salaverry","rec_a2p_desv1":"","rec_b1_ofic":"","rec_b1_desv1":"","rec_b2_ofic":"","rec_b2_desv1":"","rec_b2p_ofic":"Puente Tiabaya a Bombas / Salida de Bombas 19:40 a Salaverry","rec_b2p_desv1":"","a1":"NO HAY","a2_lv":"NO HAY","a2_sd":"NO HAY","a2p_lv":"GPS","a2p_sd":"GPS","b1":"NO HAY","b2":"NO HAY","b2p":"GPS"}
+    {"zona":"8C","rec_a1_ofic":"CASA CAMPO","rec_a1_desv1":"","rec_a2_ofic":"CASA CAMPO","rec_a2_desv1":"","rec_a2p_ofic":"CASA CAMPO","rec_a2p_desv1":"","rec_b1_ofic":"CASA CAMPO","rec_b1_desv1":"","rec_b2_ofic":"CASA CAMPO","rec_b2_desv1":"","rec_b2p_ofic":"CASA CAMPO","rec_b2p_desv1":"","a1":"05:05:00","a2_lv":"06:00:00","a2_sd":"06:00:00","a2p_lv":"06:00:00","a2p_sd":"06:00:00","b1":"17:05:00","b2":"18:00:00","b2p":"18:00:00"},
+    {"zona":"11/12 HT","rec_a1_ofic":"OVALO HUNTER (RUTA REGULAR)","rec_a1_desv1":"OVALO HUNTER (RUTA REGULAR)","rec_a2_ofic":"OVALO HUNTER (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"OVALO HUNTER (RUTA REGULAR)","rec_b1_desv1":"","rec_b2_ofic":"OVALO HUNTER (RUTA REGULAR)","rec_b2_desv1":"","rec_b2p_ofic":"OVALO HUNTER (RUTA REGULAR)","rec_b2p_desv1":"","a1":"05:00:00","a2_lv":"05:59:30","a2_sd":"06:00:00","a2p_lv":"05:59:30","a2p_sd":"06:00:00","b1":"16:50:00","b2":"17:45:00","b2p":"17:45:00"},
+    {"zona":"11/12 C","rec_a1_ofic":"ESTADIO CONGATA","rec_a1_desv1":"","rec_a2_ofic":"ESTADIO CONGATA (RUTA REGULAR)","rec_a2_desv1":"","rec_a2p_ofic":"ESTADIO CONGATA","rec_a2p_desv1":"","rec_b1_ofic":"ESTADIO CONGATA","rec_b1_desv1":"","rec_b2_ofic":"ESTADIO CONGATA","rec_b2_desv1":"","rec_b2p_ofic":"ESTADIO CONGATA (RUTA REGULAR)","rec_b2p_desv1":"","a1":"05:20:00","a2_lv":"06:20:00","a2_sd":"06:20:00","a2p_lv":"06:20:00","a2p_sd":"06:20:00","b1":"17:20:00","b2":"18:20:00","b2p":"18:20:00"}
 ];
 
 const DIC_ADICIONALES = { 
@@ -67,14 +50,16 @@ const DIC_ADICIONALES = {
 
 const OPCIONES_CARRILES = ["", "MOV. TIERR / CARR. 3", "TRUCKSHOP / CARR. 1", "TRUCKSHOP / CARR. 2", "LUBRIC / CARR. AUX", "CARR. J/PLAT SUR"];
 
+// Tus URLs de conexión
+const URL_API_CONDUCTORES = "https://script.google.com/macros/s/AKfycbwYiiV2_-zSTcLUft_xcPTXl03LxcyTNcZ2l2u8RfTtPsrvyrzOcPR9NVJCd4AxhLfR/exec";
+const URL_API_UNIDADES = "https://script.google.com/macros/s/AKfycbz95bAXTt3TdLqWrHswVEtSWEjA1Qb5RCdb9QfUnRqsGOgilnNzrpcR8V6l4mkhZCBlZA/exec";
+
 // CARGA DE DATOS SEGUROS
 function cargarDatosSeguros(k, fb) { 
     try { 
         let d = localStorage.getItem(k); 
         return d ? JSON.parse(d) : fb; 
-    } catch(e) { 
-        return fb; 
-    } 
+    } catch(e) { return fb; } 
 }
 
 let conductores = cargarDatosSeguros('bd_conductores_smcv', []);
@@ -83,6 +68,20 @@ let zonasBD = cargarDatosSeguros('bd_zonas_oficial_smcv', ZONAS_FABRICA);
 let plantillasBD = cargarDatosSeguros('bd_plantillas_smcv', { LV: {A1:[],A2:[],A2P:[],B1:[],B2:[],B2P:[]}, SD: {A1:[],A2:[],A2P:[],B1:[],B2:[],B2P:[]}, FER: {A1:[],A2:[],A2P:[],B1:[],B2:[],B2P:[]} });
 let programacionDiaria = cargarDatosSeguros('bd_prog_diaria_smcv', {});
 let datosCapacitacion = cargarDatosSeguros('bd_capacitaciones_smcv', { titulo: "", lista: [] });
+
+// GUARDADOS CENTRALIZADOS (Actualizan el Dashboard en automático)
+function guardarConductores(refrescar = true) { 
+    localStorage.setItem('bd_conductores_smcv', JSON.stringify(conductores)); 
+    if(refrescar) actualizarDashboard(); 
+}
+function guardarUnidades(refrescar = true) { 
+    localStorage.setItem('bd_unidades_smcv', JSON.stringify(unidades)); 
+    if(refrescar) actualizarDashboard(); 
+}
+function guardarZonas() { 
+    localStorage.setItem('bd_zonas_oficial_smcv', JSON.stringify(zonasBD)); 
+    renderizarZonas(); 
+}
 
 // FUNCIONES UTILITARIAS
 function normalizarTexto(txt) { 
@@ -116,70 +115,6 @@ function cambiarVista(v) {
     else if(v === 'roster') renderizarRosterOficial();
 }
 
-// DASHBOARD
-// ACTUALIZAR EL DASHBOARD CON FLOTA
-function actualizarDashboard() {
-    // ... (Mantén todo tu código anterior de total conductores, inducción, cumpleaños y acreditaciones) ...
-
-    // 5. COMPOSICIÓN DE FLOTA (NUEVO)
-    if (!unidades || unidades.length === 0) return;
-    
-    let fVan = 0, fMinibus = 0, fBus = 0, fCamioneta = 0;
-    unidades.forEach(u => {
-        let t = (u.tipo || '').toUpperCase().trim();
-        if(t === 'VAN') fVan++;
-        else if(t === 'MINIBUS') fMinibus++;
-        else if(t === 'BUS') fBus++;
-        else if(t === 'CAMIONETA') fCamioneta++;
-    });
-
-    if(document.getElementById('dashFlotaVan')) document.getElementById('dashFlotaVan').innerText = fVan;
-    if(document.getElementById('dashFlotaMinibus')) document.getElementById('dashFlotaMinibus').innerText = fMinibus;
-    if(document.getElementById('dashFlotaBus')) document.getElementById('dashFlotaBus').innerText = fBus;
-    if(document.getElementById('dashFlotaCamioneta')) document.getElementById('dashFlotaCamioneta').innerText = fCamioneta;
-    
-    // (Opcional) Contar total de unidades operativas si tienes esa tarjeta arriba
-    let elTotalUni = document.getElementById('dashTotalUnidades');
-    if (elTotalUni) elTotalUni.innerText = unidades.length;
-}
-
-// AL INICIAR LA WEB
-window.onload = async function() { 
-    aplicarTema(localStorage.getItem('planner_theme') || 'cerro-verde'); 
-    
-    // Descarga silenciosa de ambas bases al entrar
-    try {
-        let [resCond, resUni] = await Promise.all([
-            fetch(URL_API_CONDUCTORES + "?t=" + new Date().getTime()),
-            fetch(URL_API_UNIDADES + "?t=" + new Date().getTime())
-        ]);
-        if(resCond.ok) { let dC = await resCond.json(); if(dC.length > 0) { conductores = dC; guardarConductores(); } }
-        if(resUni.ok) { let dU = await resUni.json(); if(dU.length > 0) { unidades = dU; guardarUnidades(); } }
-    } catch(e) {}
-
-    actualizarFiltrosDinamicos();
-    renderizarConductores();
-    renderizarUnidades();
-    actualizarDashboard();
-    cambiarVista('dashboard'); 
-};
-// FORMATOS Y MAESTROS
-function formatearFechaExcelOS(val) { 
-    if (!val) return ''; 
-    if (typeof val === 'number') { 
-        let d = new Date(Math.round((val - (25567 + 2)) * 86400 * 1000)); 
-        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`; 
-    } 
-    let s = String(val).trim(); 
-    if (!isNaN(s) && Number(s) > 30000) { 
-        let d = new Date(Math.round((Number(s) - (25567 + 2)) * 86400 * 1000)); 
-        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`; 
-    } 
-    let p = s.split('-'); 
-    if (p.length === 3 && p[0].length === 4) return `${p[2]}/${p[1]}/${p[0]}`; 
-    return s.replace(/-/g, '/'); 
-}
-
 function obtenerEdadProcesada(f) { 
     if (!f) return { texto: '-', esCumple: false }; 
     let p = f.split('/'); 
@@ -202,7 +137,6 @@ function obtenerTiempoLaborandoExacto(f) {
     return a < 0 ? '0 a / 0 m' : `${a} a / ${m} m`; 
 }
 
-// Función auxiliar para clasificar los contratos
 function determinarTipoConductor(contrato) {
     if(!contrato) return 'VAN';
     let txt = contrato.toUpperCase();
@@ -211,28 +145,14 @@ function determinarTipoConductor(contrato) {
     return 'VAN';
 }
 
-// GUARDADOS
-function guardarConductores() { localStorage.setItem('bd_conductores_smcv', JSON.stringify(conductores)); actualizarDashboard(); }
-function guardarUnidades() { localStorage.setItem('bd_unidades_smcv', JSON.stringify(unidades)); actualizarDashboard(); }
-function guardarZonas() { localStorage.setItem('bd_zonas_oficial_smcv', JSON.stringify(zonasBD)); renderizarZonas(); }
-
-// Tus URLs de conexión
-const URL_API_CONDUCTORES = "https://script.google.com/macros/s/AKfycbwYiiV2_-zSTcLUft_xcPTXl03LxcyTNcZ2l2u8RfTtPsrvyrzOcPR9NVJCd4AxhLfR/exec"; // <-- PEGA TU ENLACE AQUÍ
-const URL_API_UNIDADES = "https://script.google.com/macros/s/AKfycbz95bAXTt3TdLqWrHswVEtSWEjA1Qb5RCdb9QfUnRqsGOgilnNzrpcR8V6l4mkhZCBlZA/exec";
-
-// Variables locales
-let unidades = JSON.parse(localStorage.getItem('planner_unidades')) || [];
-
-function guardarUnidades() {
-    localStorage.setItem('planner_unidades', JSON.stringify(unidades));
-}
+// ==========================================
 // EL SINCRONIZADOR UNIVERSAL
+// ==========================================
 async function sincronizarDatos() {
     let btnFuerza = document.getElementById('btnSyncConductores');
     let btnDash = document.getElementById('btnSyncDashboard');
     let btnUni = document.getElementById('btnSyncUnidades');
 
-    // Animamos todos los botones que existan
     [btnFuerza, btnDash, btnUni].forEach(btn => {
         if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
     });
@@ -241,17 +161,16 @@ async function sincronizarDatos() {
         let urlCond = URL_API_CONDUCTORES + "?t=" + new Date().getTime();
         let urlUni = URL_API_UNIDADES + "?t=" + new Date().getTime();
         
-        // Disparamos ambas descargas al mismo tiempo para mayor velocidad
         let [resCond, resUni] = await Promise.all([ fetch(urlCond), fetch(urlUni) ]);
         
         if (resCond.ok) {
             let dataCond = await resCond.json();
-            if (dataCond.length > 0) { conductores = dataCond; guardarConductores(); }
+            if (dataCond && dataCond.length > 0) { conductores = dataCond; guardarConductores(false); }
         }
         
         if (resUni.ok) {
             let dataUni = await resUni.json();
-            if (dataUni.length > 0) { unidades = dataUni; guardarUnidades(); }
+            if (dataUni && dataUni.length > 0) { unidades = dataUni; guardarUnidades(false); }
         }
         
         actualizarFiltrosDinamicos(); 
@@ -268,40 +187,95 @@ async function sincronizarDatos() {
         });
     }
 }
-// Función para sincronizar desde el botón del Dashboard
-async function sincronizarConductoresDesdeDashboard() {
-    let btn = document.getElementById('btnSyncDashboard');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+
+// ==========================================
+// EL CEREBRO DEL DASHBOARD
+// ==========================================
+function actualizarDashboard() {
+    // 1. CONDUCTORES
+    if (conductores && conductores.length > 0) {
+        let elTotal = document.getElementById('dashTotalConductores');
+        if (elTotal) elTotal.innerText = conductores.length;
+
+        let induccionCount = conductores.filter(c => (c.servicio || '').toUpperCase().trim() === 'INDUCCION').length;
+        let elInd = document.getElementById('dashInduccion');
+        if (elInd) elInd.innerText = induccionCount;
+
+        let hoy = new Date();
+        let dia = String(hoy.getDate()).padStart(2, '0');
+        let mes = String(hoy.getMonth() + 1).padStart(2, '0');
+        let fechaHoy = dia + '/' + mes; 
+        
+        let cumpleaneros = conductores.filter(c => {
+            if(!c.nac) return false;
+            return String(c.nac).trim().substring(0, 5) === fechaHoy; 
+        });
+        
+        let elCumple = document.getElementById('dashCumpleanos');
+        if (elCumple) {
+            elCumple.innerText = cumpleaneros.length;
+            let cardElement = elCumple.closest('.card');
+            if(cardElement) {
+                if(cumpleaneros.length > 0) {
+                    let listaNombres = cumpleaneros.map(c => "🎂 " + c.nombre).join('\n');
+                    cardElement.title = "Cumpleañeros de hoy:\n" + listaNombres;
+                    cardElement.style.cursor = "help";
+                } else {
+                    cardElement.title = "No hay cumpleaños el día de hoy";
+                    cardElement.style.cursor = "default";
+                }
+            }
+        }
+
+        let cVan = 0, cMinibus = 0, cBus = 0;
+        conductores.forEach(c => {
+            let cat = determinarTipoConductor(c.contrato);
+            if(cat === 'VAN') cVan++;
+            else if(cat === 'MINIBUS') cMinibus++;
+            else if(cat === 'BUS') cBus++;
+        });
+
+        if(document.getElementById('dashAcredVan')) document.getElementById('dashAcredVan').innerText = cVan;
+        if(document.getElementById('dashAcredMinibus')) document.getElementById('dashAcredMinibus').innerText = cMinibus;
+        if(document.getElementById('dashAcredBus')) document.getElementById('dashAcredBus').innerText = cBus;
     }
+
+    // 2. UNIDADES
+    if (unidades && unidades.length > 0) {
+        let fVan = 0, fMinibus = 0, fBus = 0, fCamioneta = 0;
+        unidades.forEach(u => {
+            let t = (u.tipo || '').toUpperCase().trim();
+            if(t === 'VAN') fVan++;
+            else if(t === 'MINIBUS') fMinibus++;
+            else if(t === 'BUS') fBus++;
+            else if(t === 'CAMIONETA') fCamioneta++;
+        });
+
+        if(document.getElementById('dashFlotaVan')) document.getElementById('dashFlotaVan').innerText = fVan;
+        if(document.getElementById('dashFlotaMinibus')) document.getElementById('dashFlotaMinibus').innerText = fMinibus;
+        if(document.getElementById('dashFlotaBus')) document.getElementById('dashFlotaBus').innerText = fBus;
+        if(document.getElementById('dashFlotaCamioneta')) document.getElementById('dashFlotaCamioneta').innerText = fCamioneta;
+    }
+}
+
+// ==========================================
+// VISTAS Y TABLAS
+// ==========================================
+function actualizarFiltrosDinamicos() {
+    let selectServicio = document.getElementById('filtroServicioCond');
+    if (!selectServicio) return;
     
-    try {
-        let urlFresca = URL_API_CONDUCTORES + "?t=" + new Date().getTime();
-        let response = await fetch(urlFresca);
-        
-        if (!response.ok) throw new Error("No se pudo conectar con el servidor de Google.");
-        
-        let data = await response.json();
-        
-        if (data && data.length > 0) {
-            conductores = data; 
-            guardarConductores();
-            actualizarFiltrosDinamicos(); 
-            actualizarDashboard();
-            alert("✓ ¡Base de datos sincronizada correctamente desde Google Sheets!");
-        } else {
-            alert("⚠️ La API respondió pero no devolvió registros.");
-        }
-    } catch (e) {
-        alert("Error al sincronizar: " + e.message);
-        console.error(e);
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Sheets';
-        }
-    }
+    let valorActual = selectServicio.value;
+    
+    let serviciosUnicos = [...new Set(conductores.map(c => (c.servicio || '').toUpperCase().trim()))].filter(s => s !== '');
+    serviciosUnicos.sort();
+    
+    let html = '<option value="TODOS">Todos los Servicios</option>';
+    serviciosUnicos.forEach(serv => {
+        let selected = (serv === valorActual) ? 'selected' : '';
+        html += `<option value="${serv}" ${selected}>${serv}</option>`;
+    });
+    selectServicio.innerHTML = html;
 }
 
 function renderizarConductores() { 
@@ -315,7 +289,7 @@ function renderizarConductores() {
     let selectServicio = document.getElementById('filtroServicioCond');
     let fServicio = selectServicio ? selectServicio.value : 'TODOS';
     
-    let correlativo = 1; // Contador dinámico
+    let correlativo = 1; 
     
     conductores.forEach((c) => { 
         if (txt && !c.dni.includes(txt) && !c.nombre.toUpperCase().includes(txt)) return; 
@@ -336,7 +310,6 @@ function renderizarConductores() {
         else if (est === 'AL') { colorText = '#1d4ed8'; colorBg = '#dbeafe'; } 
         else if (est === 'V' || est === 'DT' || est === 'I' || est === 'D' || est === 'NC') { colorText = '#991b1b'; colorBg = '#fee2e2'; } 
 
-        // ¡AQUÍ ESTÁ LA CORRECCIÓN! Las 9 columnas exactas para que nada se mueva:
         tbody.insertAdjacentHTML('beforeend', `<tr>
             <td style="color:var(--text-muted); font-weight:bold;">${correlativo++}</td>
             <td>${c.dni}</td>
@@ -359,123 +332,20 @@ function renderizarUnidades() {
     let correlativo = 1;
     
     unidades.forEach(u => {
-        let badgeClass = u.tipo.toUpperCase() === 'BUS' ? 'badge-bus' : (u.tipo.toUpperCase() === 'MINIBUS' ? 'badge-minibus' : 'badge-van');
-        if(u.tipo.toUpperCase() === 'CAMIONETA') badgeClass = 'badge-van'; // Usaremos el estilo azul para la camioneta
+        let badgeClass = (u.tipo || '').toUpperCase() === 'BUS' ? 'badge-bus' : ((u.tipo || '').toUpperCase() === 'MINIBUS' ? 'badge-minibus' : 'badge-van');
+        if((u.tipo || '').toUpperCase() === 'CAMIONETA') badgeClass = 'badge-van';
         
         tbody.insertAdjacentHTML('beforeend', `<tr>
             <td style="color:var(--text-muted); font-weight:bold;">${correlativo++}</td>
-            <td>${u.codigo}</td>
-            <td style="font-weight:700; letter-spacing: 1px;">${u.placa}</td>
-            <td><span class="badge-unit ${badgeClass}">${u.tipo}</span></td>
-            <td>${u.marca}</td>
-            <td>${u.capacidad} pax</td>
-            <td style="color:#0284c7; font-weight:700; font-size:0.75rem;">${u.servicio}</td>
+            <td>${u.codigo || '-'}</td>
+            <td style="font-weight:700; letter-spacing: 1px;">${u.placa || '-'}</td>
+            <td><span class="badge-unit ${badgeClass}">${u.tipo || '-'}</span></td>
+            <td>${u.marca || '-'}</td>
+            <td>${u.capacidad || '-'} pax</td>
+            <td style="color:#0284c7; font-weight:700; font-size:0.75rem;">${u.servicio || '-'}</td>
             <td><i class="fa-solid fa-lock" style="color:var(--text-muted); opacity:0.4;"></i></td>
         </tr>`);
     });
-}
-
-// UNIDADES
-function procesarArchivoUnidades(e) { 
-    let file = e.target.files[0]; 
-    if(!file) return; 
-    let r = new FileReader(); 
-    r.onload = function(evt) { 
-        try { 
-            let wb = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'}); 
-            let json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval: ""}); 
-            let nuevos = []; 
-            json.forEach(row => { 
-                let kCod = Object.keys(row).find(k => k.toUpperCase().includes("COD")); 
-                let kPlaca = Object.keys(row).find(k => k.toUpperCase().includes("PLACA")); 
-                let kTipo = Object.keys(row).find(k => k.toUpperCase().includes("TIPO")); 
-                let kMarca = Object.keys(row).find(k => k.toUpperCase().includes("MARCA")); 
-                let kCap = Object.keys(row).find(k => k.toUpperCase().includes("CAPACIDAD")); 
-                
-                if(kCod && String(row[kCod]).trim()) {
-                    nuevos.push({ 
-                        cod: String(row[kCod]).trim(), 
-                        placa: kPlaca ? String(row[kPlaca]).trim().toUpperCase() : '', 
-                        tipoVehiculo: kTipo ? String(row[kTipo]).trim().toUpperCase() : 'VAN', 
-                        marca: kMarca ? String(row[kMarca]).trim().toUpperCase() : '', 
-                        capacidad: kCap ? String(row[kCap]).trim() : '15', 
-                        servicio: 'REGULAR', 
-                        estado: 'OPERATIVO' 
-                    }); 
-                }
-            }); 
-            if(nuevos.length && confirm(`¿Importar ${nuevos.length} unidades?`)) { 
-                unidades = nuevos; 
-                guardarUnidades(); 
-                renderizarUnidades(); 
-            } 
-        } catch(err) { alert("Error: " + err.message); } 
-        e.target.value = ''; 
-    }; 
-    r.readAsArrayBuffer(file); 
-}
-
-function renderizarUnidades() { 
-    let tbody = document.getElementById('tbodyUnidades'); 
-    tbody.innerHTML = ''; 
-    let fE = document.getElementById('filtroEstadoUnidades').value;
-    let fT = document.getElementById('filtroTipoUnidades').value;
-    let txt = document.getElementById('searchUnidades').value.toUpperCase().trim(); 
-    
-    unidades.forEach((u, idx) => { 
-        if (fE !== 'TODOS' && u.estado !== fE) return; 
-        if (fT !== 'TODOS' && !(u.tipoVehiculo || '').toUpperCase().includes(fT)) return; 
-        if (txt && !u.cod.includes(txt) && !u.placa.includes(txt)) return; 
-        
-        let statusClass = u.estado === 'OPERATIVO' ? 'status-operativo' : 'status-taller';
-        
-        tbody.insertAdjacentHTML('beforeend', `<tr>
-            <td>${u.cod}</td>
-            <td><b>${u.placa}</b></td>
-            <td>${u.tipoVehiculo}</td>
-            <td>${u.capacidad}</td>
-            <td>${u.servicio}</td>
-            <td><span class="badge-status ${statusClass}">${u.estado}</span></td>
-            <td><button class="btn btn-outline" onclick="abrirModalEditUnidad(${idx})"><i class="fa-solid fa-pen"></i></button></td>
-        </tr>`); 
-    }); 
-}
-
-function abrirModalNuevaUnidad() { 
-    ['nuevoCodUnidad','nuevaPlaca','nuevaMarca','nuevaCapacidad'].forEach(id => document.getElementById(id).value = ''); 
-    abrirModal('modalNuevaUnidad'); 
-}
-
-function guardarNuevaUnidad() { 
-    unidades.push({ 
-        cod: document.getElementById('nuevoCodUnidad').value.trim(), 
-        placa: document.getElementById('nuevaPlaca').value.trim().toUpperCase(), 
-        tipoVehiculo: document.getElementById('nuevoTipoVehiculo').value, 
-        marca: document.getElementById('nuevaMarca').value.trim().toUpperCase(), 
-        capacidad: document.getElementById('nuevaCapacidad').value, 
-        servicio: document.getElementById('nuevoServicio').value, 
-        estado: 'OPERATIVO' 
-    }); 
-    guardarUnidades(); 
-    renderizarUnidades(); 
-    cerrarModal('modalNuevaUnidad'); 
-}
-
-function abrirModalEditUnidad(idx) { 
-    idxUnidadEdit = idx; 
-    document.getElementById('editCodUnidad').value = unidades[idx].cod; 
-    document.getElementById('editPlacaUnidad').value = unidades[idx].placa; 
-    document.getElementById('editServicioUnidad').value = unidades[idx].servicio || 'LIBRE'; 
-    document.getElementById('editEstadoUnidad').value = unidades[idx].estado; 
-    abrirModal('modalEditUnidad'); 
-}
-
-function guardarCambiosUnidad() { 
-    unidades[idxUnidadEdit].servicio = document.getElementById('editServicioUnidad').value; 
-    unidades[idxUnidadEdit].estado = document.getElementById('editEstadoUnidad').value; 
-    guardarUnidades(); 
-    renderizarUnidades(); 
-    cerrarModal('modalEditUnidad'); 
 }
 
 // ZONAS Y 360
@@ -509,24 +379,6 @@ function renderizarZonas() {
     }); 
 }
 
-function actualizarFiltrosDinamicos() {
-    let selectServicio = document.getElementById('filtroServicioCond');
-    if (!selectServicio) return;
-    
-    let valorActual = selectServicio.value;
-    
-    // Simplemente extrae lo que viene de la columna "SERVICIO ASIG"
-    let serviciosUnicos = [...new Set(conductores.map(c => (c.servicio || '').toUpperCase().trim()))].filter(s => s !== '');
-    serviciosUnicos.sort();
-    
-    let html = '<option value="TODOS">Todos los Servicios</option>';
-    serviciosUnicos.forEach(serv => {
-        let selected = (serv === valorActual) ? 'selected' : '';
-        html += `<option value="${serv}" ${selected}>${serv}</option>`;
-    });
-    
-    selectServicio.innerHTML = html;
-}
 function abrirModalEditZona(idx) {
     idxZonaEdit = idx; 
     let z = zonasBD[idx]; 
@@ -683,43 +535,6 @@ function agregarZonaPlantilla() {
     renderizarGestorPlantillas(); 
 }
 
-function procesarArchivoPlantillaMaestra(e) {
-    let file = e.target.files[0]; 
-    if(!file) return; 
-    let r = new FileReader(); 
-    r.onload = function(evt) {
-        try { 
-            let wb = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'}); 
-            let json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval: ""}); 
-            let agregados = 0; 
-            plantillasBD[uiPl][uiTu] = []; 
-            
-            json.forEach(row => {
-                let kZona = Object.keys(row).find(k => k.toUpperCase() === "ZONA"); 
-                let kBus48 = Object.keys(row).find(k => k.toUpperCase().includes("BUS_48")); 
-                let kVan15 = Object.keys(row).find(k => k.toUpperCase().includes("VAN_15")); 
-                let kVan13 = Object.keys(row).find(k => k.toUpperCase().includes("VAN_13")); 
-                let kVan09 = Object.keys(row).find(k => k.toUpperCase().includes("VAN_09"));
-                
-                if(kZona && String(row[kZona]).trim()) {
-                    let z = String(row[kZona]).trim(); 
-                    let cB48 = parseInt(row[kBus48])||0, cV15 = parseInt(row[kVan15])||0, cV13 = parseInt(row[kVan13])||0, cV09 = parseInt(row[kVan09])||0;
-                    
-                    if(cB48 > 0) { plantillasBD[uiPl][uiTu].push({zona: z, cant: cB48, tipo: 'BUS_48'}); agregados++; }
-                    if(cV15 > 0) { plantillasBD[uiPl][uiTu].push({zona: z, cant: cV15, tipo: 'VAN_15'}); agregados++; }
-                    if(cV13 > 0) { plantillasBD[uiPl][uiTu].push({zona: z, cant: cV13, tipo: 'VAN_13'}); agregados++; }
-                    if(cV09 > 0) { plantillasBD[uiPl][uiTu].push({zona: z, cant: cV09, tipo: 'VAN_09'}); agregados++; }
-                }
-            }); 
-            guardarPlantillas(); 
-            renderizarGestorPlantillas(); 
-            alert(`✓ Importados ${agregados} requerimientos.`);
-        } catch(err) { alert("Error: " + err.message); } 
-        e.target.value = '';
-    }; 
-    r.readAsArrayBuffer(file);
-}
-
 function descargarPlantillaMaestraZonas() { 
     let ws = XLSX.utils.json_to_sheet(zonasBD.map(z => ({ "ZONA": z.zona, "REQ_BUS_48": "", "REQ_VAN_15": "", "REQ_VAN_13": "", "REQ_VAN_09": "" }))); 
     let wb = XLSX.utils.book_new(); 
@@ -783,7 +598,7 @@ function renderizarProgramacion() {
     let turnoSel = document.getElementById('filtroTurnoProg').value;
     
     let turnosLista = turnoSel !== 'TODOS' ? [turnoSel] : ['A1', 'A2', 'A2P', 'B1', 'B2', 'B2P'];
-    let condOptsBase = conductores.filter(c => c.estado === 'ACTIVO');
+    let condOptsBase = conductores.filter(c => c.estadoAbrev === 'A' || c.estadoAbrev === 'B' || c.estadoAbrev === 'AL');
     let unidadesBase = unidades.filter(u => u.estado === 'OPERATIVO');
     let regsFecha = programacionDiaria[fechaSel] || [];
     
@@ -957,7 +772,7 @@ function renderizarRosterOficial() {
             if(zonaAyer && zonaAyer !== zName) { bgConductor = "background: #2ecc71; color: #000; font-weight: bold;"; } 
         }
 
-        let tdUnidad = (uniObj.tipoVehiculo.includes('BUS')) 
+        let tdUnidad = (uniObj.tipoVehiculo && uniObj.tipoVehiculo.includes('BUS')) 
             ? `<td style="background:#95a5a6; color:#fff; font-weight:bold;">BUS / VOLV <br><small>${uniObj.cod}</small></td>` 
             : `<td style="background:#f39c12; color:#fff; font-weight:bold;">VAN / MERC <br><small>${uniObj.cod}</small></td>`;
         
@@ -1040,8 +855,8 @@ function confirmarVaciarDatos() {
 function abrirModalVaciarSeguro(t) { 
     targetVaciar = t; 
     solicitarClaveParaAccion(() => { 
-        if(t === 'conductores') { conductores = []; guardarConductores(); renderizarConductores(); } 
-        else { unidades = []; guardarUnidades(); renderizarUnidades(); } 
+        if(t === 'conductores') { conductores = []; guardarConductores(true); renderizarConductores(); } 
+        else { unidades = []; guardarUnidades(true); renderizarUnidades(); } 
         alert("✓ Eliminado."); 
     }); 
 }
@@ -1087,24 +902,24 @@ function importarRespaldoSistema(e) {
     r.readAsText(file);
 }
 
-// Carga automática al iniciar la web
+// ARRANQUE DEL SISTEMA
 window.onload = async function() { 
     aplicarTema(localStorage.getItem('planner_theme') || 'cerro-verde'); 
     
-    // Al abrir la web, intentamos descargar de Google Sheets de inmediato en segundo plano
     try {
-        let urlFresca = URL_API_CONDUCTORES + "?t=" + new Date().getTime();
-        let response = await fetch(urlFresca);
-        let data = await response.json();
-        if(data && data.length > 0) {
-            conductores = data;
-            guardarConductores();
-        }
+        let [resCond, resUni] = await Promise.all([
+            fetch(URL_API_CONDUCTORES + "?t=" + new Date().getTime()),
+            fetch(URL_API_UNIDADES + "?t=" + new Date().getTime())
+        ]);
+        if(resCond.ok) { let dC = await resCond.json(); if(dC && dC.length > 0) { conductores = dC; guardarConductores(false); } }
+        if(resUni.ok) { let dU = await resUni.json(); if(dU && dU.length > 0) { unidades = dU; guardarUnidades(false); } }
     } catch(e) {
-        console.log("Usando datos locales guardados (sin conexión a internet).");
+        console.log("Modo offline o error de red. Cargando datos locales.");
     }
 
     actualizarFiltrosDinamicos();
+    renderizarConductores();
+    renderizarUnidades();
     actualizarDashboard();
     cambiarVista('dashboard'); 
 };

@@ -126,7 +126,22 @@
                 <!-- Panel de Flota -->
                 <div class="card">
                     <h3 style="margin-bottom: 15px; font-size: 1.1rem;">Composición de Flota</h3>
-                    <p style="color: var(--text-muted); font-size: 0.85rem;">Próximamente...</p>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                        <span style="color: var(--text-muted); font-weight: 600;">VAN:</span>
+                        <strong id="dashFlotaVan">0</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                        <span style="color: var(--text-muted); font-weight: 600;">MINIBÚS:</span>
+                        <strong id="dashFlotaMinibus">0</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                        <span style="color: var(--text-muted); font-weight: 600;">BUS:</span>
+                        <strong id="dashFlotaBus">0</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0;">
+                        <span style="color: var(--text-muted); font-weight: 600;">CAMIONETA:</span>
+                        <strong id="dashFlotaCamioneta">0</strong>
+                    </div>
                 </div>
             </div>
         </div>
@@ -180,8 +195,29 @@
 
         <!-- VISTA UNIDADES -->
         <div id="vistaUnidades" class="view-section">
-            <div class="page-header"><h2>Flota Activa</h2><div style="display:flex; gap:10px;"><button class="btn btn-outline" onclick="descargarPlantillaUnidades()"><i class="fa-solid fa-file-arrow-down"></i> Bajar Plantilla</button><input type="file" id="fileInputUnidades" accept=".xlsx" style="display: none;" onchange="procesarArchivoUnidades(event)"><button class="btn btn-success" onclick="document.getElementById('fileInputUnidades').click()"><i class="fa-solid fa-upload"></i> Importar Excel</button><button class="btn btn-outline" onclick="abrirModalNuevaUnidad()"><i class="fa-solid fa-bus"></i> Nueva Unidad</button><button class="btn-hidden-admin" onclick="abrirModalVaciarSeguro('unidades')"><i class="fa-solid fa-shield-halved"></i></button></div></div>
-            <div class="card"><div class="toolbar"><div class="search-container"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="searchUnidades" placeholder="Buscar..." onkeyup="renderizarUnidades()"></div><div style="display:flex;gap:10px;"><select id="filtroTipoUnidades" onchange="renderizarUnidades()" style="padding:6px;border-radius:6px;"><option value="TODOS">Todo Tipo</option><option value="VAN">VAN</option><option value="BUS">BUS</option></select><select id="filtroEstadoUnidades" onchange="renderizarUnidades()" style="padding:6px;border-radius:6px;"><option value="TODOS">Todos Estados</option><option value="OPERATIVO" selected>Operativas</option><option value="TALLER">Taller</option></select></div></div><div class="table-container"><table><thead><tr><th>Cód</th><th>Placa</th><th>Tipo</th><th>Capacidad</th><th>Servicio</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="tbodyUnidades"></tbody></table></div></div>
+            <div class="page-header">
+                <h2>Flota de Unidades</h2>
+                <button class="btn btn-success" id="btnSyncUnidades" onclick="sincronizarDatos()"><i class="fa-solid fa-rotate"></i> Sincronizar Sheets</button>
+            </div>
+            <div class="card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Código</th>
+                                <th>Placa</th>
+                                <th>Tipo</th>
+                                <th>Marca</th>
+                                <th>Capacidad</th>
+                                <th>Servicio</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyUnidades"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- VISTA ZONAS -->

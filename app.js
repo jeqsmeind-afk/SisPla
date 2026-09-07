@@ -117,64 +117,52 @@ function cambiarVista(v) {
 }
 
 // DASHBOARD
+// ACTUALIZAR EL DASHBOARD CON FLOTA
 function actualizarDashboard() {
-    if (!conductores || conductores.length === 0) return;
+    // ... (Mantén todo tu código anterior de total conductores, inducción, cumpleaños y acreditaciones) ...
 
-    // 1. TOTAL CONDUCTORES
-    let elTotal = document.getElementById('dashTotalConductores');
-    if (elTotal) elTotal.innerText = conductores.length;
-
-    // 2. EN INDUCCIÓN (Lee la columna SERVICIO)
-    let induccionCount = conductores.filter(c => (c.servicio || '').toUpperCase().trim() === 'INDUCCION').length;
-    let elInd = document.getElementById('dashInduccion');
-    if (elInd) elInd.innerText = induccionCount;
-
-    // 3. CUMPLEAÑOS HOY CON NOMBRES (TOOLTIP)
-    let hoy = new Date();
-    // Forzamos el formato usando la fecha local del dispositivo
-    let dia = String(hoy.getDate()).padStart(2, '0');
-    let mes = String(hoy.getMonth() + 1).padStart(2, '0');
-    let fechaHoy = dia + '/' + mes; 
+    // 5. COMPOSICIÓN DE FLOTA (NUEVO)
+    if (!unidades || unidades.length === 0) return;
     
-    let cumpleaneros = conductores.filter(c => {
-        if (!c.nac) return false;
-        // Limpiamos cualquier espacio y tomamos estrictamente los primeros 5 caracteres (DD/MM)
-        let fechaNacLimpieza = String(c.nac).trim().substring(0, 5);
-        return fechaNacLimpieza === fechaHoy; 
-    });
-    
-    let elCumple = document.getElementById('dashCumpleanos');
-    if (elCumple) {
-        elCumple.innerText = cumpleaneros.length; // Ponemos el número
-        
-        // Buscamos la tarjeta (el div) que contiene el cumpleaños
-        let cardElement = elCumple.closest('.card');
-        if(cardElement) {
-            if(cumpleaneros.length > 0) {
-                // Si hay cumpleañeros, armamos la lista con sus nombres
-                let listaNombres = cumpleaneros.map(c => "🎂 " + c.nombre).join('\n');
-                cardElement.title = "Cumpleañeros de hoy:\n" + listaNombres;
-                cardElement.style.cursor = "help";
-            } else {
-                cardElement.title = "No hay cumpleaños el día de hoy";
-                cardElement.style.cursor = "default";
-            }
-        }
-    }
-
-    // 4. ACREDITACIONES (Contratos)
-    let cVan = 0, cMinibus = 0, cBus = 0;
-    conductores.forEach(c => {
-        let cat = determinarTipoConductor(c.contrato);
-        if(cat === 'VAN') cVan++;
-        else if(cat === 'MINIBUS') cMinibus++;
-        else if(cat === 'BUS') cBus++;
+    let fVan = 0, fMinibus = 0, fBus = 0, fCamioneta = 0;
+    unidades.forEach(u => {
+        let t = (u.tipo || '').toUpperCase().trim();
+        if(t === 'VAN') fVan++;
+        else if(t === 'MINIBUS') fMinibus++;
+        else if(t === 'BUS') fBus++;
+        else if(t === 'CAMIONETA') fCamioneta++;
     });
 
-    if(document.getElementById('dashAcredVan')) document.getElementById('dashAcredVan').innerText = cVan;
-    if(document.getElementById('dashAcredMinibus')) document.getElementById('dashAcredMinibus').innerText = cMinibus;
-    if(document.getElementById('dashAcredBus')) document.getElementById('dashAcredBus').innerText = cBus;
+    if(document.getElementById('dashFlotaVan')) document.getElementById('dashFlotaVan').innerText = fVan;
+    if(document.getElementById('dashFlotaMinibus')) document.getElementById('dashFlotaMinibus').innerText = fMinibus;
+    if(document.getElementById('dashFlotaBus')) document.getElementById('dashFlotaBus').innerText = fBus;
+    if(document.getElementById('dashFlotaCamioneta')) document.getElementById('dashFlotaCamioneta').innerText = fCamioneta;
+    
+    // (Opcional) Contar total de unidades operativas si tienes esa tarjeta arriba
+    let elTotalUni = document.getElementById('dashTotalUnidades');
+    if (elTotalUni) elTotalUni.innerText = unidades.length;
 }
+
+// AL INICIAR LA WEB
+window.onload = async function() { 
+    aplicarTema(localStorage.getItem('planner_theme') || 'cerro-verde'); 
+    
+    // Descarga silenciosa de ambas bases al entrar
+    try {
+        let [resCond, resUni] = await Promise.all([
+            fetch(URL_API_CONDUCTORES + "?t=" + new Date().getTime()),
+            fetch(URL_API_UNIDADES + "?t=" + new Date().getTime())
+        ]);
+        if(resCond.ok) { let dC = await resCond.json(); if(dC.length > 0) { conductores = dC; guardarConductores(); } }
+        if(resUni.ok) { let dU = await resUni.json(); if(dU.length > 0) { unidades = dU; guardarUnidades(); } }
+    } catch(e) {}
+
+    actualizarFiltrosDinamicos();
+    renderizarConductores();
+    renderizarUnidades();
+    actualizarDashboard();
+    cambiarVista('dashboard'); 
+};
 // FORMATOS Y MAESTROS
 function formatearFechaExcelOS(val) { 
     if (!val) return ''; 
@@ -228,33 +216,58 @@ function guardarConductores() { localStorage.setItem('bd_conductores_smcv', JSON
 function guardarUnidades() { localStorage.setItem('bd_unidades_smcv', JSON.stringify(unidades)); actualizarDashboard(); }
 function guardarZonas() { localStorage.setItem('bd_zonas_oficial_smcv', JSON.stringify(zonasBD)); renderizarZonas(); }
 
-// CONDUCTORES (Sincronización con Google Sheets)
+// Tus URLs de conexión
 const URL_API_CONDUCTORES = "https://script.google.com/macros/s/AKfycbwYiiV2_-zSTcLUft_xcPTXl03LxcyTNcZ2l2u8RfTtPsrvyrzOcPR9NVJCd4AxhLfR/exec"; // <-- PEGA TU ENLACE AQUÍ
+const URL_API_UNIDADES = "https://script.google.com/macros/s/AKfycbz95bAXTt3TdLqWrHswVEtSWEjA1Qb5RCdb9QfUnRqsGOgilnNzrpcR8V6l4mkhZCBlZA/exec";
 
-async function sincronizarConductores() {
-    let btn = document.getElementById('btnSyncConductores');
-    if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+// Variables locales
+let unidades = JSON.parse(localStorage.getItem('planner_unidades')) || [];
+
+function guardarUnidades() {
+    localStorage.setItem('planner_unidades', JSON.stringify(unidades));
+}
+// EL SINCRONIZADOR UNIVERSAL
+async function sincronizarDatos() {
+    let btnFuerza = document.getElementById('btnSyncConductores');
+    let btnDash = document.getElementById('btnSyncDashboard');
+    let btnUni = document.getElementById('btnSyncUnidades');
+
+    // Animamos todos los botones que existan
+    [btnFuerza, btnDash, btnUni].forEach(btn => {
+        if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+    });
     
     try {
-        // TRUCO ANTI-CACHÉ: Le pegamos la hora actual al enlace para que el navegador lo vea como una URL "nueva"
-        let urlFresca = URL_API_CONDUCTORES + "?t=" + new Date().getTime();
+        let urlCond = URL_API_CONDUCTORES + "?t=" + new Date().getTime();
+        let urlUni = URL_API_UNIDADES + "?t=" + new Date().getTime();
         
-        let response = await fetch(urlFresca);
-        let data = await response.json();
+        // Disparamos ambas descargas al mismo tiempo para mayor velocidad
+        let [resCond, resUni] = await Promise.all([ fetch(urlCond), fetch(urlUni) ]);
         
-        conductores = data; 
-        guardarConductores();
+        if (resCond.ok) {
+            let dataCond = await resCond.json();
+            if (dataCond.length > 0) { conductores = dataCond; guardarConductores(); }
+        }
+        
+        if (resUni.ok) {
+            let dataUni = await resUni.json();
+            if (dataUni.length > 0) { unidades = dataUni; guardarUnidades(); }
+        }
+        
         actualizarFiltrosDinamicos(); 
         renderizarConductores();
+        renderizarUnidades();
+        actualizarDashboard();
         
-        alert("✓ Base de conductores sincronizada desde Google Sheets.");
+        alert("✓ ¡Datos de Conductores y Flota sincronizados!");
     } catch(e) {
-        alert("Error de conexión: " + e.message);
+        alert("Error al sincronizar: " + e.message);
     } finally {
-        if(btn) btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Sheets';
+        [btnFuerza, btnDash, btnUni].forEach(btn => {
+            if(btn) btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Sheets';
+        });
     }
 }
-
 // Función para sincronizar desde el botón del Dashboard
 async function sincronizarConductoresDesdeDashboard() {
     let btn = document.getElementById('btnSyncDashboard');
@@ -336,6 +349,30 @@ function renderizarConductores() {
             <td><i class="fa-solid fa-lock" style="color:var(--text-muted); opacity:0.4;" title="Controlado desde Google Sheets"></i></td>
         </tr>`); 
     }); 
+}
+
+function renderizarUnidades() {
+    let tbody = document.getElementById('tbodyUnidades');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    
+    let correlativo = 1;
+    
+    unidades.forEach(u => {
+        let badgeClass = u.tipo.toUpperCase() === 'BUS' ? 'badge-bus' : (u.tipo.toUpperCase() === 'MINIBUS' ? 'badge-minibus' : 'badge-van');
+        if(u.tipo.toUpperCase() === 'CAMIONETA') badgeClass = 'badge-van'; // Usaremos el estilo azul para la camioneta
+        
+        tbody.insertAdjacentHTML('beforeend', `<tr>
+            <td style="color:var(--text-muted); font-weight:bold;">${correlativo++}</td>
+            <td>${u.codigo}</td>
+            <td style="font-weight:700; letter-spacing: 1px;">${u.placa}</td>
+            <td><span class="badge-unit ${badgeClass}">${u.tipo}</span></td>
+            <td>${u.marca}</td>
+            <td>${u.capacidad} pax</td>
+            <td style="color:#0284c7; font-weight:700; font-size:0.75rem;">${u.servicio}</td>
+            <td><i class="fa-solid fa-lock" style="color:var(--text-muted); opacity:0.4;"></i></td>
+        </tr>`);
+    });
 }
 
 // UNIDADES

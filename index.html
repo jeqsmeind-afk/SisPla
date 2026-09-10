@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <style>
+        .chip-filtro {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            background: var(--main-bg);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .chip-filtro:hover { background: #e2e8f0; color: #333; }
+        .chip-filtro.active {
+            background: #0284c7; /* Azul fuerte para indicar que está activo */
+            color: white;
+            border-color: #0284c7;
+            box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);
+        }
+    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LÍNEA | SMCV | PLANNER</title>
@@ -203,26 +223,33 @@
                 </div>
             </div>
             
-            <!-- TARJETAS INTERACTIVAS (Filtros Estilo Power BI) -->
-            <div id="panelTarjetasUnidades" style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
-                <!-- Se llenará automáticamente con JavaScript -->
+            <!-- TARJETAS SUPERIORES (Salud de la Flota) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div class="card" style="padding:15px; text-align:center; border-left: 4px solid #0284c7;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">TOTAL FLOTA</span>
+                    <h3 id="kpiTotalUnidades" style="margin:0; color: var(--text-main);">0</h3>
+                </div>
+                <div class="card" style="padding:15px; text-align:center; border-left: 4px solid #059669;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">OPERATIVAS</span>
+                    <h3 id="kpiOperativas" style="margin:0; color: #059669;">0</h3>
+                </div>
+                <div class="card" style="padding:15px; text-align:center; border-left: 4px solid #dc2626;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">EN TALLER</span>
+                    <h3 id="kpiTaller" style="margin:0; color: #dc2626;">0</h3>
+                </div>
             </div>
 
             <div class="card">
-                <div class="toolbar">
-                    <div class="search-container">
+                <!-- NUEVA BARRA DE HERRAMIENTAS Y FILTROS CRUZADOS -->
+                <div class="toolbar" style="flex-direction: column; align-items: stretch; gap: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <div class="search-container" style="max-width: 400px;">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <input type="text" id="searchUnidades" placeholder="Buscar Código o Placa..." onkeyup="renderizarUnidades()">
                     </div>
-                    <div style="display:flex; gap:10px;">
-                        <select id="filtroTipoUnidades" onchange="renderizarUnidades()" class="select-prog" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main);">
-                            <option value="TODOS">Todo Tipo</option>
-                        </select>
-                        <select id="filtroServicioUnidades" onchange="renderizarUnidades()" class="select-prog" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main);">
-                            <option value="TODOS">Todo Servicio</option>
-                        </select>
-                    </div>
+                    <!-- Aquí se inyectarán las píldoras desde JavaScript -->
+                    <div id="contenedorChipsFiltros" style="display: flex; flex-direction: column; gap: 10px;"></div>
                 </div>
+
                 <div class="table-container">
                     <table>
                         <thead>

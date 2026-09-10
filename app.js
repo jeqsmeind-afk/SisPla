@@ -170,15 +170,29 @@ async function sincronizarDatos() {
         
         if (resUni.ok) {
             let dataUni = await resUni.json();
-            if (dataUni && dataUni.length > 0) { unidades = dataUni; guardarUnidades(false); }
+            if (dataUni && dataUni.length > 0) { 
+                // MEMORIA DE ESTADOS: Evita que Sheets sobreescriba lo que pusiste en "Taller"
+                dataUni.forEach(uNueva => {
+                    let uLocal = unidades.find(ul => ul.codigo === uNueva.codigo);
+                    if(uLocal && uLocal.estado) uNueva.estado = uLocal.estado;
+                });
+                unidades = dataUni; 
+                guardarUnidades(false); 
+            }
         }
         
+        // Actualizamos la etiqueta de "Última sincronización"
+        let textoSync = "Última sincronización: Hoy, " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        let lblUni = document.getElementById('lblLastSyncUnidades');
+        if(lblUni) lblUni.innerText = textoSync;
+        
         actualizarFiltrosDinamicos(); 
+        actualizarFiltrosDinamicosUnidades(); // Nuevo
         renderizarConductores();
         renderizarUnidades();
         actualizarDashboard();
         
-        alert("✓ ¡Datos de Conductores y Flota sincronizados!");
+        alert("✓ ¡Datos sincronizados!");
     } catch(e) {
         alert("Error al sincronizar: " + e.message);
     } finally {
@@ -186,6 +200,60 @@ async function sincronizarDatos() {
             if(btn) btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Sheets';
         });
     }
+}
+
+function actualizarFiltrosDinamicosUnidades() {
+    let tiposUnicos = [...new Set(unidades.map(u => (u.tipo || '').toUpperCase().trim()))].filter(t => t !== '');
+    let serviciosUnicos = [...new Set(unidades.map(u => (u.servicio || '').toUpperCase().trim()))].filter(s => s !== '');
+    
+    // Llenar Selectores
+    let selTipo = document.getElementById('filtroTipoUnidades');
+    if (selTipo) {
+        selTipo.innerHTML = '<option value="TODOS">Todo Tipo</option>' + tiposUnicos.map(t => `<option value="${t}">${t}</option>`).join('');
+    }
+
+    let selServ = document.getElementById('filtroServicioUnidades');
+    if (selServ) {
+        selServ.innerHTML = '<option value="TODOS">Todo Servicio</option>' + serviciosUnicos.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    // Generar Tarjetas Interactivas (Power BI)
+    let panel = document.getElementById('panelTarjetasUnidades');
+    if (!panel) return;
+    
+    let htmlTarjetas = `
+        <div class="card" onclick="aplicarFiltroRapidoUnidades('TODOS', 'TODOS')" style="cursor:pointer; padding:15px; border-left: 4px solid var(--accent); flex: 1; min-width: 120px; text-align:center; transition: 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">TOTAL FLOTA</span>
+            <h3 style="margin:0; color: var(--text-main);">${unidades.length}</h3>
+        </div>
+    `;
+
+    tiposUnicos.forEach(t => {
+        let count = unidades.filter(u => (u.tipo || '').toUpperCase().trim() === t).length;
+        htmlTarjetas += `
+            <div class="card" onclick="aplicarFiltroRapidoUnidades('tipo', '${t}')" style="cursor:pointer; padding:15px; border-left: 4px solid #f39c12; flex: 1; min-width: 120px; text-align:center; transition: 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">${t}</span>
+                <h3 style="margin:0; color: var(--text-main);">${count}</h3>
+            </div>
+        `;
+    });
+    panel.innerHTML = htmlTarjetas;
+}
+
+// Al hacer clic en una tarjeta, mueve los selectores y filtra la tabla
+function aplicarFiltroRapidoUnidades(filtroA, valor) {
+    document.getElementById('filtroTipoUnidades').value = 'TODOS';
+    document.getElementById('filtroServicioUnidades').value = 'TODOS';
+    document.getElementById('searchUnidades').value = '';
+
+    if (filtroA === 'tipo') document.getElementById('filtroTipoUnidades').value = valor;
+    renderizarUnidades();
+}
+
+function cambiarEstadoUnidad(idx, nuevoEstado) {
+    unidades[idx].estado = nuevoEstado;
+    guardarUnidades(); // Guarda en tu navegador
+    renderizarUnidades(); // Refresca los colores de la tabla
 }
 
 // ==========================================
@@ -329,12 +397,37 @@ function renderizarUnidades() {
     if(!tbody) return;
     tbody.innerHTML = '';
     
+    let txt = document.getElementById('searchUnidades') ? document.getElementById('searchUnidades').value.toUpperCase().trim() : '';
+    let fTipo = document.getElementById('filtroTipoUnidades') ? document.getElementById('filtroTipoUnidades').value : 'TODOS';
+    let fServ = document.getElementById('filtroServicioUnidades') ? document.getElementById('filtroServicioUnidades').value : 'TODOS';
+
     let correlativo = 1;
     
-    unidades.forEach(u => {
-        let badgeClass = (u.tipo || '').toUpperCase() === 'BUS' ? 'badge-bus' : ((u.tipo || '').toUpperCase() === 'MINIBUS' ? 'badge-minibus' : 'badge-van');
-        if((u.tipo || '').toUpperCase() === 'CAMIONETA') badgeClass = 'badge-van';
+    unidades.forEach((u, idx) => {
+        let tStr = (u.tipo || '').toUpperCase();
+        let sStr = (u.servicio || '').toUpperCase();
+        let cStr = (u.codigo || '').toUpperCase();
+        let pStr = (u.placa || '').toUpperCase();
+
+        if (fTipo !== 'TODOS' && tStr !== fTipo) return;
+        if (fServ !== 'TODOS' && sStr !== fServ) return;
+        if (txt && !cStr.includes(txt) && !pStr.includes(txt)) return;
+
+        let badgeClass = tStr === 'BUS' ? 'badge-bus' : (tStr === 'MINIBUS' ? 'badge-minibus' : 'badge-van');
+        if(tStr === 'CAMIONETA') badgeClass = 'badge-van';
         
+        let estadoActual = u.estado || 'OPERATIVO';
+        let bgEstado = estadoActual === 'OPERATIVO' ? '#d1fae5' : '#fee2e2';
+        let colorEstado = estadoActual === 'OPERATIVO' ? '#065f46' : '#991b1b';
+        
+        // El selector dinámico para Operativo / Taller
+        let selectEstado = `
+            <select class="select-prog" style="background:${bgEstado}; color:${colorEstado}; font-weight:bold; padding:4px; border:none; border-radius:4px; font-size:0.75rem; cursor:pointer;" onchange="cambiarEstadoUnidad(${idx}, this.value)">
+                <option value="OPERATIVO" ${estadoActual==='OPERATIVO'?'selected':''}>OPERATIVO</option>
+                <option value="TALLER" ${estadoActual==='TALLER'?'selected':''}>TALLER</option>
+            </select>
+        `;
+
         tbody.insertAdjacentHTML('beforeend', `<tr>
             <td style="color:var(--text-muted); font-weight:bold;">${correlativo++}</td>
             <td>${u.codigo || '-'}</td>
@@ -343,6 +436,7 @@ function renderizarUnidades() {
             <td>${u.marca || '-'}</td>
             <td>${u.capacidad || '-'} pax</td>
             <td style="color:#0284c7; font-weight:700; font-size:0.75rem;">${u.servicio || '-'}</td>
+            <td>${selectEstado}</td>
             <td><i class="fa-solid fa-lock" style="color:var(--text-muted); opacity:0.4;"></i></td>
         </tr>`);
     });
@@ -918,6 +1012,7 @@ window.onload = async function() {
     }
 
     actualizarFiltrosDinamicos();
+    actualizarFiltrosDinamicosUnidades();
     renderizarConductores();
     renderizarUnidades();
     actualizarDashboard();

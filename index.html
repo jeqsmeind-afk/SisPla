@@ -197,9 +197,32 @@
         <div id="vistaUnidades" class="view-section">
             <div class="page-header">
                 <h2>Flota de Unidades</h2>
-                <button class="btn btn-success" id="btnSyncUnidades" onclick="sincronizarDatos()"><i class="fa-solid fa-rotate"></i> Sincronizar Sheets</button>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <span id="lblLastSyncUnidades" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;"></span>
+                    <button class="btn btn-success" id="btnSyncUnidades" onclick="sincronizarDatos()"><i class="fa-solid fa-rotate"></i> Sincronizar Sheets</button>
+                </div>
             </div>
+            
+            <!-- TARJETAS INTERACTIVAS (Filtros Estilo Power BI) -->
+            <div id="panelTarjetasUnidades" style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                <!-- Se llenará automáticamente con JavaScript -->
+            </div>
+
             <div class="card">
+                <div class="toolbar">
+                    <div class="search-container">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="searchUnidades" placeholder="Buscar Código o Placa..." onkeyup="renderizarUnidades()">
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <select id="filtroTipoUnidades" onchange="renderizarUnidades()" class="select-prog" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main);">
+                            <option value="TODOS">Todo Tipo</option>
+                        </select>
+                        <select id="filtroServicioUnidades" onchange="renderizarUnidades()" class="select-prog" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main);">
+                            <option value="TODOS">Todo Servicio</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="table-container">
                     <table>
                         <thead>
@@ -211,6 +234,7 @@
                                 <th>Marca</th>
                                 <th>Capacidad</th>
                                 <th>Servicio</th>
+                                <th>Estado</th>
                                 <th>Acción</th>
                             </tr>
                         </thead>

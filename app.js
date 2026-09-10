@@ -2,6 +2,10 @@ const CLAVE_ADMIN_PERMANENTE = "J0s3hp";
 let targetVaciar = '', callbackAccionPendiente = null;
 let idxConductorEdit = null, idxUnidadEdit = null, idxZonaEdit = null;
 
+// --- VARIABLES GLOBALES PARA FILTROS CRUZADOS DE UNIDADES ---
+let fActivoUnidadTipo = 'TODOS';
+let fActivoUnidadServicio = 'TODOS';
+
 // LA BASE COMPLETA DE ZONAS
 const ZONAS_FABRICA = [
     {"zona":"1","rec_a1_ofic":"OVALO CCORITOS (RUTA REGULAR)","rec_a1_desv1":"","rec_a2_ofic":"OVALO CCORITOS (CONF. DESVIO SUPERVISOR)","rec_a2_desv1":"","rec_a2p_ofic":"","rec_a2p_desv1":"","rec_b1_ofic":"OVALO CCORITOS (CONFIRMA DESVIO SUPERVISOR)","rec_b1_desv1":"","rec_b2_ofic":"OVALO CCORITOS (CONFIRMA DESVIO SUPERVISOR)","rec_b2_desv1":"","rec_b2p_ofic":"OVALO CCORITOS (CONF. DESVIO SUPERVISOR)","rec_b2p_desv1":"","a1":"04:55:00","a2_lv":"05:49:30","a2_sd":"05:50:00","a2p_lv":"05:49:30","a2p_sd":"05:50:00","b1":"16:45:00","b2":"17:40:00","b2p":"17:40:00"},
@@ -108,7 +112,7 @@ function cambiarVista(v) {
     
     if(v === 'dashboard') actualizarDashboard();
     else if(v === 'conductores') renderizarConductores();
-    else if(v === 'unidades') renderizarUnidades();
+    else if(v === 'unidades') { actualizarFiltrosDinamicosUnidades(); renderizarUnidades(); }
     else if(v === 'zonas') renderizarZonas();
     else if(v === 'plantillas') { cargarOpcionesZonasSelect(); renderizarGestorPlantillas(); }
     else if(v === 'programacion') procesarCambioFechaProg();
@@ -187,7 +191,7 @@ async function sincronizarDatos() {
         if(lblUni) lblUni.innerText = textoSync;
         
         actualizarFiltrosDinamicos(); 
-        actualizarFiltrosDinamicosUnidades(); // Nuevo
+        actualizarFiltrosDinamicosUnidades(); 
         renderizarConductores();
         renderizarUnidades();
         actualizarDashboard();
@@ -202,59 +206,58 @@ async function sincronizarDatos() {
     }
 }
 
+// ==========================================
+// PÍLDORAS (CHIPS) DE FILTROS CRUZADOS - UNIDADES
+// ==========================================
 function actualizarFiltrosDinamicosUnidades() {
-    let tiposUnicos = [...new Set(unidades.map(u => (u.tipo || '').toUpperCase().trim()))].filter(t => t !== '');
-    let serviciosUnicos = [...new Set(unidades.map(u => (u.servicio || '').toUpperCase().trim()))].filter(s => s !== '');
+    let tipos = [...new Set(unidades.map(u => (u.tipo || '').toUpperCase().trim()))].filter(t => t !== '');
+    let servicios = [...new Set(unidades.map(u => (u.servicio || '').toUpperCase().trim()))].filter(s => s !== '');
     
-    // Llenar Selectores
-    let selTipo = document.getElementById('filtroTipoUnidades');
-    if (selTipo) {
-        selTipo.innerHTML = '<option value="TODOS">Todo Tipo</option>' + tiposUnicos.map(t => `<option value="${t}">${t}</option>`).join('');
-    }
-
-    let selServ = document.getElementById('filtroServicioUnidades');
-    if (selServ) {
-        selServ.innerHTML = '<option value="TODOS">Todo Servicio</option>' + serviciosUnicos.map(s => `<option value="${s}">${s}</option>`).join('');
-    }
-
-    // Generar Tarjetas Interactivas (Power BI)
-    let panel = document.getElementById('panelTarjetasUnidades');
-    if (!panel) return;
-    
-    let htmlTarjetas = `
-        <div class="card" onclick="aplicarFiltroRapidoUnidades('TODOS', 'TODOS')" style="cursor:pointer; padding:15px; border-left: 4px solid var(--accent); flex: 1; min-width: 120px; text-align:center; transition: 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">TOTAL FLOTA</span>
-            <h3 style="margin:0; color: var(--text-main);">${unidades.length}</h3>
-        </div>
-    `;
-
-    tiposUnicos.forEach(t => {
-        let count = unidades.filter(u => (u.tipo || '').toUpperCase().trim() === t).length;
-        htmlTarjetas += `
-            <div class="card" onclick="aplicarFiltroRapidoUnidades('tipo', '${t}')" style="cursor:pointer; padding:15px; border-left: 4px solid #f39c12; flex: 1; min-width: 120px; text-align:center; transition: 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">${t}</span>
-                <h3 style="margin:0; color: var(--text-main);">${count}</h3>
-            </div>
-        `;
+    // 1. Construir Fila de Tipos
+    let htmlTipos = `<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <span style="font-size:0.75rem; font-weight:800; color:var(--text-muted); width: 65px;">TIPO:</span>
+        <button class="chip-filtro ${fActivoUnidadTipo === 'TODOS' ? 'active' : ''}" onclick="toggleFiltroUnidades('tipo', 'TODOS')">Todos</button>`;
+    tipos.forEach(t => {
+        htmlTipos += `<button class="chip-filtro ${fActivoUnidadTipo === t ? 'active' : ''}" onclick="toggleFiltroUnidades('tipo', '${t}')">${t}</button>`;
     });
-    panel.innerHTML = htmlTarjetas;
+    htmlTipos += `</div>`;
+
+    // 2. Construir Fila de Servicios
+    let htmlServs = `<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:5px;">
+        <span style="font-size:0.75rem; font-weight:800; color:var(--text-muted); width: 65px;">SERVICIO:</span>
+        <button class="chip-filtro ${fActivoUnidadServicio === 'TODOS' ? 'active' : ''}" onclick="toggleFiltroUnidades('servicio', 'TODOS')">Todos</button>`;
+    servicios.forEach(s => {
+        htmlServs += `<button class="chip-filtro ${fActivoUnidadServicio === s ? 'active' : ''}" onclick="toggleFiltroUnidades('servicio', '${s}')">${s}</button>`;
+    });
+    htmlServs += `</div>`;
+
+    let panel = document.getElementById('contenedorChipsFiltros');
+    if(panel) panel.innerHTML = htmlTipos + htmlServs;
+
+    // 3. Actualizar KPIs Superiores
+    if(document.getElementById('kpiTotalUnidades')) {
+        document.getElementById('kpiTotalUnidades').innerText = unidades.length;
+        document.getElementById('kpiOperativas').innerText = unidades.filter(u => u.estado !== 'TALLER').length;
+        document.getElementById('kpiTaller').innerText = unidades.filter(u => u.estado === 'TALLER').length;
+    }
 }
 
-// Al hacer clic en una tarjeta, mueve los selectores y filtra la tabla
-function aplicarFiltroRapidoUnidades(filtroA, valor) {
-    document.getElementById('filtroTipoUnidades').value = 'TODOS';
-    document.getElementById('filtroServicioUnidades').value = 'TODOS';
-    document.getElementById('searchUnidades').value = '';
-
-    if (filtroA === 'tipo') document.getElementById('filtroTipoUnidades').value = valor;
-    renderizarUnidades();
+// Al hacer clic en un Chip
+function toggleFiltroUnidades(categoria, valor) {
+    if (categoria === 'tipo') fActivoUnidadTipo = valor;
+    if (categoria === 'servicio') fActivoUnidadServicio = valor;
+    
+    actualizarFiltrosDinamicosUnidades(); 
+    renderizarUnidades(); 
 }
 
 function cambiarEstadoUnidad(idx, nuevoEstado) {
     unidades[idx].estado = nuevoEstado;
-    guardarUnidades(); // Guarda en tu navegador
-    renderizarUnidades(); // Refresca los colores de la tabla
+    guardarUnidades(); 
+    actualizarFiltrosDinamicosUnidades(); // Actualiza el número de los KPIs
+    renderizarUnidades(); 
 }
+
 
 // ==========================================
 // EL CEREBRO DEL DASHBOARD
@@ -398,19 +401,18 @@ function renderizarUnidades() {
     tbody.innerHTML = '';
     
     let txt = document.getElementById('searchUnidades') ? document.getElementById('searchUnidades').value.toUpperCase().trim() : '';
-    let fTipo = document.getElementById('filtroTipoUnidades') ? document.getElementById('filtroTipoUnidades').value : 'TODOS';
-    let fServ = document.getElementById('filtroServicioUnidades') ? document.getElementById('filtroServicioUnidades').value : 'TODOS';
 
     let correlativo = 1;
     
     unidades.forEach((u, idx) => {
-        let tStr = (u.tipo || '').toUpperCase();
-        let sStr = (u.servicio || '').toUpperCase();
+        let tStr = (u.tipo || '').toUpperCase().trim();
+        let sStr = (u.servicio || '').toUpperCase().trim();
         let cStr = (u.codigo || '').toUpperCase();
         let pStr = (u.placa || '').toUpperCase();
 
-        if (fTipo !== 'TODOS' && tStr !== fTipo) return;
-        if (fServ !== 'TODOS' && sStr !== fServ) return;
+        // Aplicamos el Filtro Cruzado de las píldoras (La Magia)
+        if (fActivoUnidadTipo !== 'TODOS' && tStr !== fActivoUnidadTipo) return;
+        if (fActivoUnidadServicio !== 'TODOS' && sStr !== fActivoUnidadServicio) return;
         if (txt && !cStr.includes(txt) && !pStr.includes(txt)) return;
 
         let badgeClass = tStr === 'BUS' ? 'badge-bus' : (tStr === 'MINIBUS' ? 'badge-minibus' : 'badge-van');
@@ -420,9 +422,8 @@ function renderizarUnidades() {
         let bgEstado = estadoActual === 'OPERATIVO' ? '#d1fae5' : '#fee2e2';
         let colorEstado = estadoActual === 'OPERATIVO' ? '#065f46' : '#991b1b';
         
-        // El selector dinámico para Operativo / Taller
         let selectEstado = `
-            <select class="select-prog" style="background:${bgEstado}; color:${colorEstado}; font-weight:bold; padding:4px; border:none; border-radius:4px; font-size:0.75rem; cursor:pointer;" onchange="cambiarEstadoUnidad(${idx}, this.value)">
+            <select class="select-prog" style="background:${bgEstado}; color:${colorEstado}; font-weight:bold; padding:4px; border:none; border-radius:4px; font-size:0.75rem; cursor:pointer; outline:none;" onchange="cambiarEstadoUnidad(${idx}, this.value)">
                 <option value="OPERATIVO" ${estadoActual==='OPERATIVO'?'selected':''}>OPERATIVO</option>
                 <option value="TALLER" ${estadoActual==='TALLER'?'selected':''}>TALLER</option>
             </select>
@@ -693,7 +694,7 @@ function renderizarProgramacion() {
     
     let turnosLista = turnoSel !== 'TODOS' ? [turnoSel] : ['A1', 'A2', 'A2P', 'B1', 'B2', 'B2P'];
     let condOptsBase = conductores.filter(c => c.estadoAbrev === 'A' || c.estadoAbrev === 'B' || c.estadoAbrev === 'AL');
-    let unidadesBase = unidades.filter(u => u.estado === 'OPERATIVO');
+    let unidadesBase = unidades.filter(u => u.estado === 'OPERATIVO'); // Las de taller ya no aparecerán aquí
     let regsFecha = programacionDiaria[fechaSel] || [];
     
     let totalFilas = 0, asignados = 0, htmlTabla = '';

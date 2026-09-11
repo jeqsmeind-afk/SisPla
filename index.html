@@ -219,34 +219,45 @@
                 <h2>Flota de Unidades</h2>
                 <div style="display:flex; align-items:center; gap:15px;">
                     <span id="lblLastSyncUnidades" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;"></span>
+                    <!-- NUEVO BOTÓN DE IMPORTACIÓN DE MANTENIMIENTO -->
+                    <input type="file" id="fileMantenimiento" accept=".xlsx, .xls" style="display: none;" onchange="importarExcelMantenimiento(event)">
+                    <button class="btn btn-outline" onclick="document.getElementById('fileMantenimiento').click()"><i class="fa-solid fa-file-excel"></i> Importar Mantto.</button>
+                    
                     <button class="btn btn-success" id="btnSyncUnidades" onclick="sincronizarDatos()"><i class="fa-solid fa-rotate"></i> Sincronizar Sheets</button>
                 </div>
             </div>
             
-            <!-- TARJETAS SUPERIORES (Salud de la Flota) -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                <div class="card" style="padding:15px; text-align:center; border-left: 4px solid #0284c7;">
-                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">TOTAL FLOTA</span>
-                    <h3 id="kpiTotalUnidades" style="margin:0; color: var(--text-main);">0</h3>
+            <!-- TARJETAS SUPERIORES (Salud de la Flota - Formato Compacto y Elegante) -->
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div class="card" style="padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-left: 4px solid #0284c7; flex: 1; min-width: 200px;">
+                    <div style="background: #e0f2fe; color: #0284c7; padding: 10px; border-radius: 50%; display: flex; justify-content: center; align-items: center; width: 40px; height: 40px;"><i class="fa-solid fa-bus" style="font-size: 1.2rem;"></i></div>
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 800;">TOTAL FLOTA</span>
+                        <h3 id="kpiTotalUnidades" style="margin: 0; color: var(--text-main); font-size: 1.4rem;">0</h3>
+                    </div>
                 </div>
-                <div class="card" style="padding:15px; text-align:center; border-left: 4px solid #059669;">
-                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">OPERATIVAS</span>
-                    <h3 id="kpiOperativas" style="margin:0; color: #059669;">0</h3>
+                <div class="card" style="padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-left: 4px solid #059669; flex: 1; min-width: 200px;">
+                    <div style="background: #d1fae5; color: #059669; padding: 10px; border-radius: 50%; display: flex; justify-content: center; align-items: center; width: 40px; height: 40px;"><i class="fa-solid fa-circle-check" style="font-size: 1.2rem;"></i></div>
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 800;">OPERATIVAS</span>
+                        <h3 id="kpiOperativas" style="margin: 0; color: #059669; font-size: 1.4rem;">0</h3>
+                    </div>
                 </div>
-                <div class="card" style="padding:15px; text-align:center; border-left: 4px solid #dc2626;">
-                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">EN TALLER</span>
-                    <h3 id="kpiTaller" style="margin:0; color: #dc2626;">0</h3>
+                <div class="card" style="padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-left: 4px solid #dc2626; flex: 1; min-width: 200px;">
+                    <div style="background: #fee2e2; color: #dc2626; padding: 10px; border-radius: 50%; display: flex; justify-content: center; align-items: center; width: 40px; height: 40px;"><i class="fa-solid fa-wrench" style="font-size: 1.2rem;"></i></div>
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 800;">EN TALLER</span>
+                        <h3 id="kpiTaller" style="margin: 0; color: #dc2626; font-size: 1.4rem;">0</h3>
+                    </div>
                 </div>
             </div>
 
             <div class="card">
-                <!-- NUEVA BARRA DE HERRAMIENTAS Y FILTROS CRUZADOS -->
                 <div class="toolbar" style="flex-direction: column; align-items: stretch; gap: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <div class="search-container" style="max-width: 400px;">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <input type="text" id="searchUnidades" placeholder="Buscar Código o Placa..." onkeyup="renderizarUnidades()">
                     </div>
-                    <!-- Aquí se inyectarán las píldoras desde JavaScript -->
                     <div id="contenedorChipsFiltros" style="display: flex; flex-direction: column; gap: 10px;"></div>
                 </div>
 
@@ -262,7 +273,7 @@
                                 <th>Capacidad</th>
                                 <th>Servicio</th>
                                 <th>Estado</th>
-                                <th>Acción</th>
+                                <th>Novedad</th> <!-- Cambiamos Acción por Novedad -->
                             </tr>
                         </thead>
                         <tbody id="tbodyUnidades"></tbody>

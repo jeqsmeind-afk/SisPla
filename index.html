@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LÍNEA | SMCV | PLANNER</title>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- ENLACE AL ARCHIVO DE ESTILOS -->
+    <link rel="stylesheet" href="styles.css">
+
     <style>
         .chip-filtro {
             padding: 6px 14px;
@@ -21,82 +32,61 @@
             box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);
         }
     </style>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LÍNEA | SMCV | PLANNER</title>
-    
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
-    <!-- ENLACE AL ARCHIVO DE ESTILOS -->
-    <link rel="stylesheet" href="styles.css">
 </head>
 <body data-theme="cerro-verde">
 
-    <!-- BARRA LATERAL -->
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
-            <div class="brand-container">
-                <span class="logo-linea">LÍNEA</span>
-                <span class="logo-smcv">SMCV</span>
-                <span class="brand-planner">PLANNER</span>
-            </div>
-            <i class="fa-solid fa-bars" onclick="togglePinSidebar()" style="cursor: pointer;"></i>
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR (TOPBAR) -->
+    <header class="topbar">
+        <div class="topbar-logo">
+            <span class="brand-rojo" style="background:#cc0000; color:white; padding:2px 6px; border-radius:4px;">LÍNEA</span> 
+            <span class="brand-azul" style="background:#0284c7; color:white; padding:2px 6px; border-radius:4px;">SMCV</span> 
+            <span style="font-weight: 300;">PLANNER</span>
         </div>
-        <div class="sidebar-nav">
-            <button class="nav-item active" id="btnNavDashboard" onclick="cambiarVista('dashboard')">
-                <div class="nav-item-content"><i class="fa-solid fa-house"></i> <span>Inicio</span></div>
-            </button>
-            <button class="nav-item" id="btnNavMaestros" onclick="toggleSubmenuMaestros()">
-                <div class="nav-item-content"><i class="fa-solid fa-database"></i> <span>1. Gestor Maestros</span></div>
-                <i class="fa-solid fa-chevron-down arrow-icon" id="arrowMaestros"></i>
-            </button>
-            <div class="submenu open" id="submenuMaestros">
-                <button class="submenu-item" id="btnSubConductores" onclick="cambiarVista('conductores')">
-                    <i class="fa-solid fa-id-card"></i> <span>Fuerza Laboral</span>
-                </button>
-                <button class="submenu-item" id="btnSubUnidades" onclick="cambiarVista('unidades')">
-                    <i class="fa-solid fa-bus"></i> <span>Flota Activa</span>
-                </button>
+        
+        <nav class="topbar-nav">
+            <button class="nav-btn active" onclick="cambiarVista('dashboard')" id="btnNavDashboard"><i class="fa-solid fa-house"></i> Inicio</button>
+            
+            <div class="dropdown">
+                <button class="nav-btn"><i class="fa-solid fa-database"></i> Maestros <i class="fa-solid fa-caret-down" style="font-size:0.7rem;"></i></button>
+                <div class="dropdown-content">
+                    <a href="#" onclick="cambiarVista('conductores')" id="btnNavConductores"><i class="fa-solid fa-id-card"></i> 1. Fuerza Laboral</a>
+                    <a href="#" onclick="cambiarVista('unidades')" id="btnNavUnidades"><i class="fa-solid fa-bus"></i> 2. Flota Activa</a>
+                </div>
             </div>
-            <button class="nav-item" id="btnNavZonas" onclick="cambiarVista('zonas')">
-                <div class="nav-item-content"><i class="fa-solid fa-map-location-dot"></i> <span>2. Base de Zonas</span></div>
-            </button>
-            <button class="nav-item" id="btnNavPlantillas" onclick="cambiarVista('plantillas')">
-                <div class="nav-item-content"><i class="fa-solid fa-layer-group"></i> <span>3. Plantillas</span></div>
-            </button>
-            <button class="nav-item" id="btnNavProgramacion" onclick="cambiarVista('programacion')">
-                <div class="nav-item-content"><i class="fa-solid fa-calendar-check"></i> <span>4. Prog. Diaria</span></div>
-            </button>
-            <button class="nav-item" id="btnNavRespaldo" onclick="cambiarVista('respaldo')">
-                <div class="nav-item-content"><i class="fa-solid fa-hard-drive"></i> <span>5. Backup</span></div>
-            </button>
-            <button class="nav-item" id="btnNavRoster" onclick="cambiarVista('roster')">
-                <div class="nav-item-content"><i class="fa-solid fa-camera"></i> <span style="color:#10b981; font-weight: bold;">6. Roster Oficial</span></div>
+
+            <button class="nav-btn" onclick="cambiarVista('zonas')" id="btnNavZonas"><i class="fa-solid fa-map-location-dot"></i> Zonas</button>
+            <button class="nav-btn" onclick="cambiarVista('plantillas')" id="btnNavPlantillas"><i class="fa-solid fa-layer-group"></i> Plantillas</button>
+            <button class="nav-btn" onclick="cambiarVista('programacion')" id="btnNavProgramacion"><i class="fa-solid fa-calendar-day"></i> Prog. Diaria</button>
+            <button class="nav-btn" onclick="cambiarVista('respaldo')" id="btnNavRespaldo"><i class="fa-solid fa-hard-drive"></i> Backup</button>
+            <button class="nav-btn" onclick="cambiarVista('roster')" id="btnNavRoster" style="color:var(--accent);"><i class="fa-solid fa-camera"></i> Roster Oficial</button>
+        </nav>
+
+        <div class="topbar-actions">
+            <div style="display:flex; gap: 8px; margin-right: 15px;">
+                <div class="theme-dot" style="background:#0284c7; width:15px; height:15px; border-radius:50%; cursor:pointer;" onclick="aplicarTema('cerro-verde')" title="Modo Cerro Verde"></div>
+                <div class="theme-dot" style="background:#cc0000; width:15px; height:15px; border-radius:50%; cursor:pointer;" onclick="aplicarTema('linea')" title="Modo Línea"></div>
+                <div class="theme-dot" style="background:#1e293b; width:15px; height:15px; border-radius:50%; cursor:pointer;" onclick="aplicarTema('dark-ops')" title="Modo Oscuro"></div>
+            </div>
+            
+            <!-- BOTÓN GLOBAL DE SINCRONIZACIÓN EN SEGUNDO PLANO -->
+            <button class="btn btn-success" id="btnSyncGlobal" onclick="sincronizarDatosSegundoPlano()">
+                <i class="fa-solid fa-cloud-arrow-down"></i> Sincronizar
             </button>
         </div>
-        <div class="theme-picker">
-            <p>Estilo Visual</p>
-            <div class="theme-grid">
-                <div class="theme-option" onclick="aplicarTema('cerro-verde')"><div class="theme-circle" style="background: #0f172a;"></div></div>
-                <div class="theme-option" onclick="aplicarTema('linea')"><div class="theme-circle" style="background: #8B0000;"></div></div>
-                <div class="theme-option" onclick="aplicarTema('dark-ops')"><div class="theme-circle" style="background: #111827;"></div></div>
-            </div>
-        </div>
-        <div class="sidebar-footer">Sistema Operativo Integrado</div>
-    </div>
+    </header>
+
+    <!-- CONTENEDOR DE ALERTAS FLOTANTES -->
+    <div id="toast-container"></div>
 
     <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
-        <!-- VISTA DASHBOARD -->
+        
+        <!-- ============================================== -->
+        <!-- VISTA DASHBOARD                                -->
+        <!-- ============================================== -->
         <div id="vistaDashboard" class="view-section active">
             <div class="page-header">
                 <h2>Panel de Control Operativo</h2>
-                <!-- BOTÓN DE REFRESCO DIRECTO EN EL DASHBOARD -->
-                <button class="btn btn-success" id="btnSyncDashboard" onclick="sincronizarDatos()">
-                    <i class="fa-solid fa-rotate"></i> Sincronizar Sheets
-                </button>
             </div>
             
             <!-- TARJETAS SUPERIORES -->
@@ -165,13 +155,15 @@
                 </div>
             </div>
         </div>
-        <!-- VISTA CONDUCTORES -->
+
+        <!-- ============================================== -->
+        <!-- VISTA CONDUCTORES                              -->
+        <!-- ============================================== -->
         <div id="vistaConductores" class="view-section">
             <div class="page-header">
                 <h2>Fuerza Laboral</h2>
                 <div style="display:flex; gap:10px;">
-                    <button class="btn btn-success" id="btnSyncConductores" onclick="sincronizarDatos()"><i class="fa-solid fa-rotate"></i> Sincronizar Sheets</button>
-                    <button class="btn-hidden-admin" onclick="abrirModalVaciarSeguro('conductores')"><i class="fa-solid fa-shield-halved"></i></button>
+                    <button class="btn-hidden-admin" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer;" onclick="abrirModalVaciarSeguro('conductores')" title="Borrar DB Local"><i class="fa-solid fa-shield-halved"></i></button>
                 </div>
             </div>
             <div class="card">
@@ -196,7 +188,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>#</th> <!-- NUEVA COLUMNA CORRELATIVA -->
+                                <th>#</th> 
                                 <th>DNI</th>
                                 <th>Conductor</th>
                                 <th>Edad</th>
@@ -213,21 +205,20 @@
             </div>
         </div>
 
-        <!-- VISTA UNIDADES -->
+        <!-- ============================================== -->
+        <!-- VISTA UNIDADES                                 -->
+        <!-- ============================================== -->
         <div id="vistaUnidades" class="view-section">
             <div class="page-header">
                 <h2>Flota de Unidades</h2>
                 <div style="display:flex; align-items:center; gap:15px;">
                     <span id="lblLastSyncUnidades" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;"></span>
-                    <!-- NUEVO BOTÓN DE IMPORTACIÓN DE MANTENIMIENTO -->
                     <input type="file" id="fileMantenimiento" accept=".xlsx, .xls" style="display: none;" onchange="importarExcelMantenimiento(event)">
                     <button class="btn btn-outline" onclick="document.getElementById('fileMantenimiento').click()"><i class="fa-solid fa-file-excel"></i> Importar Mantto.</button>
-                    
-                    <button class="btn btn-success" id="btnSyncUnidades" onclick="sincronizarDatos()"><i class="fa-solid fa-rotate"></i> Sincronizar Sheets</button>
                 </div>
             </div>
             
-            <!-- TARJETAS SUPERIORES (Salud de la Flota - Formato Compacto y Elegante) -->
+            <!-- TARJETAS SUPERIORES COMPACTAS -->
             <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
                 <div class="card" style="padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-left: 4px solid #0284c7; flex: 1; min-width: 200px;">
                     <div style="background: #e0f2fe; color: #0284c7; padding: 10px; border-radius: 50%; display: flex; justify-content: center; align-items: center; width: 40px; height: 40px;"><i class="fa-solid fa-bus" style="font-size: 1.2rem;"></i></div>
@@ -273,7 +264,7 @@
                                 <th>Capacidad</th>
                                 <th>Servicio</th>
                                 <th>Estado</th>
-                                <th>Novedad</th> <!-- Cambiamos Acción por Novedad -->
+                                <th>Novedad</th> 
                             </tr>
                         </thead>
                         <tbody id="tbodyUnidades"></tbody>
@@ -282,96 +273,183 @@
             </div>
         </div>
 
-        <!-- VISTA ZONAS -->
+        <!-- ============================================== -->
+        <!-- VISTA ZONAS                                    -->
+        <!-- ============================================== -->
         <div id="vistaZonas" class="view-section">
-            <div class="page-header"><h2>Base Maestra de Zonas</h2><div style="display:flex; gap:10px;"><button class="btn btn-outline" onclick="abrirModal('modalNuevaZona')"><i class="fa-solid fa-plus"></i> Nueva Zona</button><button class="btn btn-outline" onclick="solicitarClaveParaAccion(restablecerZonasFabrica)"><i class="fa-solid fa-rotate-left"></i> Restablecer Oficial</button></div></div>
-            <div class="card"><div class="toolbar"><div class="search-container"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="searchZonas" placeholder="Buscar Zona..." onkeyup="renderizarZonas()"></div></div><div class="table-container"><table><thead><tr><th>Zona</th><th>Hora A1</th><th>Hora A2 LV</th><th>Hora A2P LV</th><th>Hora B1</th><th>Hora B2</th><th>Hora B2P</th><th>Ruta Oficial</th><th>Acción</th></tr></thead><tbody id="tbodyZonas"></tbody></table></div></div>
-        </div>
-
-        <!-- VISTA PLANTILLAS -->
-        <div id="vistaPlantillas" class="view-section">
-            <div class="page-header"><h2>Gestor de Plantillas</h2><div style="display:flex; gap:10px;"><button class="btn btn-outline" onclick="descargarPlantillaMaestraZonas()"><i class="fa-solid fa-download"></i> Bajar Matriz</button><input type="file" id="fileInputPlantilla" accept=".xlsx" style="display: none;" onchange="procesarArchivoPlantillaMaestra(event)"><button class="btn btn-success" onclick="document.getElementById('fileInputPlantilla').click()"><i class="fa-solid fa-upload"></i> Importar Excel</button><button class="btn" onclick="guardarPlantillas()"><i class="fa-solid fa-floppy-disk"></i> Guardar Todo</button></div></div>
-            <div class="card" style="padding-top:15px;">
-                <div class="tab-header"><button class="tab-btn active" id="tabPlLV" onclick="switchPlantilla('LV')">LUNES a VIERNES</button><button class="tab-btn" id="tabPlSD" onclick="switchPlantilla('SD')">SÁBADOS y DOMINGOS</button><button class="tab-btn" id="tabPlFER" onclick="switchPlantilla('FER')">FERIADOS</button></div>
-                <div class="sub-tab-header"><button class="sub-tab-btn active" id="stA1" onclick="switchTurnoPlantilla('A1')">Turno A1</button><button class="sub-tab-btn" id="stA2" onclick="switchTurnoPlantilla('A2')">Turno A2</button><button class="sub-tab-btn" id="stA2P" onclick="switchTurnoPlantilla('A2P')">Turno A2P</button><button class="sub-tab-btn" id="stB1" onclick="switchTurnoPlantilla('B1')">Turno B1</button><button class="sub-tab-btn" id="stB2" onclick="switchTurnoPlantilla('B2')">Turno B2</button><button class="sub-tab-btn" id="stB2P" onclick="switchTurnoPlantilla('B2P')">Turno B2P</button></div>
-                <div style="background: var(--main-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; justify-content: space-between;"><div style="display: flex; gap: 10px; align-items: center;"><select id="selAgregarZona" class="select-prog" style="max-width: 200px; padding:8px;"><option value="">-- Zona --</option></select><select id="selTipoUnidadAgregar" class="select-prog" style="width: 140px; padding:8px;"><option value="CUALQUIERA">CUALQUIERA</option><option value="BUS_48">BUS 48</option><option value="VAN_15">VAN 15</option><option value="VAN_13">VAN 13</option><option value="VAN_09">VAN 09</option></select><input type="number" id="cantAgregarZona" class="input-cant" value="1" min="1" style="padding:8px;"><button class="btn btn-success" onclick="agregarZonaPlantilla()"><i class="fa-solid fa-plus"></i></button></div><button class="btn btn-outline" onclick="abrirModalCopiarPlantilla()"><i class="fa-solid fa-clone"></i> Copiar...</button></div>
-                <div class="table-container"><table><thead><tr><th style="width:60px;">Ord</th><th>Zona</th><th style="text-align:center;">Unidades</th><th style="text-align:right;">Acción</th></tr></thead><tbody id="tbodyPlantillaList"></tbody></table></div>
+            <div class="page-header">
+                <h2>Base Maestra de Zonas</h2>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-outline" onclick="abrirModal('modalNuevaZona')"><i class="fa-solid fa-plus"></i> Nueva Zona</button>
+                    <button class="btn btn-outline" onclick="solicitarClaveParaAccion(restablecerZonasFabrica)"><i class="fa-solid fa-rotate-left"></i> Restablecer Oficial</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="toolbar">
+                    <div class="search-container"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="searchZonas" placeholder="Buscar Zona..." onkeyup="renderizarZonas()"></div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Zona</th><th>Hora A1</th><th>Hora A2 LV</th><th>Hora A2P LV</th><th>Hora B1</th><th>Hora B2</th><th>Hora B2P</th><th>Ruta Oficial</th><th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyZonas"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- VISTA PROGRAMACION DIARIA -->
-        <div id="vistaProgramacion" class="view-section">
-            <div class="page-header"><h2>Programación Diaria</h2><div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;"><input type="date" id="fechaProgInput" style="padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); font-weight: bold;" onchange="procesarCambioFechaProg()"><select id="tipoPlantillaProg" onchange="renderizarProgramacion()" class="select-prog" style="width:auto; padding:8px;"><option value="LV">Plantilla L-V</option><option value="SD">Plantilla S-D</option><option value="FER">Plantilla FER</option></select><select id="filtroTurnoProg" onchange="renderizarProgramacion()" class="select-prog" style="width:auto; padding:8px;"><option value="TODOS">Todos Turnos</option><option value="A1">A1</option><option value="A2">A2</option><option value="A2P">A2P</option><option value="B1">B1</option><option value="B2">B2</option><option value="B2P">B2P</option></select><button class="btn btn-outline" style="border-color: #8e44ad; color: #8e44ad;" onclick="abrirModal('modalCapacitacion')"><i class="fa-solid fa-graduation-cap"></i> Buzón Capacitación</button><button class="btn btn-success" onclick="guardarProgramacionDiaria()"><i class="fa-solid fa-floppy-disk"></i> Guardar</button></div></div>
-            <div class="card" style="padding: 10px;"><div class="toolbar"><span id="statAsignaciones" style="font-size:0.85rem;font-weight:bold;color:var(--text-muted);">0 / 0 Asignados</span></div><div class="table-container"><table style="min-width: 1100px;"><thead><tr><th>Zona (Subida)</th><th>Turno / Hora</th><th>Req.</th><th>Unidad</th><th>Conductor</th><th>Zona (Reparto)</th><th>Carril</th><th>Obs. / Adicional</th></tr></thead><tbody id="tbodyProgramacion"></tbody></table></div></div>
+        <!-- ============================================== -->
+        <!-- VISTA PLANTILLAS                               -->
+        <!-- ============================================== -->
+        <div id="vistaPlantillas" class="view-section">
+            <div class="page-header">
+                <h2>Gestor de Plantillas</h2>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-outline" onclick="descargarPlantillaMaestraZonas()"><i class="fa-solid fa-download"></i> Bajar Matriz</button>
+                    <input type="file" id="fileInputPlantilla" accept=".xlsx" style="display: none;" onchange="procesarArchivoPlantillaMaestra(event)">
+                    <button class="btn btn-success" onclick="document.getElementById('fileInputPlantilla').click()"><i class="fa-solid fa-upload"></i> Importar Excel</button>
+                    <button class="btn" onclick="guardarPlantillas()"><i class="fa-solid fa-floppy-disk"></i> Guardar Todo</button>
+                </div>
+            </div>
+            <div class="card" style="padding-top:15px;">
+                <div class="tab-header">
+                    <button class="tab-btn active" id="tabPlLV" onclick="switchPlantilla('LV')">LUNES a VIERNES</button>
+                    <button class="tab-btn" id="tabPlSD" onclick="switchPlantilla('SD')">SÁBADOS y DOMINGOS</button>
+                    <button class="tab-btn" id="tabPlFER" onclick="switchPlantilla('FER')">FERIADOS</button>
+                </div>
+                <div class="sub-tab-header">
+                    <button class="sub-tab-btn active" id="stA1" onclick="switchTurnoPlantilla('A1')">Turno A1</button>
+                    <button class="sub-tab-btn" id="stA2" onclick="switchTurnoPlantilla('A2')">Turno A2</button>
+                    <button class="sub-tab-btn" id="stA2P" onclick="switchTurnoPlantilla('A2P')">Turno A2P</button>
+                    <button class="sub-tab-btn" id="stB1" onclick="switchTurnoPlantilla('B1')">Turno B1</button>
+                    <button class="sub-tab-btn" id="stB2" onclick="switchTurnoPlantilla('B2')">Turno B2</button>
+                    <button class="sub-tab-btn" id="stB2P" onclick="switchTurnoPlantilla('B2P')">Turno B2P</button>
+                </div>
+                <div style="background: var(--main-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="selAgregarZona" class="select-prog" style="max-width: 200px; padding:8px;"><option value="">-- Zona --</option></select>
+                        <select id="selTipoUnidadAgregar" class="select-prog" style="width: 140px; padding:8px;">
+                            <option value="CUALQUIERA">CUALQUIERA</option>
+                            <option value="BUS_48">BUS 48</option>
+                            <option value="VAN_15">VAN 15</option>
+                            <option value="VAN_13">VAN 13</option>
+                            <option value="VAN_09">VAN 09</option>
+                        </select>
+                        <input type="number" id="cantAgregarZona" class="input-cant" value="1" min="1" style="padding:8px;">
+                        <button class="btn btn-success" onclick="agregarZonaPlantilla()"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <button class="btn btn-outline" onclick="abrirModalCopiarPlantilla()"><i class="fa-solid fa-clone"></i> Copiar...</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:60px;">Ord</th><th>Zona</th><th style="text-align:center;">Unidades</th><th style="text-align:right;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyPlantillaList"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
-        <!-- VISTA RESPALDO -->
+        <!-- ============================================== -->
+        <!-- VISTA PROGRAMACION DIARIA                      -->
+        <!-- ============================================== -->
+        <div id="vistaProgramacion" class="view-section">
+            <div class="page-header">
+                <h2>Programación Diaria</h2>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <input type="date" id="fechaProgInput" style="padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); font-weight: bold;" onchange="procesarCambioFechaProg()">
+                    <select id="tipoPlantillaProg" onchange="renderizarProgramacion()" class="select-prog" style="width:auto; padding:8px;">
+                        <option value="LV">Plantilla L-V</option>
+                        <option value="SD">Plantilla S-D</option>
+                        <option value="FER">Plantilla FER</option>
+                    </select>
+                    <select id="filtroTurnoProg" onchange="renderizarProgramacion()" class="select-prog" style="width:auto; padding:8px;">
+                        <option value="TODOS">Todos Turnos</option>
+                        <option value="A1">A1</option><option value="A2">A2</option><option value="A2P">A2P</option>
+                        <option value="B1">B1</option><option value="B2">B2</option><option value="B2P">B2P</option>
+                    </select>
+                    <button class="btn btn-outline" style="border-color: #8e44ad; color: #8e44ad;" onclick="abrirModal('modalCapacitacion')"><i class="fa-solid fa-graduation-cap"></i> Buzón Capacitación</button>
+                    <button class="btn btn-success" onclick="guardarProgramacionDiaria()"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+                </div>
+            </div>
+            <div class="card" style="padding: 10px;">
+                <div class="toolbar"><span id="statAsignaciones" style="font-size:0.85rem;font-weight:bold;color:var(--text-muted);">0 / 0 Asignados</span></div>
+                <div class="table-container">
+                    <table style="min-width: 1100px;">
+                        <thead>
+                            <tr>
+                                <th>Zona (Subida)</th><th>Turno / Hora</th><th>Req.</th><th>Unidad</th><th>Conductor</th><th>Zona (Reparto)</th><th>Carril</th><th>Obs. / Adicional</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyProgramacion"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- VISTA RESPALDO                                 -->
+        <!-- ============================================== -->
         <div id="vistaRespaldo" class="view-section">
             <div class="page-header"><h2>Backup</h2></div>
-            <div class="dashboard-grid"><div class="card"><button class="btn btn-success" onclick="exportarRespaldoSistema()" style="width:100%; justify-content:center; padding:15px; font-size:1.1rem;"><i class="fa-solid fa-download"></i> Descargar Copia</button></div><div class="card"><input type="file" id="fileInputRespaldo" accept=".json" style="display: none;" onchange="importarRespaldoSistema(event)"><button class="btn btn-warning" onclick="document.getElementById('fileInputRespaldo').click()" style="width:100%; justify-content:center; padding:15px; font-size:1.1rem;"><i class="fa-solid fa-upload"></i> Restaurar Copia</button></div></div>
+            <div class="dashboard-grid">
+                <div class="card">
+                    <button class="btn btn-success" onclick="exportarRespaldoSistema()" style="width:100%; justify-content:center; padding:15px; font-size:1.1rem;"><i class="fa-solid fa-download"></i> Descargar Copia</button>
+                </div>
+                <div class="card">
+                    <input type="file" id="fileInputRespaldo" accept=".json" style="display: none;" onchange="importarRespaldoSistema(event)">
+                    <button class="btn btn-warning" onclick="document.getElementById('fileInputRespaldo').click()" style="width:100%; justify-content:center; padding:15px; font-size:1.1rem;"><i class="fa-solid fa-upload"></i> Restaurar Copia</button>
+                </div>
+            </div>
         </div>
 
-        <!-- VISTA ROSTER OFICIAL -->
+        <!-- ============================================== -->
+        <!-- VISTA ROSTER OFICIAL                           -->
+        <!-- ============================================== -->
         <div id="vistaRoster" class="view-section">
             <div class="page-header">
                 <h2>Generador de Roster Final</h2>
                 <div style="display: flex; gap: 10px;">
                     <button class="btn btn-success" style="font-size: 1.1rem; padding: 12px 24px;" onclick="descargarRosterImagen()"><i class="fa-solid fa-camera"></i> WhatsApp</button>
-                    <!-- Aquí añadiremos los botones de PDF y Excel luego -->
                 </div>
             </div>
             <div class="card" style="padding: 0; overflow: hidden; background: #ddd;"><div id="contenedorFotoRoster"></div></div>
         </div>
     </div>
 
-    <!-- MODALES -->
+    <!-- ============================================== -->
+    <!-- MODALES                                        -->
+    <!-- ============================================== -->
     <div class="modal" id="modalCapacitacion">
-        <div class="modal-content" style="width: 500px;"><h3 style="margin-bottom: 15px; color: #8e44ad;"><i class="fa-solid fa-graduation-cap"></i> Buzón de Capacitaciones</h3><p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">El sistema creará una columna dinámica en el Roster de WhatsApp si pegas conductores aquí.</p>
+        <div class="modal-content" style="width: 500px;">
+            <h3 style="margin-bottom: 15px; color: #8e44ad;"><i class="fa-solid fa-graduation-cap"></i> Buzón de Capacitaciones</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">El sistema creará una columna dinámica en el Roster de WhatsApp si pegas conductores aquí.</p>
             <div class="form-group"><label>Título de la Capacitación:</label><input type="text" id="txtTituloCapacitacion" placeholder="Ej. CAPACITACION SSOMA" style="text-transform: uppercase; border-color: #8e44ad; font-weight: bold;"></div>
             <div class="form-group"><label>Nombres de Conductores (Pega desde Excel):</label><textarea id="txtListaCapacitacion" rows="8" placeholder="Perez Juan\nGomez Carlos\n..."></textarea></div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;"><button class="btn btn-danger" onclick="limpiarCapacitacion()"><i class="fa-solid fa-trash"></i> Limpiar Todo</button><div style="display: flex; gap: 10px;"><button class="btn btn-outline" onclick="cerrarModal('modalCapacitacion')">Cerrar</button><button class="btn btn-success" style="background-color: #8e44ad;" onclick="guardarCapacitacion()">Guardar y Aplicar</button></div></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                <button class="btn btn-danger" onclick="limpiarCapacitacion()"><i class="fa-solid fa-trash"></i> Limpiar Todo</button>
+                <div style="display: flex; gap: 10px;"><button class="btn btn-outline" onclick="cerrarModal('modalCapacitacion')">Cerrar</button><button class="btn btn-success" style="background-color: #8e44ad;" onclick="guardarCapacitacion()">Guardar y Aplicar</button></div>
+            </div>
         </div>
     </div>
     
     <div class="modal" id="modalVaciar">
-        <div class="modal-content" style="width: 380px; text-align: center;"><h3 style="margin-bottom: 8px;">Autorización</h3>
+        <div class="modal-content" style="width: 380px; text-align: center;">
+            <h3 style="margin-bottom: 8px;">Autorización</h3>
             <div class="form-group"><input type="password" id="claveAdminInput" placeholder="••••••••" style="text-align: center; font-size: 1.2rem; letter-spacing: 4px;" onkeyup="if(event.key==='Enter') confirmarVaciarDatos()"></div>
             <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;"><button class="btn btn-outline" onclick="cerrarModal('modalVaciar')">Cancelar</button><button class="btn btn-danger" onclick="confirmarVaciarDatos()">Confirmar</button></div>
         </div>
     </div>
     
-    <div class="modal" id="modalNuevaUnidad">
-        <div class="modal-content" style="width: 450px;"><h3 style="margin-bottom: 15px;">Registrar Unidad</h3>
-            <div class="form-group"><label>Cód:</label><input type="text" id="nuevoCodUnidad"></div>
-            <div class="form-group"><label>Placa:</label><input type="text" id="nuevaPlaca" style="text-transform: uppercase;"></div>
-            <div class="form-group"><label>Tipo:</label><select id="nuevoTipoVehiculo"><option value="VAN">VAN</option><option value="BUS">BUS</option></select></div>
-            <div class="form-group"><label>Marca:</label><input type="text" id="nuevaMarca" style="text-transform: uppercase;"></div>
-            <div class="form-group"><label>Capacidad:</label><input type="text" id="nuevaCapacidad" value="15"></div>
-            <div class="form-group"><label>Servicio:</label><select id="nuevoServicio"><option value="REGULAR">REGULAR</option><option value="DOMICILIOS">DOMICILIOS</option></select></div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;"><button class="btn btn-outline" onclick="cerrarModal('modalNuevaUnidad')">Cancelar</button><button class="btn btn-success" onclick="guardarNuevaUnidad()">Guardar</button></div>
-        </div>
-    </div>
-    
-    <div class="modal" id="modalEditConductor">
-        <div class="modal-content" style="width: 450px;"><h3 style="margin-bottom: 15px;">Editar Conductor</h3>
-            <div class="form-group"><label>Conductor:</label><input type="text" id="editNombreConductor" disabled></div>
-            <div class="form-group"><label>Contrato:</label><select id="editContratoConductor"><option value="CONDUCTOR VAN">CONDUCTOR VAN</option><option value="CONDUCTOR PROFESIONAL ESPECIALIZADO M">MINIBÚS</option><option value="CONDUCTOR PROFESIONAL ESPECIALIZADO">BUS</option></select></div>
-            <div class="form-group"><label>Estado:</label><select id="editEstadoConductor"><option value="ACTIVO">ACTIVO</option><option value="RETIRADO">RETIRADO</option></select></div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;"><button class="btn btn-outline" onclick="cerrarModal('modalEditConductor')">Cancelar</button><button class="btn btn-success" onclick="guardarCambiosConductor()">Guardar</button></div>
-        </div>
-    </div>
-    
-    <div class="modal" id="modalEditUnidad">
-        <div class="modal-content" style="width: 450px;"><h3 style="margin-bottom: 15px;">Editar Unidad</h3>
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px;"><div class="form-group"><label>Cód:</label><input type="text" id="editCodUnidad" disabled></div><div class="form-group"><label>Placa:</label><input type="text" id="editPlacaUnidad" disabled></div></div>
-            <div class="form-group"><label>Servicio:</label><select id="editServicioUnidad"><option value="REGULAR">REGULAR</option><option value="DOMICILIOS">DOMICILIOS</option><option value="LIBRE">LIBRE</option></select></div>
-            <div class="form-group"><label>Estado:</label><select id="editEstadoUnidad"><option value="OPERATIVO">OPERATIVO</option><option value="TALLER">TALLER</option></select></div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;"><button class="btn btn-outline" onclick="cerrarModal('modalEditUnidad')">Cancelar</button><button class="btn btn-success" onclick="guardarCambiosUnidad()">Guardar</button></div>
-        </div>
-    </div>
-    
     <div class="modal" id="modalCopiarPlantilla">
-        <div class="modal-content" style="width: 400px;"><h3 style="margin-bottom: 15px;">Clonar Configuración</h3><p style="margin-bottom: 15px;">Hacia: <strong id="lblDestinoCopia">--</strong></p>
+        <div class="modal-content" style="width: 400px;">
+            <h3 style="margin-bottom: 15px;">Clonar Configuración</h3><p style="margin-bottom: 15px;">Hacia: <strong id="lblDestinoCopia">--</strong></p>
             <div class="form-group"><label>Desde Plantilla:</label><select id="selCopiaPlantilla"><option value="LV">L-V</option><option value="SD">S-D</option><option value="FER">FERIADOS</option></select></div>
             <div class="form-group"><label>Desde Turno:</label><select id="selCopiaTurno"><option value="A1">A1</option><option value="A2">A2</option><option value="A2P">A2P</option><option value="B1">B1</option><option value="B2">B2</option><option value="B2P">B2P</option></select></div>
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;"><button class="btn btn-outline" onclick="cerrarModal('modalCopiarPlantilla')">Cancelar</button><button class="btn btn-success" onclick="confirmarCopiaPlantilla()">Copiar</button></div>
@@ -379,7 +457,8 @@
     </div>
     
     <div class="modal" id="modalNuevaZona">
-        <div class="modal-content" style="width: 400px;"><h3 style="margin-bottom: 15px;">Añadir Zona</h3>
+        <div class="modal-content" style="width: 400px;">
+            <h3 style="margin-bottom: 15px;">Añadir Zona</h3>
             <div class="form-group"><label>Nombre:</label><input type="text" id="nuevaZonaNombre" style="text-transform: uppercase;"></div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;"><button class="btn btn-outline" onclick="cerrarModal('modalNuevaZona')">Cancelar</button><button class="btn btn-success" onclick="guardarNuevaZona()">Crear</button></div>
         </div>
@@ -388,7 +467,14 @@
     <div class="modal" id="modalEditZona">
         <div class="modal-content">
             <div style="display: flex; justify-content: space-between; margin-bottom: 15px;"><h3 style="color:var(--accent);"><i class="fa-solid fa-map-location-dot"></i> Configuración 360°</h3><span id="badgeZonaEditName" style="font-weight:bold;">ZONA --</span></div>
-            <div class="tab-header"><button class="tab-btn active" onclick="switchTabZona(event, 'tabA1')">A1</button><button class="tab-btn" onclick="switchTabZona(event, 'tabA2')">A2</button><button class="tab-btn" onclick="switchTabZona(event, 'tabA2P')">A2P</button><button class="tab-btn" onclick="switchTabZona(event, 'tabB1')">B1</button><button class="tab-btn" onclick="switchTabZona(event, 'tabB2')">B2</button><button class="tab-btn" onclick="switchTabZona(event, 'tabB2P')">B2P</button></div>
+            <div class="tab-header">
+                <button class="tab-btn active" onclick="switchTabZona(event, 'tabA1')">A1</button>
+                <button class="tab-btn" onclick="switchTabZona(event, 'tabA2')">A2</button>
+                <button class="tab-btn" onclick="switchTabZona(event, 'tabA2P')">A2P</button>
+                <button class="tab-btn" onclick="switchTabZona(event, 'tabB1')">B1</button>
+                <button class="tab-btn" onclick="switchTabZona(event, 'tabB2')">B2</button>
+                <button class="tab-btn" onclick="switchTabZona(event, 'tabB2P')">B2P</button>
+            </div>
             <div id="tabA1" class="tab-content active"><div class="form-group"><label>Hora A1:</label><input type="text" id="zHoraA1"></div><div class="form-group"><label>Ruta Oficial:</label><textarea id="zRutaA1Ofic" rows="2"></textarea></div><div class="form-group"><label>Desvío 1:</label><textarea id="zRutaA1Desv1" rows="2"></textarea></div><div class="form-group"><label>Desvío 2:</label><textarea id="zRutaA1Desv2" rows="2"></textarea></div></div>
             <div id="tabA2" class="tab-content"><div style="display:flex;gap:10px;"><div class="form-group"><label>Hr L-V:</label><input type="text" id="zHoraA2LV"></div><div class="form-group"><label>Hr S-D/FER:</label><input type="text" id="zHoraA2SDFER"></div></div><div class="form-group"><label>Ruta:</label><textarea id="zRutaA2Ofic" rows="2"></textarea></div><div class="form-group"><label>Desv 1:</label><textarea id="zRutaA2Desv1" rows="2"></textarea></div><div class="form-group"><label>Desv 2:</label><textarea id="zRutaA2Desv2" rows="2"></textarea></div></div>
             <div id="tabA2P" class="tab-content"><div style="display:flex;gap:10px;"><div class="form-group"><label>Hr L-V:</label><input type="text" id="zHoraA2PLV"></div><div class="form-group"><label>Hr S-D/FER:</label><input type="text" id="zHoraA2PSDFER"></div></div><div class="form-group"><label>Ruta:</label><textarea id="zRutaA2POfic" rows="2"></textarea></div><div class="form-group"><label>Desv 1:</label><textarea id="zRutaA2PDesv1" rows="2"></textarea></div><div class="form-group"><label>Desv 2:</label><textarea id="zRutaA2PDesv2" rows="2"></textarea></div></div>

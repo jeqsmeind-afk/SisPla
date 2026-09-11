@@ -150,62 +150,107 @@ function determinarTipoConductor(contrato) {
 }
 
 // ==========================================
-// EL SINCRONIZADOR UNIVERSAL
+// SISTEMA DE NOTIFICACIONES FLOTANTES (TOAST)
 // ==========================================
-async function sincronizarDatos() {
-    let btnFuerza = document.getElementById('btnSyncConductores');
-    let btnDash = document.getElementById('btnSyncDashboard');
-    let btnUni = document.getElementById('btnSyncUnidades');
+function mostrarToast(mensaje, tipo = 'info', duracion = 4000) {
+    let container = document.getElementById('toast-container');
+    if (!container) return;
+    
+    let toast = document.createElement('div');
+    toast.className = `toast ${tipo}`;
+    
+    let icon = 'fa-circle-info';
+    if (tipo === 'success') icon = 'fa-circle-check';
+    if (tipo === 'error') icon = 'fa-triangle-exclamation';
 
-    [btnFuerza, btnDash, btnUni].forEach(btn => {
-        if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
-    });
+    toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${mensaje}</span>`;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.5s ease forwards';
+        setTimeout(() => toast.remove(), 500);
+    }, duracion);
+}
+
+// ==========================================
+// SINCRONIZACIÓN EN SEGUNDO PLANO (NON-BLOCKING)
+// ==========================================
+async function sincronizarDatosSegundoPlano() {
+    let btnGlobal = document.getElementById('btnSyncGlobal');
+    
+    // Cambiamos el estado del botón para mostrar actividad
+    if(btnGlobal) {
+        btnGlobal.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...';
+        btnGlobal.disabled = true;
+    }
+    
+    // Avisamos al usuario que puede seguir trabajando
+    mostrarToast("Iniciando sincronización con Google Sheets. Puedes seguir trabajando.", "info", 5000);
     
     try {
         let urlCond = URL_API_CONDUCTORES + "?t=" + new Date().getTime();
         let urlUni = URL_API_UNIDADES + "?t=" + new Date().getTime();
         
+        // Disparamos las peticiones a Google en paralelo sin bloquear la pantalla
         let [resCond, resUni] = await Promise.all([ fetch(urlCond), fetch(urlUni) ]);
         
+        let actualizados = 0;
+
         if (resCond.ok) {
             let dataCond = await resCond.json();
-            if (dataCond && dataCond.length > 0) { conductores = dataCond; guardarConductores(false); }
+            if (dataCond && dataCond.length > 0) { 
+                conductores = dataCond; 
+                guardarConductores(false); 
+                actualizados++; 
+            }
         }
         
         if (resUni.ok) {
             let dataUni = await resUni.json();
             if (dataUni && dataUni.length > 0) { 
-                // MEMORIA DE ESTADOS Y MANTENIMIENTO: Evita que Sheets sobreescriba
+                // Protegemos los estados locales (Taller, Destinos, Prioridades)
                 dataUni.forEach(uNueva => {
                     let uLocal = unidades.find(ul => ul.codigo === uNueva.codigo);
                     if(uLocal) {
                         if(uLocal.estado) uNueva.estado = uLocal.estado;
-                        if(uLocal.mantenimiento) uNueva.mantenimiento = uLocal.mantenimiento; // <--- Recuerda el destino de mantenimiento
+                        if(uLocal.mantenimiento) uNueva.mantenimiento = uLocal.mantenimiento;
                     }
                 });
                 unidades = dataUni; 
                 guardarUnidades(false); 
+                actualizados++;
             }
         }
         
-        // Actualizamos la etiqueta de "Última sincronización"
-        let textoSync = "Última sincronización: Hoy, " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        let lblUni = document.getElementById('lblLastSyncUnidades');
-        if(lblUni) lblUni.innerText = textoSync;
+        if (actualizados > 0) {
+            // Actualizamos la interfaz en silencio con los nuevos datos
+            actualizarFiltrosDinamicos(); 
+            actualizarFiltrosDinamicosUnidades(); 
+            
+            // Renderizamos solo la vista que el usuario esté viendo actualmente
+            let vistaActiva = document.querySelector('.view-section.active').id;
+            if(vistaActiva === 'vistaDashboard') actualizarDashboard();
+            if(vistaActiva === 'vistaConductores') renderizarConductores();
+            if(vistaActiva === 'vistaUnidades') renderizarUnidades();
+            if(vistaActiva === 'vistaProgramacion') renderizarProgramacion();
+            
+            // Etiqueta de última sincronización
+            let lblUni = document.getElementById('lblLastSyncUnidades');
+            if(lblUni) lblUni.innerText = "Última sincronización: Hoy, " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+            mostrarToast("¡Bases de datos actualizadas con éxito!", "success");
+        } else {
+            mostrarToast("No se recibieron datos de Google Sheets.", "error");
+        }
         
-        actualizarFiltrosDinamicos(); 
-        actualizarFiltrosDinamicosUnidades(); 
-        renderizarConductores();
-        renderizarUnidades();
-        actualizarDashboard();
-        
-        alert("✓ ¡Datos sincronizados!");
     } catch(e) {
-        alert("Error al sincronizar: " + e.message);
+        mostrarToast("Error de conexión: " + e.message, "error");
     } finally {
-        [btnFuerza, btnDash, btnUni].forEach(btn => {
-            if(btn) btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar Sheets';
-        });
+        // Restauramos el botón
+        if(btnGlobal) {
+            btnGlobal.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Sincronizar';
+            btnGlobal.disabled = false;
+        }
     }
 }
 

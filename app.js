@@ -175,10 +175,13 @@ async function sincronizarDatos() {
         if (resUni.ok) {
             let dataUni = await resUni.json();
             if (dataUni && dataUni.length > 0) { 
-                // MEMORIA DE ESTADOS: Evita que Sheets sobreescriba lo que pusiste en "Taller"
+                // MEMORIA DE ESTADOS Y MANTENIMIENTO: Evita que Sheets sobreescriba
                 dataUni.forEach(uNueva => {
                     let uLocal = unidades.find(ul => ul.codigo === uNueva.codigo);
-                    if(uLocal && uLocal.estado) uNueva.estado = uLocal.estado;
+                    if(uLocal) {
+                        if(uLocal.estado) uNueva.estado = uLocal.estado;
+                        if(uLocal.mantenimiento) uNueva.mantenimiento = uLocal.mantenimiento; // <--- Recuerda el destino de mantenimiento
+                    }
                 });
                 unidades = dataUni; 
                 guardarUnidades(false); 
@@ -429,6 +432,9 @@ function renderizarUnidades() {
             </select>
         `;
 
+        // NUEVO: Píldora de Mantenimiento / Destino
+        let novedadHtml = u.mantenimiento ? `<span style="background:#fef3c7; color:#b45309; padding:4px 8px; border-radius:4px; font-weight:800; font-size:0.7rem;">🛠️ ${u.mantenimiento}</span>` : `<span style="color:var(--text-muted); font-size:0.8rem;">-</span>`;
+
         tbody.insertAdjacentHTML('beforeend', `<tr>
             <td style="color:var(--text-muted); font-weight:bold;">${correlativo++}</td>
             <td>${u.codigo || '-'}</td>
@@ -438,7 +444,7 @@ function renderizarUnidades() {
             <td>${u.capacidad || '-'} pax</td>
             <td style="color:#0284c7; font-weight:700; font-size:0.75rem;">${u.servicio || '-'}</td>
             <td>${selectEstado}</td>
-            <td><i class="fa-solid fa-lock" style="color:var(--text-muted); opacity:0.4;"></i></td>
+            <td>${novedadHtml}</td>
         </tr>`);
     });
 }
@@ -1019,3 +1025,84 @@ window.onload = async function() {
     actualizarDashboard();
     cambiarVista('dashboard'); 
 };
+
+// ==========================================
+// IMPORTAR EXCEL DEL PLANNER DE MANTENIMIENTO
+// ==========================================
+function importarExcelMantenimiento(e) {
+    let file = e.target.files[0];
+    if(!file) return;
+    let r = new FileReader();
+    r.onload = function(evt) {
+        try {
+            let dataArr = new Uint8Array(evt.target.result);
+            let wb = XLSX.read(dataArr, {type: 'array'});
+            let sheet = wb.Sheets[wb.SheetNames[0]];
+            
+            // Leemos el Excel como un "tablero de ajedrez" (Array 2D) para buscar los encabezados estén donde estén
+            let rows = XLSX.utils.sheet_to_json(sheet, {header: 1, defval: ""});
+            
+            let actualizadosCount = 0;
+            let idxCod = -1, idxLugar = -1, idxObs = -1;
+
+            // 1. Limpiamos el día: Ponemos TODAS a Operativo y borramos las novedades
+            unidades.forEach(u => { 
+                u.estado = 'OPERATIVO'; 
+                u.mantenimiento = ''; 
+                u.prioridadTurnoA = false; 
+            });
+
+            // 2. Escaneamos fila por fila buscando los datos
+            rows.forEach(row => {
+                // Buscamos si en esta fila están los títulos
+                let tempCod = row.findIndex(cell => String(cell).toUpperCase().trim() === 'CODIGO' || String(cell).toUpperCase().trim() === 'CÓDIGO');
+                let tempLugar = row.findIndex(cell => String(cell).toUpperCase().trim() === 'LUGAR');
+                let tempObs = row.findIndex(cell => String(cell).toUpperCase().trim() === 'OBSERVACIONES');
+                
+                if (tempCod !== -1) idxCod = tempCod;
+                if (tempLugar !== -1) idxLugar = tempLugar;
+                if (tempObs !== -1) idxObs = tempObs;
+
+                // Si ya encontramos dónde están los códigos y los lugares, empezamos a leer datos
+                if (idxCod !== -1) {
+                    let codVal = String(row[idxCod]).toUpperCase().trim();
+                    let lugarVal = idxLugar !== -1 ? String(row[idxLugar]).toUpperCase().trim() : '';
+
+                    // Evitamos procesar los encabezados de nuevo
+                    if (codVal && codVal !== 'CODIGO' && codVal !== 'CÓDIGO') {
+                        
+                        // INTELIGENCIA DE LIMPIEZA: El planner manda "0-681" o "V-189". Lo limpiamos a "681" y "V189"
+                        let codLimpio = codVal.replace(/[^A-Z0-9]/g, '').replace(/^0+/, ''); 
+                        
+                        // Buscamos la unidad haciendo el cruce con la misma limpieza
+                        let uEncontrada = unidades.find(u => {
+                            let cBase = String(u.codigo || u.cod || '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^0+/, '');
+                            return cBase === codLimpio;
+                        });
+
+                        // Si la unidad existe en tu BD, la sentenciamos al Taller
+                        if (uEncontrada) {
+                            uEncontrada.estado = 'TALLER';
+                            uEncontrada.mantenimiento = lugarVal || 'MANTTO';
+                            
+                            // Regla de Oro: Si va a Autrisa o Divemotor, forzamos prioridad en Turno A
+                            if (lugarVal.includes("AUTRISA") || lugarVal.includes("BASE 1") || lugarVal.includes("DIVE")) {
+                                uEncontrada.prioridadTurnoA = true;
+                            }
+                            actualizadosCount++;
+                        }
+                    }
+                }
+            });
+
+            guardarUnidades();
+            actualizarFiltrosDinamicosUnidades();
+            renderizarUnidades();
+            alert(`✓ Importación exitosa. Se pasaron a TALLER ${actualizadosCount} unidades según el reporte.`);
+        } catch(err) {
+            alert("Error al leer el Excel de mantenimiento: " + err.message);
+        }
+        e.target.value = '';
+    };
+    r.readAsArrayBuffer(file);
+}

@@ -35,7 +35,9 @@
 </head>
 <body data-theme="cerro-verde">
 
-    <!-- BARRA DE NAVEGACIÓN SUPERIOR (TOPBAR) -->
+    <!-- ============================================== -->
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR (TOPBAR)          -->
+    <!-- ============================================== -->
     <header class="topbar">
         <div class="topbar-logo">
             <span class="brand-rojo" style="background:#cc0000; color:white; padding:2px 6px; border-radius:4px;">LÍNEA</span> 
@@ -218,27 +220,27 @@
                 </div>
             </div>
             
-            <!-- TARJETAS SUPERIORES COMPACTAS -->
-            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
-                <div class="card" style="padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-left: 4px solid #0284c7; flex: 1; min-width: 200px;">
-                    <div style="background: #e0f2fe; color: #0284c7; padding: 10px; border-radius: 50%; display: flex; justify-content: center; align-items: center; width: 40px; height: 40px;"><i class="fa-solid fa-bus" style="font-size: 1.2rem;"></i></div>
-                    <div>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 800;">TOTAL FLOTA</span>
-                        <h3 id="kpiTotalUnidades" style="margin: 0; color: var(--text-main); font-size: 1.4rem;">0</h3>
+            <!-- NUEVOS SEPARADORES DE CUADERNO FLOTANTES (KPIs) -->
+            <div id="sideKpisUnidades" class="side-kpis">
+                <div class="kpi-tab tab-blue">
+                    <div class="kpi-icon"><i class="fa-solid fa-bus"></i></div>
+                    <div class="kpi-details">
+                        <span>TOTAL FLOTA</span>
+                        <h3 id="kpiTotalUnidades">0</h3>
                     </div>
                 </div>
-                <div class="card" style="padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-left: 4px solid #059669; flex: 1; min-width: 200px;">
-                    <div style="background: #d1fae5; color: #059669; padding: 10px; border-radius: 50%; display: flex; justify-content: center; align-items: center; width: 40px; height: 40px;"><i class="fa-solid fa-circle-check" style="font-size: 1.2rem;"></i></div>
-                    <div>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 800;">OPERATIVAS</span>
-                        <h3 id="kpiOperativas" style="margin: 0; color: #059669; font-size: 1.4rem;">0</h3>
+                <div class="kpi-tab tab-green">
+                    <div class="kpi-icon"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="kpi-details">
+                        <span>OPERATIVAS</span>
+                        <h3 id="kpiOperativas">0</h3>
                     </div>
                 </div>
-                <div class="card" style="padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-left: 4px solid #dc2626; flex: 1; min-width: 200px;">
-                    <div style="background: #fee2e2; color: #dc2626; padding: 10px; border-radius: 50%; display: flex; justify-content: center; align-items: center; width: 40px; height: 40px;"><i class="fa-solid fa-wrench" style="font-size: 1.2rem;"></i></div>
-                    <div>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 800;">EN TALLER</span>
-                        <h3 id="kpiTaller" style="margin: 0; color: #dc2626; font-size: 1.4rem;">0</h3>
+                <div class="kpi-tab tab-red">
+                    <div class="kpi-icon"><i class="fa-solid fa-wrench"></i></div>
+                    <div class="kpi-details">
+                        <span>EN TALLER</span>
+                        <h3 id="kpiTaller">0</h3>
                     </div>
                 </div>
             </div>

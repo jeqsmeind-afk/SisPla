@@ -126,9 +126,7 @@ function cambiarVista(vista) {
 function parsearFechaGenerica(f) {
     if (!f) return null;
     if (f instanceof Date) return f;
-    if (typeof f === 'number') {
-        return new Date((f - (25567 + 2)) * 86400 * 1000);
-    }
+    if (typeof f === 'number') return new Date((f - (25567 + 2)) * 86400 * 1000);
     let s = String(f).trim();
     if (/^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/.test(s)) {
         let d = new Date(s);
@@ -136,11 +134,8 @@ function parsearFechaGenerica(f) {
     }
     let p = s.split(/[\/\-\.]/);
     if (p.length === 3) {
-        if (p[0].length === 4) {
-            return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
-        } else {
-            return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
-        }
+        if (p[0].length === 4) return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
+        else return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
     }
     let d2 = new Date(s);
     return isNaN(d2.getTime()) ? null : d2;
@@ -148,7 +143,7 @@ function parsearFechaGenerica(f) {
 
 function obtenerEdadProcesada(f) { 
     let nac = parsearFechaGenerica(f);
-    if (!nac) return { texto: '-', esCumple: false }; 
+    if (!nac || isNaN(nac.getTime())) return { texto: '-', esCumple: false }; 
     let hoy = new Date(); 
     let edad = hoy.getFullYear() - nac.getFullYear(); 
     let m = hoy.getMonth() - nac.getMonth(); 
@@ -159,10 +154,14 @@ function obtenerEdadProcesada(f) {
 }
 
 function obtenerTiempoLaborandoExacto(f) { 
+    if (!f) return '-';
+    // SI EL DATO YA VIENE CALCULADO (ej. "3 años", "2 a / 5 m"), LO DEVOLVEMOS DIRECTO
     let ing = parsearFechaGenerica(f);
-    if (!ing) return '-'; 
+    if (!ing || isNaN(ing.getTime())) {
+        return f; 
+    }
+    // SI EL DATO ES UNA FECHA, SE CALCULA AQUÍ
     let hoy = new Date(); 
-    if (isNaN(ing.getTime())) return '-'; 
     let a = hoy.getFullYear() - ing.getFullYear(); 
     let m = hoy.getMonth() - ing.getMonth(); 
     let d = hoy.getDate() - ing.getDate(); 
@@ -455,7 +454,6 @@ function renderizarConductores() {
         return matchSearch && matchContrato && matchServicio;
     });
 
-    // Actualizar KPIs laterales dinámicos con conteo por servicio
     actualizarSideKpisConductores(filtrados, conductores);
 
     tbody.innerHTML = '';
@@ -468,7 +466,10 @@ function renderizarConductores() {
         
         let contrato = c.contrato || c.CONTRATO || '-';
         let servicio = c.servicio || c.SERVICIO || '-';
-        let estado = c.estado || c.ESTADO || c.status || 'ACTIVO';
+        // SE CORRIGE LECTURA DEL ESTADO PARA LEER ABREVIATURAS SI EXISTEN
+        let estado = c.estadoAbrev || c.ESTADO_ABREV || c.estado || c.ESTADO || c.status || '-';
+        let badgeClass = estado.toLowerCase().replace(/[^a-z0-9]/g, '');
+        
         let nombre = c.nombre || c.NOMBRE || '-';
         let dni = c.dni || c.DNI || '-';
 
@@ -483,7 +484,7 @@ function renderizarConductores() {
             <td>${tiempo}</td>
             <td><span class="badge-abrev badge-van">${contrato}</span></td>
             <td><span class="badge-abrev badge-minibus">${servicio}</span></td>
-            <td><span class="badge-status status-${estado.toLowerCase()}">${estado}</span></td>
+            <td><span class="badge-status status-${badgeClass}">${estado}</span></td>
             <td><button class="btn-icon" onclick="abrirModalEditConductor('${dni}')"><i class="fa-solid fa-pen"></i></button></td>
         `;
         tbody.appendChild(tr);
@@ -507,12 +508,13 @@ function actualizarSideKpisConductores(filtrados, todosConductores) {
         'AMBULANCIA': { icon: 'fa-truck-medical', color: '#10b981' }
     };
 
+    // SE AÑADEN ESTILOS CSS EN LÍNEA SUPER COMPACTOS PARA EVITAR EL SCROLL
     let html = `
-        <div class="kpi-tab tab-blue" onclick="setFiltroServicioCond('TODOS')" title="Ver Todos">
-            <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
-            <div class="kpi-details">
-                <span>TOTAL COND.</span>
-                <h3>${todosConductores.length}</h3>
+        <div class="kpi-tab tab-blue" style="padding: 4px 6px; margin-bottom: 3px; min-height: 35px; border-radius: 4px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);" onclick="setFiltroServicioCond('TODOS')" title="Ver Todos">
+            <div class="kpi-icon" style="font-size: 0.9rem; min-width: 15px; text-align:center;"><i class="fa-solid fa-users"></i></div>
+            <div class="kpi-details" style="display:flex; flex-direction:column;">
+                <span style="font-size: 0.55rem; line-height: 1; margin-bottom: 1px;">TODOS</span>
+                <h3 style="font-size: 0.85rem; margin:0; line-height: 1;">${todosConductores.length}</h3>
             </div>
         </div>
     `;
@@ -521,13 +523,14 @@ function actualizarSideKpisConductores(filtrados, todosConductores) {
         let count = todosConductores.filter(c => ((c.servicio || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()) === serv).length;
         let cfg = configServicios[serv] || { icon: 'fa-circle-dot', color: '#2563eb' };
         let isActive = (filtroActivoServicioCond.toUpperCase() === serv);
+        let bgStyle = isActive ? 'background: var(--main-bg);' : 'background: var(--card-bg);';
 
         html += `
-            <div class="kpi-tab" style="border-left: 4px solid ${cfg.color}; background: ${isActive ? 'var(--main-bg)' : 'var(--card-bg)'};" onclick="setFiltroServicioCond('${serv}')" title="Filtrar por ${serv}">
-                <div class="kpi-icon" style="color: ${cfg.color};"><i class="fa-solid ${cfg.icon}"></i></div>
-                <div class="kpi-details">
-                    <span>${serv}</span>
-                    <h3 style="color: ${cfg.color}; margin:0; font-size: 1.3rem;">${count}</h3>
+            <div class="kpi-tab" style="${bgStyle} padding: 4px 6px; margin-bottom: 3px; min-height: 35px; border-radius: 4px; border-left: 4px solid ${cfg.color}; cursor:pointer; display:flex; align-items:center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);" onclick="setFiltroServicioCond('${serv}')" title="Filtrar por ${serv}">
+                <div class="kpi-icon" style="color: ${cfg.color}; font-size: 0.9rem; min-width: 15px; text-align:center;"><i class="fa-solid ${cfg.icon}"></i></div>
+                <div class="kpi-details" style="display:flex; flex-direction:column;">
+                    <span style="font-size: 0.55rem; line-height: 1; margin-bottom: 1px; color: var(--text-muted); font-weight:700;">${serv}</span>
+                    <h3 style="color: ${cfg.color}; margin:0; font-size: 0.85rem; line-height: 1;">${count}</h3>
                 </div>
             </div>
         `;

@@ -99,9 +99,7 @@ function cambiarVista(vista) {
     document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
     document.querySelectorAll('.nav-btn, .dropdown-content a').forEach(btn => btn.classList.remove('active'));
 
-    let vistaId = "";
-    let btnId = "";
-    let parentBtnId = "";
+    let vistaId = ""; let btnId = ""; let parentBtnId = "";
 
     if (vista === 'dashboard') { vistaId = 'vistaDashboard'; btnId = 'btnNavDashboard'; }
     if (vista === 'conductores') { vistaId = 'vistaConductores'; btnId = 'btnNavConductores'; parentBtnId = 'btnNavMaestros'; }
@@ -129,16 +127,14 @@ function parsearFechaGenerica(f) {
     if (typeof f === 'number') return new Date((f - (25567 + 2)) * 86400 * 1000);
     let s = String(f).trim();
     if (/^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/.test(s)) {
-        let d = new Date(s);
-        return isNaN(d.getTime()) ? null : d;
+        let d = new Date(s); return isNaN(d.getTime()) ? null : d;
     }
     let p = s.split(/[\/\-\.]/);
     if (p.length === 3) {
         if (p[0].length === 4) return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
         else return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
     }
-    let d2 = new Date(s);
-    return isNaN(d2.getTime()) ? null : d2;
+    let d2 = new Date(s); return isNaN(d2.getTime()) ? null : d2;
 }
 
 function obtenerEdadProcesada(f) { 
@@ -155,12 +151,10 @@ function obtenerEdadProcesada(f) {
 
 function obtenerTiempoLaborandoExacto(f) { 
     if (!f) return '-';
-    // SI EL DATO YA VIENE CALCULADO (ej. "3 años", "2 a / 5 m"), LO DEVOLVEMOS DIRECTO
     let ing = parsearFechaGenerica(f);
-    if (!ing || isNaN(ing.getTime())) {
-        return f; 
-    }
-    // SI EL DATO ES UNA FECHA, SE CALCULA AQUÍ
+    // Si no es una fecha válida, asumimos que ya viene calculado del Excel (ej. "3 años")
+    if (!ing || isNaN(ing.getTime())) return f; 
+    
     let hoy = new Date(); 
     let a = hoy.getFullYear() - ing.getFullYear(); 
     let m = hoy.getMonth() - ing.getMonth(); 
@@ -178,6 +172,18 @@ function determinarTipoConductor(contrato) {
     return 'VAN';
 }
 
+// INYECCIÓN DE COLORES DIRECTOS PARA EL ESTADO
+function obtenerEstiloEstado(estado) {
+    let e = String(estado).toUpperCase().trim();
+    if(e === 'A') return 'background-color: #d1fae5; color: #065f46; border: 1px solid #34d399; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Verde
+    if(e === 'B') return 'background-color: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Azul
+    if(e === 'D' || e === 'V') return 'background-color: #fef3c7; color: #b45309; border: 1px solid #fbd38d; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Naranja/Amarillo
+    if(e === 'DM') return 'background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Rojo 
+    if(e === 'MO') return 'background-color: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Morado
+    if(e === 'AL' || e === 'ADI') return 'background-color: #ffedd5; color: #c2410c; border: 1px solid #fdba74; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Naranja fuerte
+    return 'background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Default gris
+}
+
 // Variables globales para filtros de conductores
 let filtroActivoContratoCond = "TODOS";
 let filtroActivoServicioCond = "TODOS";
@@ -187,7 +193,7 @@ function actualizarFiltrosDinamicosConductores() {
     if (!contenedor || !conductores) return;
 
     let contratos = ["TODOS", ...new Set(conductores.map(c => c.contrato || c.CONTRATO).filter(Boolean))];
-    let servicios = ["TODOS", ...new Set(conductores.map(c => c.servicio || c.SERVICIO).filter(Boolean))];
+    let servicios = ["TODOS", ...new Set(conductores.map(c => c["SERVICIO ASIG"] || c.servicio || c.SERVICIO).filter(Boolean))];
 
     let html = `
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -205,23 +211,14 @@ function actualizarFiltrosDinamicosConductores() {
 function setFiltroContratoCond(val) { filtroActivoContratoCond = val; actualizarFiltrosDinamicosConductores(); renderizarConductores(); }
 function setFiltroServicioCond(val) { filtroActivoServicioCond = val; actualizarFiltrosDinamicosConductores(); renderizarConductores(); }
 
-// ==========================================
-// SISTEMA DE NOTIFICACIONES FLOTANTES (TOAST)
-// ==========================================
 function mostrarToast(mensaje, tipo = 'info', duracion = 4000) {
     let container = document.getElementById('toast-container');
     if (!container) return;
-    
     let toast = document.createElement('div');
     toast.className = `toast ${tipo}`;
-    
-    let icon = 'fa-circle-info';
-    if (tipo === 'success') icon = 'fa-circle-check';
-    if (tipo === 'error') icon = 'fa-triangle-exclamation';
-
+    let icon = tipo === 'success' ? 'fa-circle-check' : (tipo === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info');
     toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${mensaje}</span>`;
     container.appendChild(toast);
-
     setTimeout(() => {
         toast.style.animation = 'fadeOut 0.5s ease forwards';
         setTimeout(() => toast.remove(), 500);
@@ -233,79 +230,44 @@ function mostrarToast(mensaje, tipo = 'info', duracion = 4000) {
 // ==========================================
 async function sincronizarDatosSegundoPlano() {
     let btnGlobal = document.getElementById('btnSyncGlobal');
-    
-    if(btnGlobal) {
-        btnGlobal.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...';
-        btnGlobal.disabled = true;
-    }
-    
+    if(btnGlobal) { btnGlobal.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...'; btnGlobal.disabled = true; }
     mostrarToast("Iniciando sincronización con Google Sheets. Puedes seguir trabajando.", "info", 5000);
     
     try {
-        let urlCond = URL_API_CONDUCTORES + "?t=" + new Date().getTime();
-        let urlUni = URL_API_UNIDADES + "?t=" + new Date().getTime();
-        
-        let [resCond, resUni] = await Promise.all([ fetch(urlCond), fetch(urlUni) ]);
-        
+        let [resCond, resUni] = await Promise.all([ fetch(URL_API_CONDUCTORES + "?t=" + new Date().getTime()), fetch(URL_API_UNIDADES + "?t=" + new Date().getTime()) ]);
         let actualizados = 0;
-
         if (resCond.ok) {
             let dataCond = await resCond.json();
-            if (dataCond && dataCond.length > 0) { 
-                conductores = dataCond; 
-                guardarConductores(false); 
-                actualizados++; 
-            }
+            if (dataCond && dataCond.length > 0) { conductores = dataCond; guardarConductores(false); actualizados++; }
         }
-        
         if (resUni.ok) {
             let dataUni = await resUni.json();
             if (dataUni && dataUni.length > 0) { 
                 dataUni.forEach(uNueva => {
                     let uLocal = unidades.find(ul => ul.codigo === uNueva.codigo);
-                    if(uLocal) {
-                        if(uLocal.estado) uNueva.estado = uLocal.estado;
-                        if(uLocal.mantenimiento) uNueva.mantenimiento = uLocal.mantenimiento;
-                    }
+                    if(uLocal) { if(uLocal.estado) uNueva.estado = uLocal.estado; if(uLocal.mantenimiento) uNueva.mantenimiento = uLocal.mantenimiento; }
                 });
-                unidades = dataUni; 
-                guardarUnidades(false); 
-                actualizados++;
+                unidades = dataUni; guardarUnidades(false); actualizados++;
             }
         }
         
         if (actualizados > 0) {
-            actualizarFiltrosDinamicos(); 
-            actualizarFiltrosDinamicosUnidades(); 
-            actualizarFiltrosDinamicosConductores();
-            
+            actualizarFiltrosDinamicos(); actualizarFiltrosDinamicosUnidades(); actualizarFiltrosDinamicosConductores();
             let vistaActiva = document.querySelector('.view-section.active').id;
             if(vistaActiva === 'vistaDashboard') actualizarDashboard();
             if(vistaActiva === 'vistaConductores') renderizarConductores();
             if(vistaActiva === 'vistaUnidades') renderizarUnidades();
             if(vistaActiva === 'vistaProgramacion') renderizarProgramacion();
-            
             let lblUni = document.getElementById('lblLastSyncUnidades');
             if(lblUni) lblUni.innerText = "Última sincronización: Hoy, " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
             mostrarToast("¡Bases de datos actualizadas con éxito!", "success");
-        } else {
-            mostrarToast("No se recibieron datos de Google Sheets.", "error");
-        }
-        
-    } catch(e) {
-        mostrarToast("Error de conexión: " + e.message, "error");
-    } finally {
-        if(btnGlobal) {
-            btnGlobal.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Sincronizar';
-            btnGlobal.disabled = false;
-        }
+        } else { mostrarToast("No se recibieron datos de Google Sheets.", "error"); }
+    } catch(e) { mostrarToast("Error de conexión: " + e.message, "error"); } finally {
+        if(btnGlobal) { btnGlobal.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Sincronizar'; btnGlobal.disabled = false; }
     }
 }
 
-// ==========================================
-// PÍLDORAS (CHIPS) DE FILTROS CRUZADOS - UNIDADES
-// ==========================================
+// PÍLDORAS FILTROS UNIDADES
 function actualizarFiltrosDinamicosUnidades() {
     let tipos = [...new Set(unidades.map(u => (u.tipo || '').toUpperCase().trim()))].filter(t => t !== '');
     let servicios = [...new Set(unidades.map(u => (u.servicio || '').toUpperCase().trim()))].filter(s => s !== '');
@@ -313,17 +275,13 @@ function actualizarFiltrosDinamicosUnidades() {
     let htmlTipos = `<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
         <span style="font-size:0.75rem; font-weight:800; color:var(--text-muted); width: 65px;">TIPO:</span>
         <button class="chip-filtro ${fActivoUnidadTipo === 'TODOS' ? 'active' : ''}" onclick="toggleFiltroUnidades('tipo', 'TODOS')">Todos</button>`;
-    tipos.forEach(t => {
-        htmlTipos += `<button class="chip-filtro ${fActivoUnidadTipo === t ? 'active' : ''}" onclick="toggleFiltroUnidades('tipo', '${t}')">${t}</button>`;
-    });
+    tipos.forEach(t => { htmlTipos += `<button class="chip-filtro ${fActivoUnidadTipo === t ? 'active' : ''}" onclick="toggleFiltroUnidades('tipo', '${t}')">${t}</button>`; });
     htmlTipos += `</div>`;
 
     let htmlServs = `<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:5px;">
         <span style="font-size:0.75rem; font-weight:800; color:var(--text-muted); width: 65px;">SERVICIO:</span>
         <button class="chip-filtro ${fActivoUnidadServicio === 'TODOS' ? 'active' : ''}" onclick="toggleFiltroUnidades('servicio', 'TODOS')">Todos</button>`;
-    servicios.forEach(s => {
-        htmlServs += `<button class="chip-filtro ${fActivoUnidadServicio === s ? 'active' : ''}" onclick="toggleFiltroUnidades('servicio', '${s}')">${s}</button>`;
-    });
+    servicios.forEach(s => { htmlServs += `<button class="chip-filtro ${fActivoUnidadServicio === s ? 'active' : ''}" onclick="toggleFiltroUnidades('servicio', '${s}')">${s}</button>`; });
     htmlServs += `</div>`;
 
     let panel = document.getElementById('contenedorChipsFiltros');
@@ -339,27 +297,19 @@ function actualizarFiltrosDinamicosUnidades() {
 function toggleFiltroUnidades(categoria, valor) {
     if (categoria === 'tipo') fActivoUnidadTipo = valor;
     if (categoria === 'servicio') fActivoUnidadServicio = valor;
-    
-    actualizarFiltrosDinamicosUnidades(); 
-    renderizarUnidades(); 
+    actualizarFiltrosDinamicosUnidades(); renderizarUnidades(); 
 }
 
 function cambiarEstadoUnidad(idx, nuevoEstado) {
-    unidades[idx].estado = nuevoEstado;
-    guardarUnidades(); 
-    actualizarFiltrosDinamicosUnidades(); 
-    renderizarUnidades(); 
+    unidades[idx].estado = nuevoEstado; guardarUnidades(); actualizarFiltrosDinamicosUnidades(); renderizarUnidades(); 
 }
 
-// ==========================================
-// EL CEREBRO DEL DASHBOARD
-// ==========================================
+// DASHBOARD
 function actualizarDashboard() {
     if (conductores && conductores.length > 0) {
         let elTotal = document.getElementById('dashTotalConductores');
         if (elTotal) elTotal.innerText = conductores.length;
-
-        let induccionCount = conductores.filter(c => (c.servicio || c.SERVICIO || '').toUpperCase().trim() === 'INDUCCION').length;
+        let induccionCount = conductores.filter(c => (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '').toUpperCase().trim() === 'INDUCCION').length;
         let elInd = document.getElementById('dashInduccion');
         if (elInd) elInd.innerText = induccionCount;
 
@@ -369,7 +319,7 @@ function actualizarDashboard() {
         let fechaHoy = dia + '/' + mes; 
         
         let cumpleaneros = conductores.filter(c => {
-            let nacVal = c.nac || c.fechaNacimiento || c.FECHA_NACIMIENTO;
+            let nacVal = c["FECHA NACIMIENTO"] || c.nac || c.fechaNacimiento || c.FECHA_NACIMIENTO;
             if(!nacVal) return false;
             return String(nacVal).trim().substring(0, 5) === fechaHoy; 
         });
@@ -380,12 +330,10 @@ function actualizarDashboard() {
             let cardElement = elCumple.closest('.card');
             if(cardElement) {
                 if(cumpleaneros.length > 0) {
-                    let listaNombres = cumpleaneros.map(c => "🎂 " + (c.nombre || c.NOMBRE)).join('\n');
-                    cardElement.title = "Cumpleañeros de hoy:\n" + listaNombres;
-                    cardElement.style.cursor = "help";
+                    let listaNombres = cumpleaneros.map(c => "🎂 " + (c.nombre || c.CONDUCTOR || c.NOMBRE)).join('\n');
+                    cardElement.title = "Cumpleañeros de hoy:\n" + listaNombres; cardElement.style.cursor = "help";
                 } else {
-                    cardElement.title = "No hay cumpleaños el día de hoy";
-                    cardElement.style.cursor = "default";
+                    cardElement.title = "No hay cumpleaños el día de hoy"; cardElement.style.cursor = "default";
                 }
             }
         }
@@ -393,11 +341,8 @@ function actualizarDashboard() {
         let cVan = 0, cMinibus = 0, cBus = 0;
         conductores.forEach(c => {
             let cat = determinarTipoConductor(c.contrato || c.CONTRATO);
-            if(cat === 'VAN') cVan++;
-            else if(cat === 'MINIBUS') cMinibus++;
-            else if(cat === 'BUS') cBus++;
+            if(cat === 'VAN') cVan++; else if(cat === 'MINIBUS') cMinibus++; else if(cat === 'BUS') cBus++;
         });
-
         if(document.getElementById('dashAcredVan')) document.getElementById('dashAcredVan').innerText = cVan;
         if(document.getElementById('dashAcredMinibus')) document.getElementById('dashAcredMinibus').innerText = cMinibus;
         if(document.getElementById('dashAcredBus')) document.getElementById('dashAcredBus').innerText = cBus;
@@ -407,12 +352,8 @@ function actualizarDashboard() {
         let fVan = 0, fMinibus = 0, fBus = 0, fCamioneta = 0;
         unidades.forEach(u => {
             let t = (u.tipo || '').toUpperCase().trim();
-            if(t === 'VAN') fVan++;
-            else if(t === 'MINIBUS') fMinibus++;
-            else if(t === 'BUS') fBus++;
-            else if(t === 'CAMIONETA') fCamioneta++;
+            if(t === 'VAN') fVan++; else if(t === 'MINIBUS') fMinibus++; else if(t === 'BUS') fBus++; else if(t === 'CAMIONETA') fCamioneta++;
         });
-
         if(document.getElementById('dashFlotaVan')) document.getElementById('dashFlotaVan').innerText = fVan;
         if(document.getElementById('dashFlotaMinibus')) document.getElementById('dashFlotaMinibus').innerText = fMinibus;
         if(document.getElementById('dashFlotaBus')) document.getElementById('dashFlotaBus').innerText = fBus;
@@ -420,17 +361,13 @@ function actualizarDashboard() {
     }
 }
 
-// ==========================================
-// VISTAS Y RENDERIZADO DE CONDUCTORES Y UNIDADES
-// ==========================================
+// RENDERIZADO CONDUCTORES
 function actualizarFiltrosDinamicos() {
     let selectServicio = document.getElementById('filtroServicioCond');
     if (!selectServicio) return;
-    
     let valorActual = selectServicio.value;
-    let serviciosUnicos = [...new Set(conductores.map(c => (c.servicio || c.SERVICIO || '').toUpperCase().trim()))].filter(s => s !== '');
+    let serviciosUnicos = [...new Set(conductores.map(c => (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '').toUpperCase().trim()))].filter(s => s !== '');
     serviciosUnicos.sort();
-    
     let html = '<option value="TODOS">Todos los Servicios</option>';
     serviciosUnicos.forEach(serv => {
         let selected = (serv === valorActual) ? 'selected' : '';
@@ -447,10 +384,10 @@ function renderizarConductores() {
     
     let filtrados = conductores.filter(c => {
         let dniStr = String(c.dni || c.DNI || '').toLowerCase();
-        let nomStr = String(c.nombre || c.NOMBRE || '').toLowerCase();
+        let nomStr = String(c.nombre || c.CONDUCTOR || c.NOMBRE || '').toLowerCase();
         let matchSearch = dniStr.includes(search) || nomStr.includes(search);
         let matchContrato = (filtroActivoContratoCond === 'TODOS' || (c.contrato || c.CONTRATO || '').toUpperCase() === filtroActivoContratoCond.toUpperCase());
-        let matchServicio = (filtroActivoServicioCond === 'TODOS' || (c.servicio || c.SERVICIO || '').toUpperCase() === filtroActivoServicioCond.toUpperCase());
+        let matchServicio = (filtroActivoServicioCond === 'TODOS' || (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '').toUpperCase() === filtroActivoServicioCond.toUpperCase());
         return matchSearch && matchContrato && matchServicio;
     });
 
@@ -458,22 +395,24 @@ function renderizarConductores() {
 
     tbody.innerHTML = '';
     filtrados.forEach((c, index) => {
-        let rawNac = c.nac || c.fechaNacimiento || c.FECHA_NACIMIENTO || c.nacimiento || c.NACIMIENTO;
-        let rawIng = c.ingreso || c.fechaIngreso || c.FECHA_INGRESO || c.tiempoLaborando || c.TIEMPO_LABORANDO;
+        // AQUÍ ESTÁ LA CORRECCIÓN EXACTA PARA LEER LAS CABECERAS DE TU EXCEL
+        let rawNac = c["FECHA NACIMIENTO"] || c.nac || c.fechaNacimiento || c.FECHA_NACIMIENTO || c.nacimiento;
+        let rawIng = c["FECHA INGRESO"] || c.ingreso || c.fechaIngreso || c.FECHA_INGRESO || c.tiempoLaborando;
 
         let edadObj = obtenerEdadProcesada(rawNac);
         let tiempo = obtenerTiempoLaborandoExacto(rawIng);
         
         let contrato = c.contrato || c.CONTRATO || '-';
-        let servicio = c.servicio || c.SERVICIO || '-';
-        // SE CORRIGE LECTURA DEL ESTADO PARA LEER ABREVIATURAS SI EXISTEN
-        let estado = c.estadoAbrev || c.ESTADO_ABREV || c.estado || c.ESTADO || c.status || '-';
-        let badgeClass = estado.toLowerCase().replace(/[^a-z0-9]/g, '');
+        let servicio = c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '-';
         
-        let nombre = c.nombre || c.NOMBRE || '-';
+        // LEER EL ESTADO Y APLICAR COLOR INYECTADO
+        let estado = c.ESTADO || c.estado || c.estadoAbrev || c.ESTADO_ABREV || '-';
+        let estiloEstado = obtenerEstiloEstado(estado);
+        
+        let nombre = c.nombre || c.CONDUCTOR || c.NOMBRE || '-';
         let dni = c.dni || c.DNI || '-';
 
-        let badgeCumple = edadObj.esCumple ? `<span class="badge-birthday"><i class="fa-solid fa-cake-candles"></i> Hoy</span>` : '';
+        let badgeCumple = edadObj.esCumple ? `<span class="badge-birthday" style="background:#fce7f3; color:#db2777; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;"><i class="fa-solid fa-cake-candles"></i> Hoy</span>` : '';
 
         let tr = document.createElement('tr');
         tr.innerHTML = `
@@ -484,8 +423,9 @@ function renderizarConductores() {
             <td>${tiempo}</td>
             <td><span class="badge-abrev badge-van">${contrato}</span></td>
             <td><span class="badge-abrev badge-minibus">${servicio}</span></td>
-            <td><span class="badge-status status-${badgeClass}">${estado}</span></td>
-            <td><button class="btn-icon" onclick="abrirModalEditConductor('${dni}')"><i class="fa-solid fa-pen"></i></button></td>
+            <td><span style="${estiloEstado}">${estado}</span></td>
+            <!-- Se elimina el botón de editar porque es solo lectura desde el Excel -->
+            <td style="color:#9ca3af; font-size: 0.8rem; text-align:center;" title="Solo lectura (Editar en Excel)"><i class="fa-solid fa-lock"></i></td>
         `;
         tbody.appendChild(tr);
     });
@@ -495,7 +435,19 @@ function actualizarSideKpisConductores(filtrados, todosConductores) {
     let sideKpis = document.getElementById('sideKpisConductores');
     if (!sideKpis) return;
 
-    let serviciosUnicos = [...new Set(todosConductores.map(c => (c.servicio || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()))];
+    // ELIMINAMOS EL SCROLL Y LA SUPERPOSICIÓN HACIENDO EL CONTENEDOR HORIZONTAL Y SUPERIOR
+    sideKpis.style.position = 'relative';
+    sideKpis.style.display = 'flex';
+    sideKpis.style.flexDirection = 'row';
+    sideKpis.style.flexWrap = 'wrap';
+    sideKpis.style.gap = '10px';
+    sideKpis.style.marginBottom = '15px';
+    sideKpis.style.width = '100%';
+    sideKpis.style.height = 'auto';
+    sideKpis.style.background = 'transparent';
+    sideKpis.style.boxShadow = 'none';
+
+    let serviciosUnicos = [...new Set(todosConductores.map(c => (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()))];
     serviciosUnicos.sort();
 
     let configServicios = {
@@ -508,29 +460,28 @@ function actualizarSideKpisConductores(filtrados, todosConductores) {
         'AMBULANCIA': { icon: 'fa-truck-medical', color: '#10b981' }
     };
 
-    // SE AÑADEN ESTILOS CSS EN LÍNEA SUPER COMPACTOS PARA EVITAR EL SCROLL
     let html = `
-        <div class="kpi-tab tab-blue" style="padding: 4px 6px; margin-bottom: 3px; min-height: 35px; border-radius: 4px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);" onclick="setFiltroServicioCond('TODOS')" title="Ver Todos">
-            <div class="kpi-icon" style="font-size: 0.9rem; min-width: 15px; text-align:center;"><i class="fa-solid fa-users"></i></div>
-            <div class="kpi-details" style="display:flex; flex-direction:column;">
-                <span style="font-size: 0.55rem; line-height: 1; margin-bottom: 1px;">TODOS</span>
-                <h3 style="font-size: 0.85rem; margin:0; line-height: 1;">${todosConductores.length}</h3>
+        <div style="background: var(--card-bg); padding: 8px 12px; border-radius: 6px; cursor:pointer; display:flex; align-items:center; gap:8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;" onclick="setFiltroServicioCond('TODOS')" title="Ver Todos">
+            <div style="color:var(--primary); font-size: 1.1rem;"><i class="fa-solid fa-users"></i></div>
+            <div style="display:flex; flex-direction:column;">
+                <span style="font-size: 0.65rem; color:var(--text-muted); font-weight:700;">TODOS</span>
+                <h3 style="font-size: 1rem; margin:0; line-height: 1;">${todosConductores.length}</h3>
             </div>
         </div>
     `;
 
     serviciosUnicos.forEach(serv => {
-        let count = todosConductores.filter(c => ((c.servicio || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()) === serv).length;
+        let count = todosConductores.filter(c => ((c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()) === serv).length;
         let cfg = configServicios[serv] || { icon: 'fa-circle-dot', color: '#2563eb' };
         let isActive = (filtroActivoServicioCond.toUpperCase() === serv);
-        let bgStyle = isActive ? 'background: var(--main-bg);' : 'background: var(--card-bg);';
+        let bgStyle = isActive ? 'background: #f3f4f6;' : 'background: var(--card-bg);';
 
         html += `
-            <div class="kpi-tab" style="${bgStyle} padding: 4px 6px; margin-bottom: 3px; min-height: 35px; border-radius: 4px; border-left: 4px solid ${cfg.color}; cursor:pointer; display:flex; align-items:center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);" onclick="setFiltroServicioCond('${serv}')" title="Filtrar por ${serv}">
-                <div class="kpi-icon" style="color: ${cfg.color}; font-size: 0.9rem; min-width: 15px; text-align:center;"><i class="fa-solid ${cfg.icon}"></i></div>
-                <div class="kpi-details" style="display:flex; flex-direction:column;">
-                    <span style="font-size: 0.55rem; line-height: 1; margin-bottom: 1px; color: var(--text-muted); font-weight:700;">${serv}</span>
-                    <h3 style="color: ${cfg.color}; margin:0; font-size: 0.85rem; line-height: 1;">${count}</h3>
+            <div style="${bgStyle} padding: 8px 12px; border-radius: 6px; border-left: 4px solid ${cfg.color}; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; cursor:pointer; display:flex; align-items:center; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" onclick="setFiltroServicioCond('${serv}')" title="Filtrar por ${serv}">
+                <div style="color: ${cfg.color}; font-size: 1.1rem;"><i class="fa-solid ${cfg.icon}"></i></div>
+                <div style="display:flex; flex-direction:column;">
+                    <span style="font-size: 0.65rem; color: var(--text-muted); font-weight:700;">${serv}</span>
+                    <h3 style="color: ${cfg.color}; margin:0; font-size: 1rem; line-height: 1;">${count}</h3>
                 </div>
             </div>
         `;
@@ -590,30 +541,19 @@ function renderizarUnidades() {
 
 // ZONAS Y 360
 function restablecerZonasFabrica() { 
-    zonasBD = JSON.parse(JSON.stringify(ZONAS_FABRICA)); 
-    guardarZonas(); 
-    alert("✓ Zonas restablecidas con éxito al listado oficial de fábrica."); 
+    zonasBD = JSON.parse(JSON.stringify(ZONAS_FABRICA)); guardarZonas(); alert("✓ Zonas restablecidas."); 
 }
 
 function renderizarZonas() { 
-    let tbody = document.getElementById('tbodyZonas'); 
-    if(!tbody) return;
-    tbody.innerHTML = ''; 
+    let tbody = document.getElementById('tbodyZonas'); if(!tbody) return; tbody.innerHTML = ''; 
     let txt = document.getElementById('searchZonas').value.toUpperCase().trim(); 
     
     zonasBD.forEach((z, idx) => { 
         if (txt && !z.zona.toUpperCase().includes(txt)) return; 
-        
         let ofi = z.rec_a2_ofic || z.rec_a1_ofic || '-';
-        
         tbody.insertAdjacentHTML('beforeend', `<tr>
-            <td><b>${z.zona}</b></td>
-            <td>${z.a1||'-'}</td>
-            <td style="color:var(--accent); font-weight:600;">${z.a2_lv||'-'}</td>
-            <td>${z.a2p_lv||'-'}</td>
-            <td>${z.b1||'-'}</td>
-            <td>${z.b2||'-'}</td>
-            <td>${z.b2p||'-'}</td>
+            <td><b>${z.zona}</b></td><td>${z.a1||'-'}</td><td style="color:var(--accent); font-weight:600;">${z.a2_lv||'-'}</td>
+            <td>${z.a2p_lv||'-'}</td><td>${z.b1||'-'}</td><td>${z.b2||'-'}</td><td>${z.b2p||'-'}</td>
             <td style="font-size:0.75rem; color:var(--text-muted);">${ofi}</td>
             <td><button class="btn btn-outline" onclick="abrirModalEditZona(${idx})"><i class="fa-solid fa-pen"></i> 360°</button></td>
         </tr>`); 
@@ -621,141 +561,54 @@ function renderizarZonas() {
 }
 
 function abrirModalEditZona(idx) {
-    idxZonaEdit = idx; 
-    let z = zonasBD[idx]; 
+    idxZonaEdit = idx; let z = zonasBD[idx]; 
     document.getElementById('badgeZonaEditName').innerText = `ZONA ${z.zona}`;
-    
-    document.getElementById('zHoraA1').value = z.a1 || ''; 
-    document.getElementById('zRutaA1Ofic').value = z.rec_a1_ofic || ''; 
-    document.getElementById('zRutaA1Desv1').value = z.rec_a1_desv1 || ''; 
-    document.getElementById('zRutaA1Desv2').value = z.rec_a1_desv2 || '';
-    
-    document.getElementById('zHoraA2LV').value = z.a2_lv || ''; 
-    document.getElementById('zHoraA2SDFER').value = z.a2_sd || ''; 
-    document.getElementById('zRutaA2Ofic').value = z.rec_a2_ofic || ''; 
-    document.getElementById('zRutaA2Desv1').value = z.rec_a2_desv1 || ''; 
-    document.getElementById('zRutaA2Desv2').value = z.rec_a2_desv2 || '';
-    
-    document.getElementById('zHoraA2PLV').value = z.a2p_lv || ''; 
-    document.getElementById('zHoraA2PSDFER').value = z.a2p_sd || ''; 
-    document.getElementById('zRutaA2POfic').value = z.rec_a2p_ofic || ''; 
-    document.getElementById('zRutaA2PDesv1').value = z.rec_a2p_desv1 || ''; 
-    document.getElementById('zRutaA2PDesv2').value = z.rec_a2p_desv2 || '';
-    
-    document.getElementById('zHoraB1').value = z.b1 || ''; 
-    document.getElementById('zRutaB1Ofic').value = z.rec_b1_ofic || ''; 
-    document.getElementById('zRutaB1Desv1').value = z.rec_b1_desv1 || ''; 
-    document.getElementById('zRutaB1Desv2').value = z.rec_b1_desv2 || '';
-    
-    document.getElementById('zHoraB2').value = z.b2 || ''; 
-    document.getElementById('zRutaB2Ofic').value = z.rec_b2_ofic || ''; 
-    document.getElementById('zRutaB2Desv1').value = z.rec_b2_desv1 || ''; 
-    document.getElementById('zRutaB2Desv2').value = z.rec_b2_desv2 || '';
-    
-    document.getElementById('zHoraB2P').value = z.b2p || ''; 
-    document.getElementById('zRutaB2POfic').value = z.rec_b2p_ofic || ''; 
-    document.getElementById('zRutaB2PDesv1').value = z.rec_b2p_desv1 || ''; 
-    document.getElementById('zRutaB2PDesv2').value = z.rec_b2p_desv2 || '';
-    
-    switchTabZona(null, 'tabA1'); 
-    abrirModal('modalEditZona');
+    document.getElementById('zHoraA1').value = z.a1 || ''; document.getElementById('zRutaA1Ofic').value = z.rec_a1_ofic || ''; document.getElementById('zRutaA1Desv1').value = z.rec_a1_desv1 || ''; document.getElementById('zRutaA1Desv2').value = z.rec_a1_desv2 || '';
+    document.getElementById('zHoraA2LV').value = z.a2_lv || ''; document.getElementById('zHoraA2SDFER').value = z.a2_sd || ''; document.getElementById('zRutaA2Ofic').value = z.rec_a2_ofic || ''; document.getElementById('zRutaA2Desv1').value = z.rec_a2_desv1 || ''; document.getElementById('zRutaA2Desv2').value = z.rec_a2_desv2 || '';
+    document.getElementById('zHoraA2PLV').value = z.a2p_lv || ''; document.getElementById('zHoraA2PSDFER').value = z.a2p_sd || ''; document.getElementById('zRutaA2POfic').value = z.rec_a2p_ofic || ''; document.getElementById('zRutaA2PDesv1').value = z.rec_a2p_desv1 || ''; document.getElementById('zRutaA2PDesv2').value = z.rec_a2p_desv2 || '';
+    document.getElementById('zHoraB1').value = z.b1 || ''; document.getElementById('zRutaB1Ofic').value = z.rec_b1_ofic || ''; document.getElementById('zRutaB1Desv1').value = z.rec_b1_desv1 || ''; document.getElementById('zRutaB1Desv2').value = z.rec_b1_desv2 || '';
+    document.getElementById('zHoraB2').value = z.b2 || ''; document.getElementById('zRutaB2Ofic').value = z.rec_b2_ofic || ''; document.getElementById('zRutaB2Desv1').value = z.rec_b2_desv1 || ''; document.getElementById('zRutaB2Desv2').value = z.rec_b2_desv2 || '';
+    document.getElementById('zHoraB2P').value = z.b2p || ''; document.getElementById('zRutaB2POfic').value = z.rec_b2p_ofic || ''; document.getElementById('zRutaB2PDesv1').value = z.rec_b2p_desv1 || ''; document.getElementById('zRutaB2PDesv2').value = z.rec_b2p_desv2 || '';
+    switchTabZona(null, 'tabA1'); abrirModal('modalEditZona');
 }
 
 function switchTabZona(evt, tabId) { 
     document.querySelectorAll('#modalEditZona .tab-btn').forEach(b => b.classList.remove('active')); 
     document.querySelectorAll('#modalEditZona .tab-content').forEach(c => c.classList.remove('active')); 
-    
-    if (evt) evt.currentTarget.classList.add('active'); 
-    else document.querySelector(`button[onclick*="${tabId}"]`).classList.add('active'); 
-    
+    if (evt) evt.currentTarget.classList.add('active'); else document.querySelector(`button[onclick*="${tabId}"]`).classList.add('active'); 
     document.getElementById(tabId).classList.add('active'); 
 }
 
 function guardarCambiosZonaConfirmado() {
     let z = zonasBD[idxZonaEdit];
-    z.a1 = document.getElementById('zHoraA1').value; 
-    z.rec_a1_ofic = document.getElementById('zRutaA1Ofic').value; 
-    z.rec_a1_desv1 = document.getElementById('zRutaA1Desv1').value; 
-    z.rec_a1_desv2 = document.getElementById('zRutaA1Desv2').value;
-    
-    z.a2_lv = document.getElementById('zHoraA2LV').value; 
-    z.a2_sd = document.getElementById('zHoraA2SDFER').value; 
-    z.rec_a2_ofic = document.getElementById('zRutaA2Ofic').value; 
-    z.rec_a2_desv1 = document.getElementById('zRutaA2Desv1').value; 
-    z.rec_a2_desv2 = document.getElementById('zRutaA2Desv2').value;
-    
-    z.a2p_lv = document.getElementById('zHoraA2PLV').value; 
-    z.a2p_sd = document.getElementById('zHoraA2PSDFER').value; 
-    z.rec_a2p_ofic = document.getElementById('zRutaA2POfic').value; 
-    z.rec_a2p_desv1 = document.getElementById('zRutaA2PDesv1').value; 
-    z.rec_a2p_desv2 = document.getElementById('zRutaA2PDesv2').value;
-    
-    z.b1 = document.getElementById('zHoraB1').value; 
-    z.rec_b1_ofic = document.getElementById('zRutaB1Ofic').value; 
-    z.rec_b1_desv1 = document.getElementById('zRutaB1Desv1').value; 
-    z.rec_b1_desv2 = document.getElementById('zRutaB1Desv2').value;
-    
-    z.b2 = document.getElementById('zHoraB2').value; 
-    z.rec_b2_ofic = document.getElementById('zRutaB2Ofic').value; 
-    z.rec_b2_desv1 = document.getElementById('zRutaB2Desv1').value; 
-    z.rec_b2_desv2 = document.getElementById('zRutaB2Desv2').value;
-    
-    z.b2p = document.getElementById('zHoraB2P').value; 
-    z.rec_b2p_ofic = document.getElementById('zRutaB2POfic').value; 
-    z.rec_b2p_desv1 = document.getElementById('zRutaB2PDesv1').value; 
-    z.rec_b2p_desv2 = document.getElementById('zRutaB2PDesv2').value;
-    
-    guardarZonas(); 
-    cerrarModal('modalEditZona'); 
-    alert("✓ Cambios inyectados.");
+    z.a1 = document.getElementById('zHoraA1').value; z.rec_a1_ofic = document.getElementById('zRutaA1Ofic').value; z.rec_a1_desv1 = document.getElementById('zRutaA1Desv1').value; z.rec_a1_desv2 = document.getElementById('zRutaA1Desv2').value;
+    z.a2_lv = document.getElementById('zHoraA2LV').value; z.a2_sd = document.getElementById('zHoraA2SDFER').value; z.rec_a2_ofic = document.getElementById('zRutaA2Ofic').value; z.rec_a2_desv1 = document.getElementById('zRutaA2Desv1').value; z.rec_a2_desv2 = document.getElementById('zRutaA2Desv2').value;
+    z.a2p_lv = document.getElementById('zHoraA2PLV').value; z.a2p_sd = document.getElementById('zHoraA2PSDFER').value; z.rec_a2p_ofic = document.getElementById('zRutaA2POfic').value; z.rec_a2p_desv1 = document.getElementById('zRutaA2PDesv1').value; z.rec_a2p_desv2 = document.getElementById('zRutaA2PDesv2').value;
+    z.b1 = document.getElementById('zHoraB1').value; z.rec_b1_ofic = document.getElementById('zRutaB1Ofic').value; z.rec_b1_desv1 = document.getElementById('zRutaB1Desv1').value; z.rec_b1_desv2 = document.getElementById('zRutaB1Desv2').value;
+    z.b2 = document.getElementById('zHoraB2').value; z.rec_b2_ofic = document.getElementById('zRutaB2Ofic').value; z.rec_b2_desv1 = document.getElementById('zRutaB2Desv1').value; z.rec_b2_desv2 = document.getElementById('zRutaB2Desv2').value;
+    z.b2p = document.getElementById('zHoraB2P').value; z.rec_b2p_ofic = document.getElementById('zRutaB2POfic').value; z.rec_b2p_desv1 = document.getElementById('zRutaB2PDesv1').value; z.rec_b2p_desv2 = document.getElementById('zRutaB2PDesv2').value;
+    guardarZonas(); cerrarModal('modalEditZona'); alert("✓ Cambios inyectados.");
 }
 
 function guardarNuevaZona() { 
     let n = document.getElementById('nuevaZonaNombre').value.trim().toUpperCase(); 
-    if(!n) return alert("Nombre vacío."); 
-    zonasBD.push({ zona: n }); 
-    guardarZonas(); 
-    cerrarModal('modalNuevaZona'); 
+    if(!n) return alert("Nombre vacío."); zonasBD.push({ zona: n }); guardarZonas(); cerrarModal('modalNuevaZona'); 
 }
 
 // PLANTILLAS
 let uiPl = 'LV', uiTu = 'A1';
-function switchPlantilla(p) { 
-    uiPl = p; 
-    document.querySelectorAll('#vistaPlantillas .tab-btn').forEach(b => b.classList.remove('active')); 
-    document.getElementById('tabPl' + p).classList.add('active'); 
-    renderizarGestorPlantillas(); 
-}
+function switchPlantilla(p) { uiPl = p; document.querySelectorAll('#vistaPlantillas .tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tabPl' + p).classList.add('active'); renderizarGestorPlantillas(); }
+function switchTurnoPlantilla(tu) { uiTu = tu; document.querySelectorAll('#vistaPlantillas .sub-tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('st' + tu).classList.add('active'); renderizarGestorPlantillas(); }
 
-function switchTurnoPlantilla(tu) { 
-    uiTu = tu; 
-    document.querySelectorAll('#vistaPlantillas .sub-tab-btn').forEach(b => b.classList.remove('active')); 
-    document.getElementById('st' + tu).classList.add('active'); 
-    renderizarGestorPlantillas(); 
-}
-
-function cargarOpcionesZonasSelect() { 
-    let sel = document.getElementById('selAgregarZona'); 
-    if(!sel) return;
-    sel.innerHTML = '<option value="">-- Seleccionar --</option>'; 
-    zonasBD.forEach(z => sel.innerHTML += `<option value="${z.zona}">ZONA ${z.zona}</option>`); 
-}
-
-function guardarPlantillas() { 
-    localStorage.setItem('bd_plantillas_smcv', JSON.stringify(plantillasBD)); 
-    alert("✓ Plantillas guardadas."); 
-}
+function cargarOpcionesZonasSelect() { let sel = document.getElementById('selAgregarZona'); if(!sel) return; sel.innerHTML = '<option value="">-- Seleccionar --</option>'; zonasBD.forEach(z => sel.innerHTML += `<option value="${z.zona}">ZONA ${z.zona}</option>`); }
+function guardarPlantillas() { localStorage.setItem('bd_plantillas_smcv', JSON.stringify(plantillasBD)); alert("✓ Plantillas guardadas."); }
 
 function renderizarGestorPlantillas() {
-    let tbody = document.getElementById('tbodyPlantillaList'); 
-    if(!tbody) return;
-    tbody.innerHTML = '';
+    let tbody = document.getElementById('tbodyPlantillaList'); if(!tbody) return; tbody.innerHTML = '';
     let lista = plantillasBD[uiPl][uiTu] || [];
-    
     lista.forEach((item, idx) => {
         let badgeColor = item.tipo.includes('BUS') ? 'var(--warning)' : 'var(--accent)';
         let nombreDisplay = /^\d/.test(item.zona) ? `ZONA ${item.zona}` : item.zona;
-        
         tbody.insertAdjacentHTML('beforeend', `<tr>
             <td style="text-align:center;">${idx+1}</td>
             <td><b>${nombreDisplay}</b> <span style="font-size:0.75rem; color:${badgeColor}; font-weight: bold; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${item.tipo}</span></td>
@@ -767,113 +620,60 @@ function renderizarGestorPlantillas() {
 }
 
 function agregarZonaPlantilla() { 
-    let z = document.getElementById('selAgregarZona').value;
-    let c = parseInt(document.getElementById('cantAgregarZona').value) || 1; 
-    if(!z) return; 
-    plantillasBD[uiPl][uiTu].push({
-        zona: z, 
-        cant: c, 
-        tipo: document.getElementById('selTipoUnidadAgregar').value
-    }); 
-    renderizarGestorPlantillas(); 
+    let z = document.getElementById('selAgregarZona').value, c = parseInt(document.getElementById('cantAgregarZona').value) || 1; 
+    if(!z) return; plantillasBD[uiPl][uiTu].push({ zona: z, cant: c, tipo: document.getElementById('selTipoUnidadAgregar').value }); renderizarGestorPlantillas(); 
 }
 
 function descargarPlantillaMaestraZonas() { 
     let ws = XLSX.utils.json_to_sheet(zonasBD.map(z => ({ "ZONA": z.zona, "REQ_BUS_48": "", "REQ_VAN_15": "", "REQ_VAN_13": "", "REQ_VAN_09": "" }))); 
-    let wb = XLSX.utils.book_new(); 
-    XLSX.utils.book_append_sheet(wb, ws, "Demanda_Zonas"); 
-    XLSX.writeFile(wb, "Plantilla_Maestra.xlsx"); 
+    let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Demanda_Zonas"); XLSX.writeFile(wb, "Plantilla_Maestra.xlsx"); 
 }
 
-function abrirModalCopiarPlantilla() { 
-    document.getElementById('lblDestinoCopia').innerText = `[${uiPl}] - [${uiTu}]`; 
-    abrirModal('modalCopiarPlantilla'); 
-}
-
+function abrirModalCopiarPlantilla() { document.getElementById('lblDestinoCopia').innerText = `[${uiPl}] - [${uiTu}]`; abrirModal('modalCopiarPlantilla'); }
 function confirmarCopiaPlantilla() { 
-    let sp = document.getElementById('selCopiaPlantilla').value;
-    let st = document.getElementById('selCopiaTurno').value; 
-    
-    if(plantillasBD[sp][st]?.length) { 
-        plantillasBD[uiPl][uiTu] = JSON.parse(JSON.stringify(plantillasBD[sp][st])); 
-        renderizarGestorPlantillas(); 
-        cerrarModal('modalCopiarPlantilla'); 
-    } else alert("Origen vacío."); 
+    let sp = document.getElementById('selCopiaPlantilla').value, st = document.getElementById('selCopiaTurno').value; 
+    if(plantillasBD[sp][st]?.length) { plantillasBD[uiPl][uiTu] = JSON.parse(JSON.stringify(plantillasBD[sp][st])); renderizarGestorPlantillas(); cerrarModal('modalCopiarPlantilla'); } else alert("Origen vacío."); 
 }
 
 // BUZÓN CAPACITACIÓN
-function limpiarCapacitacion() { 
-    document.getElementById('txtTituloCapacitacion').value = ''; 
-    document.getElementById('txtListaCapacitacion').value = ''; 
-}
-
+function limpiarCapacitacion() { document.getElementById('txtTituloCapacitacion').value = ''; document.getElementById('txtListaCapacitacion').value = ''; }
 function guardarCapacitacion() {
     let titulo = document.getElementById('txtTituloCapacitacion').value.trim();
-    let listaBruta = document.getElementById('txtListaCapacitacion').value.split('\n');
-    let listaLimpia = listaBruta.map(n => normalizarTexto(n)).filter(n => n !== "");
-    
+    let listaLimpia = document.getElementById('txtListaCapacitacion').value.split('\n').map(n => normalizarTexto(n)).filter(n => n !== "");
     datosCapacitacion = { titulo: titulo, lista: listaLimpia };
-    localStorage.setItem('bd_capacitaciones_smcv', JSON.stringify(datosCapacitacion));
-    cerrarModal('modalCapacitacion');
-    alert(`✓ Registrados ${listaLimpia.length} conductores para: ${titulo || 'CAPACITACIÓN'}`);
+    localStorage.setItem('bd_capacitaciones_smcv', JSON.stringify(datosCapacitacion)); cerrarModal('modalCapacitacion'); alert(`✓ Registrados ${listaLimpia.length} conductores.`);
 }
 
 // PROGRAMACIÓN DIARIA
 function procesarCambioFechaProg() {
-    let input = document.getElementById('fechaProgInput'); 
-    if(!input.value) input.value = new Date().toISOString().split('T')[0];
-    
-    let d = new Date(input.value + 'T00:00:00'); 
-    document.getElementById('tipoPlantillaProg').value = (d.getDay() === 0 || d.getDay() === 6) ? 'SD' : 'LV';
-    
-    if(!programacionDiaria[input.value]) programacionDiaria[input.value] = [];
-    renderizarProgramacion();
+    let input = document.getElementById('fechaProgInput'); if(!input.value) input.value = new Date().toISOString().split('T')[0];
+    let d = new Date(input.value + 'T00:00:00'); document.getElementById('tipoPlantillaProg').value = (d.getDay() === 0 || d.getDay() === 6) ? 'SD' : 'LV';
+    if(!programacionDiaria[input.value]) programacionDiaria[input.value] = []; renderizarProgramacion();
 }
-
-function guardarProgramacionDiaria() {
-    localStorage.setItem('bd_prog_diaria_smcv', JSON.stringify(programacionDiaria));
-    alert("✓ Programación guardada correctamente.");
-}
+function guardarProgramacionDiaria() { localStorage.setItem('bd_prog_diaria_smcv', JSON.stringify(programacionDiaria)); alert("✓ Programación guardada correctamente."); }
 
 function renderizarProgramacion() {
-    let fechaSel = document.getElementById('fechaProgInput').value;
-    let tipoPlantilla = document.getElementById('tipoPlantillaProg').value;
-    let turnoSel = document.getElementById('filtroTurnoProg').value;
-    
+    let fechaSel = document.getElementById('fechaProgInput').value, tipoPlantilla = document.getElementById('tipoPlantillaProg').value, turnoSel = document.getElementById('filtroTurnoProg').value;
     let turnosLista = turnoSel !== 'TODOS' ? [turnoSel] : ['A1', 'A2', 'A2P', 'B1', 'B2', 'B2P'];
-    let condOptsBase = conductores.filter(c => c.estadoAbrev === 'A' || c.estadoAbrev === 'B' || c.estadoAbrev === 'AL');
+    let condOptsBase = conductores.filter(c => { let e = (c.ESTADO || c.estadoAbrev || '').toUpperCase(); return e==='A'||e==='B'||e==='AL'; });
     let unidadesBase = unidades.filter(u => u.estado === 'OPERATIVO');
     let regsFecha = programacionDiaria[fechaSel] || [];
     
     let totalFilas = 0, asignados = 0, htmlTabla = '';
-    let htmlOpcionesAdicionales = `<option value="">-- Normal --</option>`;
-    Object.keys(DIC_ADICIONALES).forEach(k => htmlOpcionesAdicionales += `<option value="${k}">${k}</option>`);
-    let htmlOpcionesCarril = '';
-    OPCIONES_CARRILES.forEach(c => htmlOpcionesCarril += `<option value="${c}">${c || '-- Carril --'}</option>`);
+    let htmlOpcionesAdicionales = `<option value="">-- Normal --</option>`; Object.keys(DIC_ADICIONALES).forEach(k => htmlOpcionesAdicionales += `<option value="${k}">${k}</option>`);
+    let htmlOpcionesCarril = ''; OPCIONES_CARRILES.forEach(c => htmlOpcionesCarril += `<option value="${c}">${c || '-- Carril --'}</option>`);
 
     turnosLista.forEach(t => {
         let listaZonasTurno = plantillasBD[tipoPlantilla][t] || [];
         listaZonasTurno.forEach(itemPlantilla => {
-            let zData = zonasBD.find(z => z.zona === itemPlantilla.zona); 
-            if (!zData) return;
-            
+            let zData = zonasBD.find(z => z.zona === itemPlantilla.zona); if (!zData) return;
             let horaDinamica = '--:--';
-            if (t === 'A1') horaDinamica = zData.a1; 
-            else if (t === 'A2') horaDinamica = (tipoPlantilla === 'LV') ? zData.a2_lv : zData.a2_sd; 
-            else if (t === 'A2P') horaDinamica = (tipoPlantilla === 'LV') ? zData.a2p_lv : zData.a2p_sd; 
-            else if (t === 'B1') horaDinamica = zData.b1; 
-            else if (t === 'B2') horaDinamica = zData.b2; 
-            else if (t === 'B2P') horaDinamica = zData.b2p;
-
+            if (t === 'A1') horaDinamica = zData.a1; else if (t === 'A2') horaDinamica = (tipoPlantilla === 'LV') ? zData.a2_lv : zData.a2_sd; else if (t === 'A2P') horaDinamica = (tipoPlantilla === 'LV') ? zData.a2p_lv : zData.a2p_sd; else if (t === 'B1') horaDinamica = zData.b1; else if (t === 'B2') horaDinamica = zData.b2; else if (t === 'B2P') horaDinamica = zData.b2p;
             let cantidadRequerida = parseInt(itemPlantilla.cant) || 1;
             
             for (let i = 1; i <= cantidadRequerida; i++) {
-                totalFilas++; 
-                let key = `${itemPlantilla.zona}_${t}_${i}`; 
-                let regEx = regsFecha.find(r => r.key === key) || {};
-                
+                totalFilas++; let key = `${itemPlantilla.zona}_${t}_${i}`; let regEx = regsFecha.find(r => r.key === key) || {};
                 if (regEx.unidad && regEx.conductor) asignados++;
-                
                 let txtUnidadMult = cantidadRequerida > 1 ? `<br><small style="color:var(--text-muted)">Unidad ${i} de ${cantidadRequerida}</small>` : '';
                 let txtTipoReq = (itemPlantilla.tipo === 'CUALQUIERA' || !itemPlantilla.tipo) ? 'Cualquier Unidad' : itemPlantilla.tipo;
                 let nombreDisplay = /^\d/.test(itemPlantilla.zona) ? `ZONA ${itemPlantilla.zona}` : itemPlantilla.zona;
@@ -895,14 +695,11 @@ function renderizarProgramacion() {
                     if (reqTipo === 'CUALQUIERA' || !reqTipo) matchCond = true;
                     else if (reqTipo.includes('VAN') && (tipoC === 'VAN' || tipoC === 'MINIBUS')) matchCond = true;
                     else if (reqTipo.includes('BUS') && (tipoC === 'BUS' || tipoC === 'MINIBUS')) matchCond = true;
-                    let cDni = c.dni || c.DNI;
-                    let cNom = c.nombre || c.NOMBRE;
+                    let cDni = c.dni || c.DNI; let cNom = c.nombre || c.CONDUCTOR || c.NOMBRE;
                     if (matchCond) condOptsFiltradas += `<option value="${cDni}" ${regEx.conductor === cDni ? 'selected' : ''}>${cNom}</option>`;
                 });
 
-                let repartoOpts = `<option value="">- N/A -</option>`;
-                zonasBD.forEach(z => { repartoOpts += `<option value="${z.zona}" ${regEx.reparto === z.zona ? 'selected' : ''}>Rep. ${z.zona}</option>`; });
-                
+                let repartoOpts = `<option value="">- N/A -</option>`; zonasBD.forEach(z => { repartoOpts += `<option value="${z.zona}" ${regEx.reparto === z.zona ? 'selected' : ''}>Rep. ${z.zona}</option>`; });
                 let carrilSelect = htmlOpcionesCarril.replace(`value="${regEx.carril || ''}"`, `value="${regEx.carril || ''}" selected`);
                 let adicSelect = htmlOpcionesAdicionales.replace(`value="${regEx.adicional || ''}"`, `value="${regEx.adicional || ''}" selected`);
 
@@ -919,9 +716,7 @@ function renderizarProgramacion() {
             }
         });
     });
-
-    let tbody = document.getElementById('tbodyProgramacion');
-    if(tbody) tbody.innerHTML = htmlTabla || `<tr><td colspan="8" class="empty-state">No hay rutas configuradas.</td></tr>`;
+    let tbody = document.getElementById('tbodyProgramacion'); if(tbody) tbody.innerHTML = htmlTabla || `<tr><td colspan="8" class="empty-state">No hay rutas configuradas.</td></tr>`;
     if(document.getElementById('statAsignaciones')) document.getElementById('statAsignaciones').innerText = `${asignados} / ${totalFilas} Asignados`;
 }
 
@@ -935,313 +730,138 @@ function updMem(key, campo, valor) {
 
 // ROSTER OFICIAL WHATSAPP
 function sumar20Min(hStr) {
-    let r = String(hStr).trim(); 
-    let m = r.match(/(\d{1,2}):(\d{2})/);
-    if(!m) return r; 
-    let h = parseInt(m[1]), min = parseInt(m[2]); 
-    min += 20;
-    if(min >= 60) { h++; min -= 60; }
+    let r = String(hStr).trim(); let m = r.match(/(\d{1,2}):(\d{2})/); if(!m) return r; 
+    let h = parseInt(m[1]), min = parseInt(m[2]); min += 20; if(min >= 60) { h++; min -= 60; }
     return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`;
 }
 
 function renderizarRosterOficial() {
     let fechaSel = document.getElementById('fechaProgInput').value;
     let dObj = new Date(fechaSel + 'T00:00:00');
-    
-    let fechaAyerObj = new Date(dObj); 
-    fechaAyerObj.setDate(fechaAyerObj.getDate() - 1);
+    let fechaAyerObj = new Date(dObj); fechaAyerObj.setDate(fechaAyerObj.getDate() - 1);
     let ayerStr = fechaAyerObj.toISOString().split('T')[0];
-    let progHoy = programacionDiaria[fechaSel] || [];
-    let progAyer = programacionDiaria[ayerStr] || null;
-    
+    let progHoy = programacionDiaria[fechaSel] || []; let progAyer = programacionDiaria[ayerStr] || null;
     let hayCapacitacion = (datosCapacitacion.titulo !== "" && datosCapacitacion.lista.length > 0);
     let headCap = hayCapacitacion ? `<th style="width: 120px; background:#8e44ad;">CAPACITACIÓN</th>` : '';
     
-    let tablaHTML = `
-        <table class="roster-table" id="tablaFotografia">
-            <thead>
-                <tr>
-                    <th colspan="7" class="roster-header-top">PROGRAMACION RECOJO ZONAS - VEST. SUR / TRUCKSHOP - ZONAS</th>
-                    <th colspan="${4 + (hayCapacitacion?1:0)}" class="roster-header-top" style="text-align:right;">${dObj.toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit', year:'numeric'})}</th>
-                </tr>
-                <tr>
-                    <th colspan="7" class="roster-header-sub">EN BASE DEBERAN ESTAR SEGÚN LA HORA ESTIPULADA</th>
-                    <th colspan="${4 + (hayCapacitacion?1:0)}" class="roster-header-sub">A1 (Y DEMÁS TURNOS)</th>
-                </tr>
-                <tr style="background:#f0f0f0;">
-                    <th style="width:20px; background:#cc0000; color:white;">N°</th>
-                    <th class="col-gris-oscuro">Hr. Ingreso</th>
-                    <th class="col-gris-oscuro">Salida Base</th>
-                    <th style="width:60px; background:#cc0000; color:white;">Zona</th>
-                    <th style="background:#cc0000; color:white;">Hora Inicio Servicio</th>
-                    <th class="col-gris-claro">Conductor A</th>
-                    <th class="col-gris-oscuro">Tipo Unidad</th>
-                    <th class="col-gris-claro">OBSERVACION ZONA</th>
-                    <th style="background:#cc0000; color:white;">CARRIL INGRESO</th>
-                    <th class="col-gris-claro">OBS. Conductor</th>
-                    <th style="background:#3498db; color:white;">ZONA REPARTO</th>
-                    ${headCap}
-                </tr>
-            </thead>
-            <tbody>
-    `;
+    let tablaHTML = `<table class="roster-table" id="tablaFotografia"><thead>
+        <tr><th colspan="7" class="roster-header-top">PROGRAMACION RECOJO ZONAS - VEST. SUR / TRUCKSHOP - ZONAS</th><th colspan="${4 + (hayCapacitacion?1:0)}" class="roster-header-top" style="text-align:right;">${dObj.toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit', year:'numeric'})}</th></tr>
+        <tr><th colspan="7" class="roster-header-sub">EN BASE DEBERAN ESTAR SEGÚN LA HORA ESTIPULADA</th><th colspan="${4 + (hayCapacitacion?1:0)}" class="roster-header-sub">A1 (Y DEMÁS TURNOS)</th></tr>
+        <tr style="background:#f0f0f0;">
+            <th style="width:20px; background:#cc0000; color:white;">N°</th><th class="col-gris-oscuro">Hr. Ingreso</th><th class="col-gris-oscuro">Salida Base</th><th style="width:60px; background:#cc0000; color:white;">Zona</th><th style="background:#cc0000; color:white;">Hora Inicio Servicio</th><th class="col-gris-claro">Conductor A</th><th class="col-gris-oscuro">Tipo Unidad</th><th class="col-gris-claro">OBSERVACION ZONA</th><th style="background:#cc0000; color:white;">CARRIL INGRESO</th><th class="col-gris-claro">OBS. Conductor</th><th style="background:#3498db; color:white;">ZONA REPARTO</th>${headCap}
+        </tr></thead><tbody>`;
 
     let contadorFilas = 1;
-    
     progHoy.forEach(reg => {
         let zName = reg.key.split('_')[0], turno = reg.key.split('_')[1];
-        let zObj = zonasBD.find(z => z.zona === zName) || {};
-        let condObj = conductores.find(c => (c.dni || c.DNI) === reg.conductor) || { nombre: '--', contrato: '' };
-        let uniObj = unidades.find(u => u.cod === reg.unidad) || { cod: '', tipoVehiculo: '' };
+        let zObj = zonasBD.find(z => z.zona === zName) || {}; let condObj = conductores.find(c => (c.dni || c.DNI) === reg.conductor) || { nombre: '--', contrato: '' }; let uniObj = unidades.find(u => u.cod === reg.unidad) || { cod: '', tipoVehiculo: '' };
         
         let hrInicioServicio = '--:--';
-        if (turno === 'A1') hrInicioServicio = zObj.a1; 
-        else if (turno === 'A2') hrInicioServicio = zObj.a2_lv; 
-        else if (turno === 'A2P') hrInicioServicio = zObj.a2p_lv; 
-        else if (turno === 'B1') hrInicioServicio = zObj.b1; 
-        else if (turno === 'B2') hrInicioServicio = zObj.b2; 
-        else if (turno === 'B2P') hrInicioServicio = zObj.b2p;
-
+        if (turno === 'A1') hrInicioServicio = zObj.a1; else if (turno === 'A2') hrInicioServicio = zObj.a2_lv; else if (turno === 'A2P') hrInicioServicio = zObj.a2p_lv; else if (turno === 'B1') hrInicioServicio = zObj.b1; else if (turno === 'B2') hrInicioServicio = zObj.b2; else if (turno === 'B2P') hrInicioServicio = zObj.b2p;
         let hrIngresoFinal = hrInicioServicio; 
-        if(reg.adicional && DIC_ADICIONALES[reg.adicional] && DIC_ADICIONALES[reg.adicional].h) { 
-            hrIngresoFinal = DIC_ADICIONALES[reg.adicional].h; 
-        }
+        if(reg.adicional && DIC_ADICIONALES[reg.adicional] && DIC_ADICIONALES[reg.adicional].h) { hrIngresoFinal = DIC_ADICIONALES[reg.adicional].h; }
         let hrSalidaFinal = sumar20Min(hrIngresoFinal);
 
         let bgConductor = ""; 
-        if (reg.adicional === "DESCANSO") {
-            bgConductor = "background: #f1c40f;";
-        } else if (progAyer !== null && reg.conductor) {
-            let hizoAyer = progAyer.find(a => a.conductor === reg.conductor);
-            let zonaAyer = hizoAyer ? hizoAyer.key.split('_')[0] : null;
-            if(zonaAyer && zonaAyer !== zName) { bgConductor = "background: #2ecc71; color: #000; font-weight: bold;"; } 
-        }
+        if (reg.adicional === "DESCANSO") { bgConductor = "background: #f1c40f;"; } 
+        else if (progAyer !== null && reg.conductor) { let hizoAyer = progAyer.find(a => a.conductor === reg.conductor); let zonaAyer = hizoAyer ? hizoAyer.key.split('_')[0] : null; if(zonaAyer && zonaAyer !== zName) { bgConductor = "background: #2ecc71; color: #000; font-weight: bold;"; } }
 
-        let tdUnidad = (uniObj.tipoVehiculo && uniObj.tipoVehiculo.includes('BUS')) 
-            ? `<td style="background:#95a5a6; color:#fff; font-weight:bold;">BUS / VOLV <br><small>${uniObj.cod}</small></td>` 
-            : `<td style="background:#f39c12; color:#fff; font-weight:bold;">VAN / MERC <br><small>${uniObj.cod}</small></td>`;
-        
+        let tdUnidad = (uniObj.tipoVehiculo && uniObj.tipoVehiculo.includes('BUS')) ? `<td style="background:#95a5a6; color:#fff; font-weight:bold;">BUS / VOLV <br><small>${uniObj.cod}</small></td>` : `<td style="background:#f39c12; color:#fff; font-weight:bold;">VAN / MERC <br><small>${uniObj.cod}</small></td>`;
         let rutaOficial = '';
-        if (turno === 'A1') rutaOficial = zObj.rec_a1_ofic; 
-        else if (turno === 'A2') rutaOficial = zObj.rec_a2_ofic; 
-        else if (turno === 'A2P') rutaOficial = zObj.rec_a2p_ofic; 
-        else if (turno === 'B1') rutaOficial = zObj.rec_b1_ofic; 
-        else if (turno === 'B2') rutaOficial = zObj.rec_b2_ofic; 
-        else if (turno === 'B2P') rutaOficial = zObj.rec_b2p_ofic;
-
-        let tdObsZona = `<td class="celda-texto-largo">${rutaOficial || '-'}</td>`;
-        let tdCarril = `<td>${reg.carril || ''}</td>`;
+        if (turno === 'A1') rutaOficial = zObj.rec_a1_ofic; else if (turno === 'A2') rutaOficial = zObj.rec_a2_ofic; else if (turno === 'A2P') rutaOficial = zObj.rec_a2p_ofic; else if (turno === 'B1') rutaOficial = zObj.rec_b1_ofic; else if (turno === 'B2') rutaOficial = zObj.rec_b2_ofic; else if (turno === 'B2P') rutaOficial = zObj.rec_b2p_ofic;
         
-        let tdAdic = `<td></td>`;
-        if(reg.adicional && DIC_ADICIONALES[reg.adicional]) {
-            let d = DIC_ADICIONALES[reg.adicional];
-            tdAdic = `<td style="background:${d.bg}; color:${d.col}; font-weight:bold; font-size:0.75rem;">${reg.adicional}</td>`;
-        }
-
+        let tdObsZona = `<td class="celda-texto-largo">${rutaOficial || '-'}</td>`; let tdCarril = `<td>${reg.carril || ''}</td>`;
+        let tdAdic = `<td></td>`; if(reg.adicional && DIC_ADICIONALES[reg.adicional]) { let d = DIC_ADICIONALES[reg.adicional]; tdAdic = `<td style="background:${d.bg}; color:${d.col}; font-weight:bold; font-size:0.75rem;">${reg.adicional}</td>`; }
         let tdReparto = reg.reparto ? `<td style="background:#3498db; color:white; font-weight:bold;">REPARTO ${reg.reparto}</td>` : `<td></td>`;
-
-        let tdCapacitacion = '';
-        let cNom = condObj.nombre || condObj.NOMBRE || '--';
+        
+        let tdCapacitacion = ''; let cNom = condObj.nombre || condObj.CONDUCTOR || condObj.NOMBRE || '--';
         if (hayCapacitacion) {
-            let nombreNorm = normalizarTexto(cNom);
-            let leToca = datosCapacitacion.lista.some(n => nombreNorm.includes(n) || n.includes(nombreNorm));
-            if (leToca) { 
-                tdCapacitacion = `<td style="background:#8e44ad; color:white; font-weight:bold; font-size:0.75rem; border:2px solid #000;">${datosCapacitacion.titulo}</td>`; 
-            } else { 
-                tdCapacitacion = `<td></td>`; 
-            }
+            let nombreNorm = normalizarTexto(cNom); let leToca = datosCapacitacion.lista.some(n => nombreNorm.includes(n) || n.includes(nombreNorm));
+            tdCapacitacion = leToca ? `<td style="background:#8e44ad; color:white; font-weight:bold; font-size:0.75rem; border:2px solid #000;">${datosCapacitacion.titulo}</td>` : `<td></td>`; 
         }
 
         tablaHTML += `<tr>
-            <td style="background:#cc0000; color:white; font-weight:bold;">${contadorFilas++}</td>
-            <td style="background:#c0392b; color:#fff; font-weight:bold;">${hrIngresoFinal || '-'}</td>
-            <td class="col-gris-oscuro">${hrSalidaFinal || '-'}</td>
-            <td class="col-amarillo">${zName}</td>
-            <td class="col-amarillo">${hrInicioServicio || '-'}</td>
-            <td style="${bgConductor}">${cNom}</td>
-            ${tdUnidad}
-            ${tdObsZona}
-            ${tdCarril}
-            ${tdAdic}
-            ${tdReparto}
-            ${tdCapacitacion}
+            <td style="background:#cc0000; color:white; font-weight:bold;">${contadorFilas++}</td><td style="background:#c0392b; color:#fff; font-weight:bold;">${hrIngresoFinal || '-'}</td><td class="col-gris-oscuro">${hrSalidaFinal || '-'}</td><td class="col-amarillo">${zName}</td><td class="col-amarillo">${hrInicioServicio || '-'}</td>
+            <td style="${bgConductor}">${cNom}</td>${tdUnidad}${tdObsZona}${tdCarril}${tdAdic}${tdReparto}${tdCapacitacion}
         </tr>`;
     });
-
     tablaHTML += `</tbody></table>`;
-    let containerRoster = document.getElementById('contenedorFotoRoster');
-    if(containerRoster) containerRoster.innerHTML = tablaHTML;
+    let containerRoster = document.getElementById('contenedorFotoRoster'); if(containerRoster) containerRoster.innerHTML = tablaHTML;
 }
 
 function descargarRosterImagen() {
-    let node = document.getElementById('tablaFotografia');
-    if(!node) return alert("Primero debes cargar una programación.");
+    let node = document.getElementById('tablaFotografia'); if(!node) return alert("Primero debes cargar una programación.");
     html2canvas(node, { scale: 2 }).then(canvas => {
-        let imgURL = canvas.toDataURL("image/jpeg", 1.0);
-        let link = document.createElement("a");
-        let fechaInput = document.getElementById('fechaProgInput');
-        link.download = `Roster_WhatsApp_${fechaInput ? fechaInput.value : 'prog'}.jpg`;
+        let imgURL = canvas.toDataURL("image/jpeg", 1.0); let link = document.createElement("a");
+        let fechaInput = document.getElementById('fechaProgInput'); link.download = `Roster_WhatsApp_${fechaInput ? fechaInput.value : 'prog'}.jpg`;
         link.href = imgURL; link.click();
     });
 }
 
 // BACKUP
-function solicitarClaveParaAccion(cb) { 
-    callbackAccionPendiente = cb; 
-    let inp = document.getElementById('claveAdminInput');
-    if(inp) inp.value = ''; 
-    abrirModal('modalVaciar'); 
-    setTimeout(() => { if(inp) inp.focus(); }, 100); 
-}
-
-function confirmarVaciarDatos() { 
-    let inp = document.getElementById('claveAdminInput');
-    if(inp && inp.value === CLAVE_ADMIN_PERMANENTE) { 
-        cerrarModal('modalVaciar'); 
-        callbackAccionPendiente?.(); 
-    } else alert("Clave incorrecta."); 
-}
-
-function abrirModalVaciarSeguro(t) { 
-    targetVaciar = t; 
-    solicitarClaveParaAccion(() => { 
-        if(t === 'conductores') { conductores = []; guardarConductores(true); renderizarConductores(); } 
-        else { unidades = []; guardarUnidades(true); renderizarUnidades(); } 
-        alert("✓ Eliminado."); 
-    }); 
-}
-
+function solicitarClaveParaAccion(cb) { callbackAccionPendiente = cb; let inp = document.getElementById('claveAdminInput'); if(inp) inp.value = ''; abrirModal('modalVaciar'); setTimeout(() => { if(inp) inp.focus(); }, 100); }
+function confirmarVaciarDatos() { let inp = document.getElementById('claveAdminInput'); if(inp && inp.value === CLAVE_ADMIN_PERMANENTE) { cerrarModal('modalVaciar'); callbackAccionPendiente?.(); } else alert("Clave incorrecta."); }
+function abrirModalVaciarSeguro(t) { targetVaciar = t; solicitarClaveParaAccion(() => { if(t === 'conductores') { conductores = []; guardarConductores(true); renderizarConductores(); } else { unidades = []; guardarUnidades(true); renderizarUnidades(); } alert("✓ Eliminado."); }); }
 function exportarRespaldoSistema() {
     try { 
-        const data = { 
-            conductores: cargarDatosSeguros('bd_conductores_smcv', []), 
-            unidades: cargarDatosSeguros('bd_unidades_smcv', []), 
-            zonas: cargarDatosSeguros('bd_zonas_oficial_smcv', ZONAS_FABRICA), 
-            plantillas: cargarDatosSeguros('bd_plantillas_smcv', {}), 
-            programacion: cargarDatosSeguros('bd_prog_diaria_smcv', {}) 
-        };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-        const a = document.createElement("a"); 
-        a.href = URL.createObjectURL(blob); 
-        a.download = `Respaldo_SMCV_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a); 
-        a.click(); 
-        document.body.removeChild(a); 
-        URL.revokeObjectURL(a.href);
+        const data = { conductores: cargarDatosSeguros('bd_conductores_smcv', []), unidades: cargarDatosSeguros('bd_unidades_smcv', []), zonas: cargarDatosSeguros('bd_zonas_oficial_smcv', ZONAS_FABRICA), plantillas: cargarDatosSeguros('bd_plantillas_smcv', {}), programacion: cargarDatosSeguros('bd_prog_diaria_smcv', {}) };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `Respaldo_SMCV_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
     } catch(e) { alert("Error: " + e.message); }
 }
-
 function importarRespaldoSistema(e) {
-    const file = e.target.files[0]; 
-    if (!file) return; 
-    const r = new FileReader();
+    const file = e.target.files[0]; if (!file) return; const r = new FileReader();
     r.onload = function(evt) { 
         try { 
             const d = JSON.parse(evt.target.result);
-            if(d.conductores) localStorage.setItem('bd_conductores_smcv', JSON.stringify(d.conductores));
-            if(d.unidades) localStorage.setItem('bd_unidades_smcv', JSON.stringify(d.unidades));
-            if(d.zonas) localStorage.setItem('bd_zonas_oficial_smcv', JSON.stringify(d.zonas));
-            if(d.plantillas) localStorage.setItem('bd_plantillas_smcv', JSON.stringify(d.plantillas));
-            if(d.programacion) localStorage.setItem('bd_prog_diaria_smcv', JSON.stringify(d.programacion));
-            
-            alert("✓ RESTAURADO. Refrescando..."); 
-            location.reload(); 
-        } catch(err) { alert("Error: " + err.message); } 
-        e.target.value = ''; 
-    }; 
-    r.readAsText(file);
+            if(d.conductores) localStorage.setItem('bd_conductores_smcv', JSON.stringify(d.conductores)); if(d.unidades) localStorage.setItem('bd_unidades_smcv', JSON.stringify(d.unidades)); if(d.zonas) localStorage.setItem('bd_zonas_oficial_smcv', JSON.stringify(d.zonas)); if(d.plantillas) localStorage.setItem('bd_plantillas_smcv', JSON.stringify(d.plantillas)); if(d.programacion) localStorage.setItem('bd_prog_diaria_smcv', JSON.stringify(d.programacion));
+            alert("✓ RESTAURADO. Refrescando..."); location.reload(); 
+        } catch(err) { alert("Error: " + err.message); } e.target.value = ''; 
+    }; r.readAsText(file);
 }
 
 // ARRANQUE DEL SISTEMA
 window.onload = async function() { 
     aplicarTema(localStorage.getItem('planner_theme') || 'cerro-verde'); 
-    
     try {
-        let [resCond, resUni] = await Promise.all([
-            fetch(URL_API_CONDUCTORES + "?t=" + new Date().getTime()),
-            fetch(URL_API_UNIDADES + "?t=" + new Date().getTime())
-        ]);
+        let [resCond, resUni] = await Promise.all([ fetch(URL_API_CONDUCTORES + "?t=" + new Date().getTime()), fetch(URL_API_UNIDADES + "?t=" + new Date().getTime()) ]);
         if(resCond.ok) { let dC = await resCond.json(); if(dC && dC.length > 0) { conductores = dC; guardarConductores(false); } }
         if(resUni.ok) { let dU = await resUni.json(); if(dU && dU.length > 0) { unidades = dU; guardarUnidades(false); } }
-    } catch(e) {
-        console.log("Modo offline o error de red. Cargando datos locales.");
-    }
-
-    actualizarFiltrosDinamicos();
-    actualizarFiltrosDinamicosUnidades();
-    actualizarFiltrosDinamicosConductores();
-    renderizarConductores();
-    renderizarUnidades();
-    actualizarDashboard();
-    cambiarVista('dashboard'); 
+    } catch(e) { console.log("Modo offline o error de red. Cargando datos locales."); }
+    actualizarFiltrosDinamicos(); actualizarFiltrosDinamicosUnidades(); actualizarFiltrosDinamicosConductores();
+    renderizarConductores(); renderizarUnidades(); actualizarDashboard(); cambiarVista('dashboard'); 
 };
 
 // ==========================================
 // IMPORTAR EXCEL DEL PLANNER DE MANTENIMIENTO
 // ==========================================
 function importarExcelMantenimiento(e) {
-    let file = e.target.files[0];
-    if(!file) return;
-    let r = new FileReader();
+    let file = e.target.files[0]; if(!file) return; let r = new FileReader();
     r.onload = function(evt) {
         try {
-            let dataArr = new Uint8Array(evt.target.result);
-            let wb = XLSX.read(dataArr, {type: 'array'});
-            let sheet = wb.Sheets[wb.SheetNames[0]];
-            
+            let dataArr = new Uint8Array(evt.target.result); let wb = XLSX.read(dataArr, {type: 'array'}); let sheet = wb.Sheets[wb.SheetNames[0]];
             let rows = XLSX.utils.sheet_to_json(sheet, {header: 1, defval: ""});
-            
-            let actualizadosCount = 0;
-            let idxCod = -1, idxLugar = -1, idxObs = -1;
-
-            unidades.forEach(u => { 
-                u.estado = 'OPERATIVO'; 
-                u.mantenimiento = ''; 
-                u.prioridadTurnoA = false; 
-            });
-
+            let actualizadosCount = 0; let idxCod = -1, idxLugar = -1, idxObs = -1;
+            unidades.forEach(u => { u.estado = 'OPERATIVO'; u.mantenimiento = ''; u.prioridadTurnoA = false; });
             rows.forEach(row => {
                 let tempCod = row.findIndex(cell => String(cell).toUpperCase().trim() === 'CODIGO' || String(cell).toUpperCase().trim() === 'CÓDIGO');
-                let tempLugar = row.findIndex(cell => String(cell).toUpperCase().trim() === 'LUGAR');
-                let tempObs = row.findIndex(cell => String(cell).toUpperCase().trim() === 'OBSERVACIONES');
-                
-                if (tempCod !== -1) idxCod = tempCod;
-                if (tempLugar !== -1) idxLugar = tempLugar;
-                if (tempObs !== -1) idxObs = tempObs;
-
+                let tempLugar = row.findIndex(cell => String(cell).toUpperCase().trim() === 'LUGAR'); let tempObs = row.findIndex(cell => String(cell).toUpperCase().trim() === 'OBSERVACIONES');
+                if (tempCod !== -1) idxCod = tempCod; if (tempLugar !== -1) idxLugar = tempLugar; if (tempObs !== -1) idxObs = tempObs;
                 if (idxCod !== -1) {
-                    let codVal = String(row[idxCod]).toUpperCase().trim();
-                    let lugarVal = idxLugar !== -1 ? String(row[idxLugar]).toUpperCase().trim() : '';
-
+                    let codVal = String(row[idxCod]).toUpperCase().trim(); let lugarVal = idxLugar !== -1 ? String(row[idxLugar]).toUpperCase().trim() : '';
                     if (codVal && codVal !== 'CODIGO' && codVal !== 'CÓDIGO') {
                         let codLimpio = codVal.replace(/[^A-Z0-9]/g, '').replace(/^0+/, ''); 
-                        
-                        let uEncontrada = unidades.find(u => {
-                            let cBase = String(u.codigo || u.cod || '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^0+/, '');
-                            return cBase === codLimpio;
-                        });
-
+                        let uEncontrada = unidades.find(u => { let cBase = String(u.codigo || u.cod || '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^0+/, ''); return cBase === codLimpio; });
                         if (uEncontrada) {
-                            uEncontrada.estado = 'TALLER';
-                            uEncontrada.mantenimiento = lugarVal || 'MANTTO';
-                            
-                            if (lugarVal.includes("AUTRISA") || lugarVal.includes("BASE 1") || lugarVal.includes("DIVE")) {
-                                uEncontrada.prioridadTurnoA = true;
-                            }
+                            uEncontrada.estado = 'TALLER'; uEncontrada.mantenimiento = lugarVal || 'MANTTO';
+                            if (lugarVal.includes("AUTRISA") || lugarVal.includes("BASE 1") || lugarVal.includes("DIVE")) { uEncontrada.prioridadTurnoA = true; }
                             actualizadosCount++;
                         }
                     }
                 }
             });
-
-            guardarUnidades();
-            actualizarFiltrosDinamicosUnidades();
-            renderizarUnidades();
-            alert(`✓ Importación exitosa. Se pasaron a TALLER ${actualizadosCount} unidades según el reporte.`);
-        } catch(err) {
-            alert("Error al leer el Excel de mantenimiento: " + err.message);
-        }
+            guardarUnidades(); actualizarFiltrosDinamicosUnidades(); renderizarUnidades(); alert(`✓ Importación exitosa. Se pasaron a TALLER ${actualizadosCount} unidades según el reporte.`);
+        } catch(err) { alert("Error al leer el Excel de mantenimiento: " + err.message); }
         e.target.value = '';
-    };
-    r.readAsArrayBuffer(file);
+    }; r.readAsArrayBuffer(file);
 }

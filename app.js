@@ -103,20 +103,35 @@ function toggleSubmenuMaestros() {
     arrow.style.transform = sub.classList.contains('open') ? 'rotate(0deg)' : 'rotate(-90deg)'; 
 }
 
-function cambiarVista(v) {
-    document.querySelectorAll('.view-section, .nav-item').forEach(el => el.classList.remove('active'));
-    document.getElementById('vista' + v.charAt(0).toUpperCase() + v.slice(1)).classList.add('active');
+function cambiarVista(vista) {
+    // 1. Ocultar todas las vistas
+    document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
     
-    let navBtn = document.getElementById('btnNav' + v.charAt(0).toUpperCase() + v.slice(1)); 
-    if(navBtn) navBtn.classList.add('active');
+    // 2. Apagar todos los botones de la barra superior
+    document.querySelectorAll('.nav-btn, .dropdown-content a').forEach(btn => btn.classList.remove('active'));
+
+    // 3. Variables para saber qué botones encender
+    let vistaId = "";
+    let btnId = "";
+    let parentBtnId = ""; // Por si está dentro del menú Maestros
+
+    if (vista === 'dashboard') { vistaId = 'vistaDashboard'; btnId = 'btnNavDashboard'; }
+    if (vista === 'conductores') { vistaId = 'vistaConductores'; btnId = 'btnNavConductores'; parentBtnId = 'btnNavMaestros'; }
+    if (vista === 'unidades') { vistaId = 'vistaUnidades'; btnId = 'btnNavUnidades'; parentBtnId = 'btnNavMaestros'; }
+    if (vista === 'zonas') { vistaId = 'vistaZonas'; btnId = 'btnNavZonas'; }
+    if (vista === 'plantillas') { vistaId = 'vistaPlantillas'; btnId = 'btnNavPlantillas'; }
+    if (vista === 'programacion') { vistaId = 'vistaProgramacion'; btnId = 'btnNavProgramacion'; }
+    if (vista === 'respaldo') { vistaId = 'vistaRespaldo'; btnId = 'btnNavRespaldo'; }
+    if (vista === 'roster') { vistaId = 'vistaRoster'; btnId = 'btnNavRoster'; }
+
+    // 4. Encender la vista y los botones correspondientes
+    if(document.getElementById(vistaId)) document.getElementById(vistaId).classList.add('active');
+    if(document.getElementById(btnId)) document.getElementById(btnId).classList.add('active');
+    if(parentBtnId && document.getElementById(parentBtnId)) document.getElementById(parentBtnId).classList.add('active');
     
-    if(v === 'dashboard') actualizarDashboard();
-    else if(v === 'conductores') renderizarConductores();
-    else if(v === 'unidades') { actualizarFiltrosDinamicosUnidades(); renderizarUnidades(); }
-    else if(v === 'zonas') renderizarZonas();
-    else if(v === 'plantillas') { cargarOpcionesZonasSelect(); renderizarGestorPlantillas(); }
-    else if(v === 'programacion') procesarCambioFechaProg();
-    else if(v === 'roster') renderizarRosterOficial();
+    // 5. Refrescar renderizado
+    if (vista === 'conductores') { actualizarFiltrosDinamicosConductores(); renderizarConductores(); }
+    if (vista === 'unidades') { actualizarFiltrosDinamicosUnidades(); renderizarUnidades(); }
 }
 
 function obtenerEdadProcesada(f) { 
@@ -148,6 +163,34 @@ function determinarTipoConductor(contrato) {
     if (txt.includes('ESPECIALIZADO')) return 'BUS';
     return 'VAN';
 }
+
+// Variables globales para filtros de conductores
+let filtroActivoContratoCond = "TODOS";
+let filtroActivoServicioCond = "TODOS";
+
+function actualizarFiltrosDinamicosConductores() {
+    let contenedor = document.getElementById('contenedorChipsFiltrosCond');
+    if (!contenedor || !conductores) return;
+
+    // Obtener listas únicas quitando vacíos
+    let contratos = ["TODOS", ...new Set(conductores.map(c => c.contrato).filter(Boolean))];
+    let servicios = ["TODOS", ...new Set(conductores.map(c => c.servicio).filter(Boolean))];
+
+    let html = `
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); width: 60px;">CONTRATO:</span>
+            ${contratos.map(c => `<button class="chip-filtro ${filtroActivoContratoCond === c ? 'active' : ''}" onclick="setFiltroContratoCond('${c}')">${c}</button>`).join('')}
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); width: 60px;">SERVICIO:</span>
+            ${servicios.map(s => `<button class="chip-filtro ${filtroActivoServicioCond === s ? 'active' : ''}" onclick="setFiltroServicioCond('${s}')">${s}</button>`).join('')}
+        </div>
+    `;
+    contenedor.innerHTML = html;
+}
+
+function setFiltroContratoCond(val) { filtroActivoContratoCond = val; actualizarFiltrosDinamicosConductores(); renderizarConductores(); }
+function setFiltroServicioCond(val) { filtroActivoServicioCond = val; actualizarFiltrosDinamicosConductores(); renderizarConductores(); }
 
 // ==========================================
 // SISTEMA DE NOTIFICACIONES FLOTANTES (TOAST)
@@ -397,52 +440,44 @@ function actualizarFiltrosDinamicos() {
     selectServicio.innerHTML = html;
 }
 
-function renderizarConductores() { 
-    let tbody = document.getElementById('tbodyConductores'); 
+function renderizarConductores() {
+    let tbody = document.getElementById('tbodyConductores');
     if(!tbody) return;
-    tbody.innerHTML = ''; 
     
-    let txt = document.getElementById('searchConductores').value.toUpperCase().trim(); 
-    let selectCargo = document.getElementById('filtroCargoCond');
-    let fCargo = selectCargo ? selectCargo.value : 'TODOS';
-    let selectServicio = document.getElementById('filtroServicioCond');
-    let fServicio = selectServicio ? selectServicio.value : 'TODOS';
+    let search = (document.getElementById('searchConductores')?.value || '').toLowerCase();
     
-    let correlativo = 1; 
-    
-    conductores.forEach((c) => { 
-        if (txt && !c.dni.includes(txt) && !c.nombre.toUpperCase().includes(txt)) return; 
-        
-        let cat = determinarTipoConductor(c.contrato);
-        if (fCargo !== 'TODOS' && cat !== fCargo) return;
-        
-        let serv = (c.servicio || '').toUpperCase();
-        if (fServicio !== 'TODOS' && serv !== fServicio) return;
-        
-        let edad = obtenerEdadProcesada(c.nac); 
-        let badgeClass = cat === 'BUS' ? 'badge-bus' : (cat === 'MINIBUS' ? 'badge-minibus' : 'badge-van');
-        let est = (c.estadoAbrev || '').toUpperCase();
-        let colorText = '#1e293b', colorBg = '#e2e8f0'; 
-        
-        if (est === 'A' || est === 'B') { colorText = '#065f46'; colorBg = '#d1fae5'; } 
-        else if (est === 'ADI' || est === 'PA' || est === 'MO' || est === 'MT') { colorText = '#b45309'; colorBg = '#fef3c7'; } 
-        else if (est === 'AL') { colorText = '#1d4ed8'; colorBg = '#dbeafe'; } 
-        else if (est === 'V' || est === 'DT' || est === 'I' || est === 'D' || est === 'NC') { colorText = '#991b1b'; colorBg = '#fee2e2'; } 
+    // Filtrado por los nuevos chips
+    let filtrados = conductores.filter(c => {
+        let matchSearch = c.dni.toLowerCase().includes(search) || c.nombre.toLowerCase().includes(search);
+        let matchContrato = (filtroActivoContratoCond === 'TODOS' || c.contrato === filtroActivoContratoCond);
+        let matchServicio = (filtroActivoServicioCond === 'TODOS' || c.servicio === filtroActivoServicioCond);
+        return matchSearch && matchContrato && matchServicio;
+    });
 
-        tbody.insertAdjacentHTML('beforeend', `<tr>
-            <td style="color:var(--text-muted); font-weight:bold;">${correlativo++}</td>
+    // --- ACTUALIZAR KPIs FLOTANTES (Separadores) ---
+    if(document.getElementById('kpiTotalCond')) document.getElementById('kpiTotalCond').innerText = filtrados.length;
+    if(document.getElementById('kpiRegCond')) document.getElementById('kpiRegCond').innerText = filtrados.filter(c => c.servicio === 'REGULAR').length;
+    if(document.getElementById('kpiDomCond')) document.getElementById('kpiDomCond').innerText = filtrados.filter(c => c.servicio === 'DOMICILIOS').length;
+    // -----------------------------------------------
+
+    tbody.innerHTML = '';
+    filtrados.forEach((c, index) => {
+        let tr = document.createElement('tr');
+        // Asegúrate de incluir el index+1 en la primera celda <td>${index + 1}</td>
+        tr.innerHTML = `
+            <td>${index + 1}</td>
             <td>${c.dni}</td>
-            <td>${c.nombre}</td>
-            <td>${edad.texto}</td>
-            <td>${obtenerTiempoLaborandoExacto(c.ing)}</td>
-            <td><span class="badge-unit ${badgeClass}">${c.contrato || c.tipo}</span></td>
-            <td style="font-weight: 700; font-size: 0.75rem; color: #0284c7;">${serv || '-'}</td>
-            <td><span style="background:${colorBg}; color:${colorText}; padding:4px 8px; border-radius:4px; font-weight:700; font-size:0.75rem; cursor:help;" title="${c.estadoDesc}">${est}</span></td>
-            <td><i class="fa-solid fa-lock" style="color:var(--text-muted); opacity:0.4;" title="Controlado desde Google Sheets"></i></td>
-        </tr>`); 
-    }); 
+            <td><b>${c.nombre}</b></td>
+            <td>${c.edad || '-'}</td>
+            <td>${c.tiempo || '-'}</td>
+            <td><span class="badge-abrev badge-van">${c.contrato || '-'}</span></td>
+            <td><span class="badge-abrev badge-minibus">${c.servicio || '-'}</span></td>
+            <td><span class="badge-status status-${(c.estado || '').toLowerCase()}">${c.estado || '-'}</span></td>
+            <td><button class="btn-icon" onclick="abrirModalEditConductor('${c.dni}')"><i class="fa-solid fa-pen"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
-
 function renderizarUnidades() {
     let tbody = document.getElementById('tbodyUnidades');
     if(!tbody) return;

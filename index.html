@@ -28,7 +28,7 @@
             <button class="nav-btn active" onclick="cambiarVista('dashboard')" id="btnNavDashboard"><i class="fa-solid fa-house"></i> Inicio</button>
             
             <div class="dropdown">
-                <button class="nav-btn"><i class="fa-solid fa-database"></i> Maestros <i class="fa-solid fa-caret-down" style="font-size:0.7rem;"></i></button>
+                <button class="nav-btn" id="btnNavMaestros"><i class="fa-solid fa-database"></i> Maestros <i class="fa-solid fa-caret-down" style="font-size:0.7rem;"></i></button>
                 <div class="dropdown-content">
                     <a href="#" onclick="cambiarVista('conductores')" id="btnNavConductores"><i class="fa-solid fa-id-card"></i> 1. Fuerza Laboral</a>
                     <a href="#" onclick="cambiarVista('unidades')" id="btnNavUnidades"><i class="fa-solid fa-bus"></i> 2. Flota Activa</a>
@@ -147,24 +147,42 @@
                     <button class="btn-hidden-admin" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer;" onclick="abrirModalVaciarSeguro('conductores')" title="Borrar DB Local"><i class="fa-solid fa-shield-halved"></i></button>
                 </div>
             </div>
+
+            <!-- SEPARADORES DE CUADERNO FLOTANTES (KPIs CONDUCTORES) -->
+            <div id="sideKpisConductores" class="side-kpis">
+                <div class="kpi-tab tab-blue">
+                    <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
+                    <div class="kpi-details">
+                        <span>TOTAL</span>
+                        <h3 id="kpiTotalCond">0</h3>
+                    </div>
+                </div>
+                <div class="kpi-tab tab-green">
+                    <div class="kpi-icon"><i class="fa-solid fa-route"></i></div>
+                    <div class="kpi-details">
+                        <span>REGULARES</span>
+                        <h3 id="kpiRegCond">0</h3>
+                    </div>
+                </div>
+                <div class="kpi-tab" style="border-left: 4px solid #f59e0b;">
+                    <div class="kpi-icon" style="color: #f59e0b;"><i class="fa-solid fa-house-user"></i></div>
+                    <div class="kpi-details">
+                        <span>DOMICILIOS</span>
+                        <h3 id="kpiDomCond" style="color: #f59e0b; margin:0; font-size: 1.4rem;">0</h3>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
-                <div class="toolbar">
-                    <div class="search-container">
+                <div class="toolbar" style="flex-direction: column; align-items: stretch; gap: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <div class="search-container" style="max-width: 400px;">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <input type="text" id="searchConductores" placeholder="Buscar DNI o Nombre..." onkeyup="renderizarConductores()">
                     </div>
-                    <div style="display:flex; gap:10px;">
-                        <select id="filtroCargoCond" onchange="renderizarConductores()" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main);">
-                            <option value="TODOS">Todos los Cargos</option>
-                            <option value="VAN">Conductores VAN</option>
-                            <option value="MINIBUS">Conductores MINIBÚS</option>
-                            <option value="BUS">Conductores BUS</option>
-                        </select>
-                        <select id="filtroServicioCond" onchange="renderizarConductores()" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main);">
-                            <option value="TODOS">Todos los Servicios</option>
-                        </select>
-                    </div>
+                    <!-- CONTENEDOR DE CHIPS DINÁMICOS -->
+                    <div id="contenedorChipsFiltrosCond" style="display: flex; flex-direction: column; gap: 10px;"></div>
                 </div>
+                
                 <div class="table-container">
                     <table>
                         <thead>

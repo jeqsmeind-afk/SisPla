@@ -53,7 +53,6 @@ const DIC_ADICIONALES = {
 };
 
 const OPCIONES_CARRILES = ["", "MOV. TIERR / CARR. 3", "TRUCKSHOP / CARR. 1", "TRUCKSHOP / CARR. 2", "LUBRIC / CARR. AUX", "CARR. J/PLAT SUR"];
-
 const URL_API_CONDUCTORES = "https://script.google.com/macros/s/AKfycbwYiiV2_-zSTcLUft_xcPTXl03LxcyTNcZ2l2u8RfTtPsrvyrzOcPR9NVJCd4AxhLfR/exec";
 const URL_API_UNIDADES = "https://script.google.com/macros/s/AKfycbz95bAXTt3TdLqWrHswVEtSWEjA1Qb5RCdb9QfUnRqsGOgilnNzrpcR8V6l4mkhZCBlZA/exec";
 
@@ -75,25 +74,26 @@ function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
 function aplicarTema(t) { document.body.setAttribute('data-theme', t); localStorage.setItem('planner_theme', t); }
 
 // =========================================================
-// CORRECCIÓN MAGIA DOM: ALINEACIÓN PERFECTA DE TÍTULOS 
+// MAGIA DOM: COMPACIDAD MÁXIMA PARA TÍTULOS Y ETIQUETAS
 // =========================================================
 function estilizarTitulosYContenedores() {
     document.querySelectorAll('.view-section').forEach(vista => {
         let header = vista.querySelector('h1, h2, h3');
         if (header && !header.parentElement.classList.contains('header-flex-wrapper')) {
-            // Contenedor Flex Global
+            
+            // Creamos el Wrapper Flex que une Título + KPIs + Botones
             let wrapper = document.createElement('div');
             wrapper.className = 'header-flex-wrapper';
             wrapper.style.display = 'flex';
             wrapper.style.alignItems = 'center'; 
-            wrapper.style.justifyContent = 'space-between'; // Título a la izquierda, KPIs a la derecha
+            wrapper.style.justifyContent = 'space-between';
             wrapper.style.flexWrap = 'wrap';
-            wrapper.style.marginBottom = '12px'; // Reducimos espacios perdidos
+            wrapper.style.gap = '10px';
+            wrapper.style.marginBottom = '2px'; // << ESPACIO TOTALMENTE REDUCIDO AQUI
             wrapper.style.borderBottom = '2px solid #e5e7eb';
-            wrapper.style.paddingBottom = '8px';
+            wrapper.style.paddingBottom = '4px';
             wrapper.style.width = '100%';
 
-            // Título unificado para TODAS las pestañas
             header.style.margin = '0';
             header.style.fontSize = '1.5rem';
             header.style.fontWeight = '900';
@@ -106,11 +106,25 @@ function estilizarTitulosYContenedores() {
             header.parentNode.insertBefore(wrapper, header);
             wrapper.appendChild(header);
             
-            // Eliminamos márgenes perdidos en la tarjeta blanca (card)
+            // Si la tarjeta (card) tiene un margin-top por defecto en CSS, lo matamos
             let card = vista.querySelector('.card');
             if(card) { card.style.marginTop = '0px'; }
         }
     });
+
+    // Inyectar un CSS global para matar TODAS las lengüetas y estorbos transparentes del pasado
+    if(!document.getElementById('css-limpiador')) {
+        let style = document.createElement('style');
+        style.id = 'css-limpiador';
+        style.innerHTML = `
+            #vistaUnidades > div[style*="fixed"], 
+            #vistaUnidades > div[style*="absolute"],
+            #vistaUnidades .floating-kpis,
+            #vistaUnidades .side-tabs,
+            #vistaUnidades .right-tabs { display: none !important; }
+        `;
+        document.head.appendChild(style);
+    }
 }
 
 function cambiarVista(vista) {
@@ -153,7 +167,6 @@ function obtenerTiempoLaborandoExacto(f) {
     return a < 0 ? '0 a / 0 m' : `${a} a / ${m} m`; 
 }
 function determinarTipoConductor(contrato) { if(!contrato) return 'VAN'; let txt = contrato.toUpperCase(); if (txt.includes('ESPECIALIZADO M')) return 'MINIBUS'; if (txt.includes('ESPECIALIZADO')) return 'BUS'; return 'VAN'; }
-
 function obtenerEstiloEstado(estado) {
     let e = String(estado).toUpperCase().trim();
     if(e === 'A') return 'background-color: #d1fae5; color: #065f46; border: 1px solid #34d399; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Verde
@@ -220,7 +233,6 @@ function actualizarFiltrosDinamicosUnidades() {
     let htmlServs = `<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;"><span style="font-size:0.7rem; font-weight:800; color:#6b7280; width: 65px; letter-spacing:0.5px;">SERVICIO:</span><div style="display: flex; gap: 0; flex-wrap: wrap;">`;
     allServs.forEach((s, i) => { let isActive = (fActivoUnidadServicio === s); let bg = isActive ? '#0284c7' : '#ffffff'; let col = isActive ? '#ffffff' : '#4b5563'; let brL = i === 0 ? '4px' : '0'; let brR = i === allServs.length - 1 ? '4px' : '0'; let zIdx = isActive ? 2 : 1; htmlServs += `<button onclick="toggleFiltroUnidades('servicio', '${s}')" style="padding: 4px 12px; font-size: 0.7rem; font-weight: 700; background: ${bg}; color: ${col}; border: 1px solid #d1d5db; border-radius: ${brL} ${brR} ${brR} ${brL}; cursor: pointer; margin-left: -1px; transition: all 0.2s; position: relative; z-index: ${zIdx}; outline: none;">${s}</button>`; }); htmlServs += `</div></div>`;
     let panel = document.getElementById('contenedorChipsFiltros'); if(panel) panel.innerHTML = htmlTipos + htmlServs;
-    if(document.getElementById('kpiTotalUnidades')) { document.getElementById('kpiTotalUnidades').innerText = unidades.length; document.getElementById('kpiOperativas').innerText = unidades.filter(u => u.estado !== 'TALLER').length; document.getElementById('kpiTaller').innerText = unidades.filter(u => u.estado === 'TALLER').length; }
 }
 function toggleFiltroUnidades(categoria, valor) { if (categoria === 'tipo') fActivoUnidadTipo = valor; if (categoria === 'servicio') fActivoUnidadServicio = valor; actualizarFiltrosDinamicosUnidades(); renderizarUnidades(); }
 function cambiarEstadoUnidad(idx, nuevoEstado) { unidades[idx].estado = nuevoEstado; guardarUnidades(); actualizarFiltrosDinamicosUnidades(); renderizarUnidades(); }
@@ -255,68 +267,94 @@ function renderizarConductores() {
     });
 }
 
-// =========================================================
-// CORRECCIÓN MAGIA DOM: KPIS SEGUROS (Sin choques de CSS)
-// =========================================================
 function actualizarSideKpisConductores(filtrados, todosConductores) {
-    // 1. OCULTAMOS EL KPI VIEJO para evitar que tu CSS original lo vuelva loco (position absolute, etc.)
-    let kpiAntiguo = document.getElementById('sideKpisConductores');
-    if (kpiAntiguo && kpiAntiguo.parentElement && !kpiAntiguo.parentElement.classList.contains('header-flex-wrapper')) {
-        kpiAntiguo.style.display = 'none';
-        kpiAntiguo.id = 'sideKpisConductores_OCULTO'; 
-    }
+    let kpiAntiguo = document.getElementById('sideKpisConductores'); if (kpiAntiguo && kpiAntiguo.parentElement && !kpiAntiguo.parentElement.classList.contains('header-flex-wrapper')) { kpiAntiguo.style.display = 'none'; kpiAntiguo.id = 'sideKpisConductores_OCULTO'; }
+    let vista = document.getElementById('vistaConductores'); if (!vista) return; let header = vista.querySelector('h1, h2, h3'); if (!header) return; let wrapper = header.parentElement; if (!wrapper.classList.contains('header-flex-wrapper')) return; 
 
-    // 2. BUSCAMOS O CREAMOS NUESTRO NUEVO CONTENEDOR SEGURO AL LADO DEL TÍTULO
-    let vista = document.getElementById('vistaConductores'); if (!vista) return;
-    let header = vista.querySelector('h1, h2, h3'); if (!header) return;
-    
-    // Validamos que exista el Wrapper Global (creado en estilizarTitulos)
-    let wrapper = header.parentElement;
-    if (!wrapper.classList.contains('header-flex-wrapper')) return; 
-
-    // Creamos nuestro nuevo elemento div que no está manchado por el viejo CSS
     let safeKpiBox = document.getElementById('safeKpiBox_Conductores');
-    if (!safeKpiBox) {
-        safeKpiBox = document.createElement('div');
-        safeKpiBox.id = 'safeKpiBox_Conductores';
-        safeKpiBox.style.display = 'flex';
-        safeKpiBox.style.gap = '8px';
-        safeKpiBox.style.flexWrap = 'wrap';
-        safeKpiBox.style.alignItems = 'center';
-        wrapper.appendChild(safeKpiBox);
-    }
+    if (!safeKpiBox) { safeKpiBox = document.createElement('div'); safeKpiBox.id = 'safeKpiBox_Conductores'; safeKpiBox.style.display = 'flex'; safeKpiBox.style.gap = '8px'; safeKpiBox.style.flexWrap = 'wrap'; safeKpiBox.style.alignItems = 'center'; wrapper.appendChild(safeKpiBox); }
 
-    // 3. GENERAMOS EL HTML DE LOS KPIS DIRECTAMENTE EN EL NUEVO CONTENEDOR SEGURO
     let serviciosUnicos = [...new Set(todosConductores.map(c => (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()))]; serviciosUnicos.sort();
     let configServicios = { 'REGULAR': { icon: 'fa-route', color: '#059669' }, 'DOMICILIOS': { icon: 'fa-house-user', color: '#f59e0b' }, 'SIN SERVICIO': { icon: 'fa-ban', color: '#64748b' }, 'INDUCCION': { icon: 'fa-graduation-cap', color: '#8b5cf6' }, 'RETEN PARADA': { icon: 'fa-clock', color: '#0284c7' }, 'MOLLENDO': { icon: 'fa-map-pin', color: '#dc2626' }, 'AMBULANCIA': { icon: 'fa-truck-medical', color: '#10b981' } };
 
-    let html = `
-        <div style="background: var(--card-bg, #fff); padding: 4px 10px; border-radius: 6px; cursor:pointer; display:flex; align-items:center; gap:8px; border: 1px solid #d1d5db; transition: transform 0.1s;" onclick="setFiltroServicioCond('TODOS')" title="Ver Todos" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-            <div style="color:var(--primary, #cc0000); font-size: 1rem;"><i class="fa-solid fa-users"></i></div>
-            <div style="display:flex; flex-direction:column; justify-content:center;">
-                <span style="font-size: 0.6rem; color:#6b7280; font-weight:800; line-height: 1;">TODOS</span>
-                <h3 style="font-size: 1.1rem; margin:0; line-height: 1; color: #1f2937;">${todosConductores.length}</h3>
-            </div>
-        </div>
-    `;
+    let html = `<div style="background: var(--card-bg, #fff); padding: 4px 10px; border-radius: 6px; cursor:pointer; display:flex; align-items:center; gap:8px; border: 1px solid #d1d5db; transition: transform 0.1s;" onclick="setFiltroServicioCond('TODOS')" title="Ver Todos"><div style="color:var(--primary, #cc0000); font-size: 1rem;"><i class="fa-solid fa-users"></i></div><div style="display:flex; flex-direction:column; justify-content:center;"><span style="font-size: 0.6rem; color:#6b7280; font-weight:800; line-height: 1;">TODOS</span><h3 style="font-size: 1.1rem; margin:0; line-height: 1; color: #1f2937;">${todosConductores.length}</h3></div></div>`;
 
     serviciosUnicos.forEach(serv => {
         let count = todosConductores.filter(c => ((c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()) === serv).length; let cfg = configServicios[serv] || { icon: 'fa-circle-dot', color: '#2563eb' }; let isActive = (filtroActivoServicioCond.toUpperCase() === serv); let bgStyle = isActive ? 'background: #f3f4f6;' : 'background: var(--card-bg, #fff);';
-        html += `
-            <div style="${bgStyle} padding: 4px 10px; border-radius: 6px; border-left: 4px solid ${cfg.color}; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; border-right: 1px solid #d1d5db; cursor:pointer; display:flex; align-items:center; gap: 8px; transition: transform 0.1s;" onclick="setFiltroServicioCond('${serv}')" title="Filtrar por ${serv}" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                <div style="color: ${cfg.color}; font-size: 1rem;"><i class="fa-solid ${cfg.icon}"></i></div>
-                <div style="display:flex; flex-direction:column; justify-content:center;">
-                    <span style="font-size: 0.6rem; color: #6b7280; font-weight:800; line-height: 1;">${serv}</span>
-                    <h3 style="color: ${cfg.color}; margin:0; font-size: 1.1rem; line-height: 1;">${count}</h3>
-                </div>
-            </div>
-        `;
+        html += `<div style="${bgStyle} padding: 4px 10px; border-radius: 6px; border-left: 4px solid ${cfg.color}; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; border-right: 1px solid #d1d5db; cursor:pointer; display:flex; align-items:center; gap: 8px;" onclick="setFiltroServicioCond('${serv}')" title="Filtrar por ${serv}"><div style="color: ${cfg.color}; font-size: 1rem;"><i class="fa-solid ${cfg.icon}"></i></div><div style="display:flex; flex-direction:column; justify-content:center;"><span style="font-size: 0.6rem; color: #6b7280; font-weight:800; line-height: 1;">${serv}</span><h3 style="color: ${cfg.color}; margin:0; font-size: 1.1rem; line-height: 1;">${count}</h3></div></div>`;
     });
+    safeKpiBox.innerHTML = html;
+}
+
+// =========================================================
+// NUEVA FUNCIÓN: KPIS Y BOTÓN IMPORTAR PARA UNIDADES
+// =========================================================
+function actualizarSideKpisUnidades() {
+    let vista = document.getElementById('vistaUnidades'); if (!vista) return;
+    
+    // Ocultar cualquier botón viejo de importar que ande suelto por ahí y no en nuestro wrapper
+    vista.querySelectorAll('.btn-importar, button[onclick*="importarExcel"]').forEach(b => {
+        if(!b.classList.contains('btn-compact-seguro')) b.style.display = 'none';
+    });
+
+    let header = vista.querySelector('h1, h2, h3'); if (!header) return; 
+    let wrapper = header.parentElement; if (!wrapper.classList.contains('header-flex-wrapper')) return;
+
+    let safeKpiBox = document.getElementById('safeKpiBox_Unidades');
+    if (!safeKpiBox) { 
+        safeKpiBox = document.createElement('div'); 
+        safeKpiBox.id = 'safeKpiBox_Unidades'; 
+        safeKpiBox.style.display = 'flex'; 
+        safeKpiBox.style.gap = '8px'; 
+        safeKpiBox.style.flexWrap = 'wrap'; 
+        safeKpiBox.style.alignItems = 'center'; 
+        wrapper.appendChild(safeKpiBox); 
+    }
+
+    let total = unidades.length;
+    let operativas = unidades.filter(u => u.estado !== 'TALLER').length;
+    let taller = unidades.filter(u => u.estado === 'TALLER').length;
+
+    // Etiquetas + Botón Verde Compacto
+    let html = `
+        <div style="background: var(--card-bg, #fff); padding: 4px 10px; border-radius: 6px; display:flex; align-items:center; gap:8px; border: 1px solid #d1d5db; border-left: 4px solid #3b82f6;">
+            <div style="color:#3b82f6; font-size: 1rem;"><i class="fa-solid fa-bus"></i></div>
+            <div style="display:flex; flex-direction:column; justify-content:center;">
+                <span style="font-size: 0.6rem; color:#6b7280; font-weight:800; line-height: 1;">TOTAL</span>
+                <h3 style="font-size: 1.1rem; margin:0; line-height: 1; color: #1f2937;">${total}</h3>
+            </div>
+        </div>
+        <div style="background: var(--card-bg, #fff); padding: 4px 10px; border-radius: 6px; display:flex; align-items:center; gap:8px; border: 1px solid #d1d5db; border-left: 4px solid #10b981;">
+            <div style="color:#10b981; font-size: 1rem;"><i class="fa-solid fa-circle-check"></i></div>
+            <div style="display:flex; flex-direction:column; justify-content:center;">
+                <span style="font-size: 0.6rem; color:#6b7280; font-weight:800; line-height: 1;">OPERATIVAS</span>
+                <h3 style="font-size: 1.1rem; margin:0; line-height: 1; color: #10b981;">${operativas}</h3>
+            </div>
+        </div>
+        <div style="background: var(--card-bg, #fff); padding: 4px 10px; border-radius: 6px; display:flex; align-items:center; gap:8px; border: 1px solid #d1d5db; border-left: 4px solid #ef4444;">
+            <div style="color:#ef4444; font-size: 1rem;"><i class="fa-solid fa-wrench"></i></div>
+            <div style="display:flex; flex-direction:column; justify-content:center;">
+                <span style="font-size: 0.6rem; color:#6b7280; font-weight:800; line-height: 1;">TALLER</span>
+                <h3 style="font-size: 1.1rem; margin:0; line-height: 1; color: #ef4444;">${taller}</h3>
+            </div>
+        </div>
+        
+        <!-- Botón Compacto Importar Mantto -->
+        <label for="excelMantenimiento_compact" title="Importar Reporte de Mantenimiento" class="btn-compact-seguro" style="margin-left: 5px; padding: 6px 12px; border-radius: 6px; background: #10b981; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: all 0.2s; font-size: 1.2rem;">
+            <i class="fa-solid fa-file-excel"></i>
+        </label>
+        <input type="file" id="excelMantenimiento_compact" accept=".xlsx, .xls" style="display:none;" onchange="importarExcelMantenimiento(event)">
+    `;
+    
     safeKpiBox.innerHTML = html;
 }
 
 function renderizarUnidades() {
     let tbody = document.getElementById('tbodyUnidades'); if(!tbody) return; tbody.innerHTML = ''; let txt = document.getElementById('searchUnidades') ? document.getElementById('searchUnidades').value.toUpperCase().trim() : ''; let correlativo = 1;
+    
+    // Invocamos la generación de KPIs de Unidades sin lengüetas
+    actualizarSideKpisUnidades();
+
     unidades.forEach((u, idx) => {
         let tStr = (u.tipo || '').toUpperCase().trim(); let sStr = (u.servicio || '').toUpperCase().trim(); let cStr = (u.codigo || '').toUpperCase(); let pStr = (u.placa || '').toUpperCase();
         if (fActivoUnidadTipo !== 'TODOS' && tStr !== fActivoUnidadTipo) return; if (fActivoUnidadServicio !== 'TODOS' && sStr !== fActivoUnidadServicio) return; if (txt && !cStr.includes(txt) && !pStr.includes(txt)) return;
@@ -446,8 +484,6 @@ function importarRespaldoSistema(e) {
 // ARRANQUE DEL SISTEMA
 window.onload = async function() { 
     aplicarTema(localStorage.getItem('planner_theme') || 'cerro-verde'); 
-    
-    // >>> EJECUTAMOS LA ESTILIZACIÓN DE TÍTULOS EN TODAS LAS PESTAÑAS <<<
     estilizarTitulosYContenedores();
 
     try { let [resCond, resUni] = await Promise.all([ fetch(URL_API_CONDUCTORES + "?t=" + new Date().getTime()), fetch(URL_API_UNIDADES + "?t=" + new Date().getTime()) ]);

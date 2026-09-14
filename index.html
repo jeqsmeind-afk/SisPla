@@ -148,31 +148,6 @@
                 </div>
             </div>
 
-            <!-- SEPARADORES DE CUADERNO FLOTANTES (KPIs CONDUCTORES) -->
-            <div id="sideKpisConductores" class="side-kpis">
-                <div class="kpi-tab tab-blue">
-                    <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
-                    <div class="kpi-details">
-                        <span>TOTAL</span>
-                        <h3 id="kpiTotalCond">0</h3>
-                    </div>
-                </div>
-                <div class="kpi-tab tab-green">
-                    <div class="kpi-icon"><i class="fa-solid fa-route"></i></div>
-                    <div class="kpi-details">
-                        <span>REGULARES</span>
-                        <h3 id="kpiRegCond">0</h3>
-                    </div>
-                </div>
-                <div class="kpi-tab" style="border-left: 4px solid #f59e0b;">
-                    <div class="kpi-icon" style="color: #f59e0b;"><i class="fa-solid fa-house-user"></i></div>
-                    <div class="kpi-details">
-                        <span>DOMICILIOS</span>
-                        <h3 id="kpiDomCond" style="color: #f59e0b; margin:0; font-size: 1.4rem;">0</h3>
-                    </div>
-                </div>
-            </div>
-
             <div class="card">
                 <div class="toolbar" style="flex-direction: column; align-items: stretch; gap: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <div class="search-container" style="max-width: 400px;">
@@ -212,36 +187,9 @@
                 <h2>Flota de Unidades</h2>
                 <div style="display:flex; align-items:center; gap:15px;">
                     <span id="lblLastSyncUnidades" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;"></span>
-                    <input type="file" id="fileMantenimiento" accept=".xlsx, .xls" style="display: none;" onchange="importarExcelMantenimiento(event)">
-                    <button class="btn btn-outline" onclick="document.getElementById('fileMantenimiento').click()"><i class="fa-solid fa-file-excel"></i> Importar Mantto.</button>
                 </div>
             </div>
             
-            <!-- NUEVOS SEPARADORES DE CUADERNO FLOTANTES (KPIs) -->
-            <div id="sideKpisUnidades" class="side-kpis">
-                <div class="kpi-tab tab-blue">
-                    <div class="kpi-icon"><i class="fa-solid fa-bus"></i></div>
-                    <div class="kpi-details">
-                        <span>TOTAL FLOTA</span>
-                        <h3 id="kpiTotalUnidades">0</h3>
-                    </div>
-                </div>
-                <div class="kpi-tab tab-green">
-                    <div class="kpi-icon"><i class="fa-solid fa-circle-check"></i></div>
-                    <div class="kpi-details">
-                        <span>OPERATIVAS</span>
-                        <h3 id="kpiOperativas">0</h3>
-                    </div>
-                </div>
-                <div class="kpi-tab tab-red">
-                    <div class="kpi-icon"><i class="fa-solid fa-wrench"></i></div>
-                    <div class="kpi-details">
-                        <span>EN TALLER</span>
-                        <h3 id="kpiTaller">0</h3>
-                    </div>
-                </div>
-            </div>
-
             <div class="card">
                 <div class="toolbar" style="flex-direction: column; align-items: stretch; gap: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <div class="search-container" style="max-width: 400px;">

@@ -59,10 +59,7 @@ const URL_API_UNIDADES = "https://script.google.com/macros/s/AKfycbz95bAXTt3TdLq
 
 // CARGA DE DATOS SEGUROS
 function cargarDatosSeguros(k, fb) { 
-    try { 
-        let d = localStorage.getItem(k); 
-        return d ? JSON.parse(d) : fb; 
-    } catch(e) { return fb; } 
+    try { let d = localStorage.getItem(k); return d ? JSON.parse(d) : fb; } catch(e) { return fb; } 
 }
 
 let conductores = cargarDatosSeguros('bd_conductores_smcv', []);
@@ -73,34 +70,66 @@ let programacionDiaria = cargarDatosSeguros('bd_prog_diaria_smcv', {});
 let datosCapacitacion = cargarDatosSeguros('bd_capacitaciones_smcv', { titulo: "", lista: [] });
 
 // GUARDADOS CENTRALIZADOS
-function guardarConductores(refrescar = true) { 
-    localStorage.setItem('bd_conductores_smcv', JSON.stringify(conductores)); 
-    if(refrescar) actualizarDashboard(); 
-}
-function guardarUnidades(refrescar = true) { 
-    localStorage.setItem('bd_unidades_smcv', JSON.stringify(unidades)); 
-    if(refrescar) actualizarDashboard(); 
-}
-function guardarZonas() { 
-    localStorage.setItem('bd_zonas_oficial_smcv', JSON.stringify(zonasBD)); 
-    renderizarZonas(); 
-}
+function guardarConductores(refrescar = true) { localStorage.setItem('bd_conductores_smcv', JSON.stringify(conductores)); if(refrescar) actualizarDashboard(); }
+function guardarUnidades(refrescar = true) { localStorage.setItem('bd_unidades_smcv', JSON.stringify(unidades)); if(refrescar) actualizarDashboard(); }
+function guardarZonas() { localStorage.setItem('bd_zonas_oficial_smcv', JSON.stringify(zonasBD)); renderizarZonas(); }
 
 // FUNCIONES UTILITARIAS
-function normalizarTexto(txt) { 
-    if(!txt) return ""; 
-    return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g," ").trim().toUpperCase(); 
-}
+function normalizarTexto(txt) { if(!txt) return ""; return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g," ").trim().toUpperCase(); }
 function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
 function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
 function aplicarTema(t) { document.body.setAttribute('data-theme', t); localStorage.setItem('planner_theme', t); }
+
+// ==========================================
+// MAGIA DOM: ESTILO GLOBAL PARA TODOS LOS TÍTULOS
+// ==========================================
+function estilizarTitulosYContenedores() {
+    document.querySelectorAll('.view-section').forEach(vista => {
+        let header = vista.querySelector('h1, h2, h3');
+        // Si tiene título y aún no lo hemos estilizado (enlazado a nuestro flex-wrapper)
+        if (header && !header.parentElement.classList.contains('header-flex-wrapper')) {
+            
+            // Creamos un contenedor Flex para alinear verticalmente a la perfección
+            let wrapper = document.createElement('div');
+            wrapper.className = 'header-flex-wrapper';
+            wrapper.style.display = 'flex';
+            wrapper.style.alignItems = 'center'; // ALINEACIÓN VERTICAL EXACTA
+            wrapper.style.justifyContent = 'flex-start';
+            wrapper.style.gap = '15px';
+            wrapper.style.marginBottom = '10px'; // ESPACIO REDUCIDO
+            wrapper.style.paddingBottom = '8px'; // ESPACIO REDUCIDO
+            wrapper.style.borderBottom = '2px solid #e5e7eb';
+            wrapper.style.flexWrap = 'wrap';
+
+            // Damos el formato corporativo al texto para TODAS las pestañas
+            header.style.margin = '0';
+            header.style.fontSize = '1.6rem';
+            header.style.fontWeight = '900';
+            header.style.color = '#1f2937';
+            header.style.borderLeft = '6px solid #cc0000';
+            header.style.paddingLeft = '12px';
+            header.style.textTransform = 'uppercase';
+            header.style.letterSpacing = '0.5px';
+            header.style.lineHeight = '1'; // Elimina el margen invisible del texto
+
+            // Insertamos el wrapper en el HTML y metemos el título dentro
+            header.parentNode.insertBefore(wrapper, header);
+            wrapper.appendChild(header);
+
+            // Si es la pestaña Conductores, jalamos automáticamente los KPIs a su lado
+            if (vista.id === 'vistaConductores') {
+                let kpis = document.getElementById('sideKpisConductores');
+                if (kpis) wrapper.appendChild(kpis);
+            }
+        }
+    });
+}
 
 function cambiarVista(vista) {
     document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
     document.querySelectorAll('.nav-btn, .dropdown-content a').forEach(btn => btn.classList.remove('active'));
 
     let vistaId = ""; let btnId = ""; let parentBtnId = "";
-
     if (vista === 'dashboard') { vistaId = 'vistaDashboard'; btnId = 'btnNavDashboard'; }
     if (vista === 'conductores') { vistaId = 'vistaConductores'; btnId = 'btnNavConductores'; parentBtnId = 'btnNavMaestros'; }
     if (vista === 'unidades') { vistaId = 'vistaUnidades'; btnId = 'btnNavUnidades'; parentBtnId = 'btnNavMaestros'; }
@@ -120,42 +149,25 @@ function cambiarVista(vista) {
 
 // CÁLCULO ROBUSTO DE FECHAS
 function parsearFechaGenerica(f) {
-    if (!f) return null;
-    if (f instanceof Date) return f;
-    if (typeof f === 'number') return new Date((f - (25567 + 2)) * 86400 * 1000);
+    if (!f) return null; if (f instanceof Date) return f; if (typeof f === 'number') return new Date((f - (25567 + 2)) * 86400 * 1000);
     let s = String(f).trim();
     if (/^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/.test(s)) { let d = new Date(s); return isNaN(d.getTime()) ? null : d; }
-    let p = s.split(/[\/\-\.]/);
-    if (p.length === 3) {
-        if (p[0].length === 4) return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
-        else return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
-    }
+    let p = s.split(/[\/\-\.]/); if (p.length === 3) { if (p[0].length === 4) return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])); else return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0])); }
     let d2 = new Date(s); return isNaN(d2.getTime()) ? null : d2;
 }
-
 function obtenerEdadProcesada(f) { 
-    let nac = parsearFechaGenerica(f);
-    if (!nac || isNaN(nac.getTime())) return { texto: '-', esCumple: false }; 
+    let nac = parsearFechaGenerica(f); if (!nac || isNaN(nac.getTime())) return { texto: '-', esCumple: false }; 
     let hoy = new Date(); let edad = hoy.getFullYear() - nac.getFullYear(); let m = hoy.getMonth() - nac.getMonth(); let d = hoy.getDate() - nac.getDate(); 
-    if (m < 0 || (m === 0 && d < 0)) edad--; 
-    let esCumple = (hoy.getMonth() === nac.getMonth() && hoy.getDate() === nac.getDate());
+    if (m < 0 || (m === 0 && d < 0)) edad--; let esCumple = (hoy.getMonth() === nac.getMonth() && hoy.getDate() === nac.getDate());
     return { texto: isNaN(edad) || edad < 0 ? '-' : `${edad} años`, esCumple: esCumple }; 
 }
-
 function obtenerTiempoLaborandoExacto(f) { 
-    if (!f) return '-';
-    let ing = parsearFechaGenerica(f);
-    if (!ing || isNaN(ing.getTime())) return f; 
+    if (!f) return '-'; let ing = parsearFechaGenerica(f); if (!ing || isNaN(ing.getTime())) return f; 
     let hoy = new Date(); let a = hoy.getFullYear() - ing.getFullYear(); let m = hoy.getMonth() - ing.getMonth(); let d = hoy.getDate() - ing.getDate(); 
-    if (d < 0) { m--; d += new Date(hoy.getFullYear(), hoy.getMonth(), 0).getDate(); } 
-    if (m < 0) { a--; m += 12; } 
+    if (d < 0) { m--; d += new Date(hoy.getFullYear(), hoy.getMonth(), 0).getDate(); } if (m < 0) { a--; m += 12; } 
     return a < 0 ? '0 a / 0 m' : `${a} a / ${m} m`; 
 }
-
-function determinarTipoConductor(contrato) {
-    if(!contrato) return 'VAN'; let txt = contrato.toUpperCase();
-    if (txt.includes('ESPECIALIZADO M')) return 'MINIBUS'; if (txt.includes('ESPECIALIZADO')) return 'BUS'; return 'VAN';
-}
+function determinarTipoConductor(contrato) { if(!contrato) return 'VAN'; let txt = contrato.toUpperCase(); if (txt.includes('ESPECIALIZADO M')) return 'MINIBUS'; if (txt.includes('ESPECIALIZADO')) return 'BUS'; return 'VAN'; }
 
 function obtenerEstiloEstado(estado) {
     let e = String(estado).toUpperCase().trim();
@@ -168,230 +180,110 @@ function obtenerEstiloEstado(estado) {
     return 'background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Default gris
 }
 
-let filtroActivoContratoCond = "TODOS";
-let filtroActivoServicioCond = "TODOS";
+let filtroActivoContratoCond = "TODOS"; let filtroActivoServicioCond = "TODOS";
 
 function actualizarFiltrosDinamicosConductores() {
-    let contenedor = document.getElementById('contenedorChipsFiltrosCond');
-    if (!contenedor || !conductores) return;
-
+    let contenedor = document.getElementById('contenedorChipsFiltrosCond'); if (!contenedor || !conductores) return;
     let contratos = ["TODOS", ...new Set(conductores.map(c => c.contrato || c.CONTRATO).filter(Boolean))];
     let servicios = ["TODOS", ...new Set(conductores.map(c => c["SERVICIO ASIG"] || c.servicio || c.SERVICIO).filter(Boolean))];
 
-    // NUEVO DISEÑO: Botones segmentados rectangulares unidos (estilo dashboard profesional)
+    // Espaciado inferior reducido radicalmente
     let html = `
-        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px;">
-            <span style="font-size: 0.75rem; font-weight: 800; color: #6b7280; width: 70px; letter-spacing: 0.5px;">CONTRATO:</span>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px;">
+            <span style="font-size: 0.7rem; font-weight: 800; color: #6b7280; width: 65px; letter-spacing: 0.5px;">CONTRATO:</span>
             <div style="display: flex; gap: 0; flex-wrap: wrap;">
                 ${contratos.map((c, i) => {
-                    let isActive = (filtroActivoContratoCond === c);
-                    let bg = isActive ? '#0284c7' : '#ffffff';
-                    let col = isActive ? '#ffffff' : '#4b5563';
-                    let brL = i === 0 ? '4px' : '0'; let brR = i === contratos.length - 1 ? '4px' : '0';
-                    let zIdx = isActive ? 2 : 1;
-                    return `<button onclick="setFiltroContratoCond('${c}')" style="padding: 6px 14px; font-size: 0.75rem; font-weight: 600; background: ${bg}; color: ${col}; border: 1px solid #d1d5db; border-radius: ${brL} ${brR} ${brR} ${brL}; cursor: pointer; margin-left: -1px; transition: all 0.2s; position: relative; z-index: ${zIdx}; outline: none;">${c}</button>`;
+                    let isActive = (filtroActivoContratoCond === c); let bg = isActive ? '#0284c7' : '#ffffff'; let col = isActive ? '#ffffff' : '#4b5563';
+                    let brL = i === 0 ? '4px' : '0'; let brR = i === contratos.length - 1 ? '4px' : '0'; let zIdx = isActive ? 2 : 1;
+                    return `<button onclick="setFiltroContratoCond('${c}')" style="padding: 4px 12px; font-size: 0.7rem; font-weight: 700; background: ${bg}; color: ${col}; border: 1px solid #d1d5db; border-radius: ${brL} ${brR} ${brR} ${brL}; cursor: pointer; margin-left: -1px; transition: all 0.2s; position: relative; z-index: ${zIdx}; outline: none;">${c}</button>`;
                 }).join('')}
             </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <span style="font-size: 0.75rem; font-weight: 800; color: #6b7280; width: 70px; letter-spacing: 0.5px;">SERVICIO:</span>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-size: 0.7rem; font-weight: 800; color: #6b7280; width: 65px; letter-spacing: 0.5px;">SERVICIO:</span>
             <div style="display: flex; gap: 0; flex-wrap: wrap;">
                 ${servicios.map((s, i) => {
-                    let isActive = (filtroActivoServicioCond === s);
-                    let bg = isActive ? '#0284c7' : '#ffffff';
-                    let col = isActive ? '#ffffff' : '#4b5563';
-                    let brL = i === 0 ? '4px' : '0'; let brR = i === servicios.length - 1 ? '4px' : '0';
-                    let zIdx = isActive ? 2 : 1;
-                    return `<button onclick="setFiltroServicioCond('${s}')" style="padding: 6px 14px; font-size: 0.75rem; font-weight: 600; background: ${bg}; color: ${col}; border: 1px solid #d1d5db; border-radius: ${brL} ${brR} ${brR} ${brL}; cursor: pointer; margin-left: -1px; transition: all 0.2s; position: relative; z-index: ${zIdx}; outline: none;">${s}</button>`;
+                    let isActive = (filtroActivoServicioCond === s); let bg = isActive ? '#0284c7' : '#ffffff'; let col = isActive ? '#ffffff' : '#4b5563';
+                    let brL = i === 0 ? '4px' : '0'; let brR = i === servicios.length - 1 ? '4px' : '0'; let zIdx = isActive ? 2 : 1;
+                    return `<button onclick="setFiltroServicioCond('${s}')" style="padding: 4px 12px; font-size: 0.7rem; font-weight: 700; background: ${bg}; color: ${col}; border: 1px solid #d1d5db; border-radius: ${brL} ${brR} ${brR} ${brL}; cursor: pointer; margin-left: -1px; transition: all 0.2s; position: relative; z-index: ${zIdx}; outline: none;">${s}</button>`;
                 }).join('')}
             </div>
         </div>
     `;
     contenedor.innerHTML = html;
 }
-
 function setFiltroContratoCond(val) { filtroActivoContratoCond = val; actualizarFiltrosDinamicosConductores(); renderizarConductores(); }
 function setFiltroServicioCond(val) { filtroActivoServicioCond = val; actualizarFiltrosDinamicosConductores(); renderizarConductores(); }
+function mostrarToast(mensaje, tipo = 'info', duracion = 4000) { let container = document.getElementById('toast-container'); if (!container) return; let toast = document.createElement('div'); toast.className = `toast ${tipo}`; let icon = tipo === 'success' ? 'fa-circle-check' : (tipo === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info'); toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${mensaje}</span>`; container.appendChild(toast); setTimeout(() => { toast.style.animation = 'fadeOut 0.5s ease forwards'; setTimeout(() => toast.remove(), 500); }, duracion); }
 
-function mostrarToast(mensaje, tipo = 'info', duracion = 4000) {
-    let container = document.getElementById('toast-container'); if (!container) return;
-    let toast = document.createElement('div'); toast.className = `toast ${tipo}`;
-    let icon = tipo === 'success' ? 'fa-circle-check' : (tipo === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info');
-    toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${mensaje}</span>`; container.appendChild(toast);
-    setTimeout(() => { toast.style.animation = 'fadeOut 0.5s ease forwards'; setTimeout(() => toast.remove(), 500); }, duracion);
-}
-
-// SINCRONIZACIÓN EN SEGUNDO PLANO
 async function sincronizarDatosSegundoPlano() {
-    let btnGlobal = document.getElementById('btnSyncGlobal');
-    if(btnGlobal) { btnGlobal.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...'; btnGlobal.disabled = true; }
-    mostrarToast("Iniciando sincronización con Google Sheets. Puedes seguir trabajando.", "info", 5000);
+    let btnGlobal = document.getElementById('btnSyncGlobal'); if(btnGlobal) { btnGlobal.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...'; btnGlobal.disabled = true; } mostrarToast("Iniciando sincronización con Google Sheets. Puedes seguir trabajando.", "info", 5000);
     try {
         let [resCond, resUni] = await Promise.all([ fetch(URL_API_CONDUCTORES + "?t=" + new Date().getTime()), fetch(URL_API_UNIDADES + "?t=" + new Date().getTime()) ]);
-        let actualizados = 0;
-        if (resCond.ok) { let dataCond = await resCond.json(); if (dataCond && dataCond.length > 0) { conductores = dataCond; guardarConductores(false); actualizados++; } }
-        if (resUni.ok) {
-            let dataUni = await resUni.json();
-            if (dataUni && dataUni.length > 0) { 
-                dataUni.forEach(uNueva => { let uLocal = unidades.find(ul => ul.codigo === uNueva.codigo); if(uLocal) { if(uLocal.estado) uNueva.estado = uLocal.estado; if(uLocal.mantenimiento) uNueva.mantenimiento = uLocal.mantenimiento; } });
-                unidades = dataUni; guardarUnidades(false); actualizados++;
-            }
-        }
+        let actualizados = 0; if (resCond.ok) { let dataCond = await resCond.json(); if (dataCond && dataCond.length > 0) { conductores = dataCond; guardarConductores(false); actualizados++; } }
+        if (resUni.ok) { let dataUni = await resUni.json(); if (dataUni && dataUni.length > 0) { dataUni.forEach(uNueva => { let uLocal = unidades.find(ul => ul.codigo === uNueva.codigo); if(uLocal) { if(uLocal.estado) uNueva.estado = uLocal.estado; if(uLocal.mantenimiento) uNueva.mantenimiento = uLocal.mantenimiento; } }); unidades = dataUni; guardarUnidades(false); actualizados++; } }
         if (actualizados > 0) {
-            actualizarFiltrosDinamicos(); actualizarFiltrosDinamicosUnidades(); actualizarFiltrosDinamicosConductores();
-            let vistaActiva = document.querySelector('.view-section.active').id;
-            if(vistaActiva === 'vistaDashboard') actualizarDashboard(); if(vistaActiva === 'vistaConductores') renderizarConductores(); if(vistaActiva === 'vistaUnidades') renderizarUnidades(); if(vistaActiva === 'vistaProgramacion') renderizarProgramacion();
-            let lblUni = document.getElementById('lblLastSyncUnidades'); if(lblUni) lblUni.innerText = "Última sincronización: Hoy, " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            mostrarToast("¡Bases de datos actualizadas con éxito!", "success");
+            actualizarFiltrosDinamicos(); actualizarFiltrosDinamicosUnidades(); actualizarFiltrosDinamicosConductores(); let vistaActiva = document.querySelector('.view-section.active').id; if(vistaActiva === 'vistaDashboard') actualizarDashboard(); if(vistaActiva === 'vistaConductores') renderizarConductores(); if(vistaActiva === 'vistaUnidades') renderizarUnidades(); if(vistaActiva === 'vistaProgramacion') renderizarProgramacion();
+            let lblUni = document.getElementById('lblLastSyncUnidades'); if(lblUni) lblUni.innerText = "Última sincronización: Hoy, " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); mostrarToast("¡Bases de datos actualizadas con éxito!", "success");
         } else { mostrarToast("No se recibieron datos de Google Sheets.", "error"); }
-    } catch(e) { mostrarToast("Error de conexión: " + e.message, "error"); } finally {
-        if(btnGlobal) { btnGlobal.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Sincronizar'; btnGlobal.disabled = false; }
-    }
+    } catch(e) { mostrarToast("Error de conexión: " + e.message, "error"); } finally { if(btnGlobal) { btnGlobal.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Sincronizar'; btnGlobal.disabled = false; } }
 }
 
-// FILTROS UNIDADES (También actualizados a botones segmentados)
 function actualizarFiltrosDinamicosUnidades() {
-    let tipos = [...new Set(unidades.map(u => (u.tipo || '').toUpperCase().trim()))].filter(t => t !== '');
-    let servicios = [...new Set(unidades.map(u => (u.servicio || '').toUpperCase().trim()))].filter(s => s !== '');
-    
-    let allTipos = ['TODOS', ...tipos];
-    let htmlTipos = `<div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom: 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px;">
-        <span style="font-size:0.75rem; font-weight:800; color:#6b7280; width: 70px; letter-spacing:0.5px;">TIPO:</span>
-        <div style="display: flex; gap: 0; flex-wrap: wrap;">`;
-    allTipos.forEach((t, i) => {
-        let isActive = (fActivoUnidadTipo === t); let bg = isActive ? '#0284c7' : '#ffffff'; let col = isActive ? '#ffffff' : '#4b5563';
-        let brL = i === 0 ? '4px' : '0'; let brR = i === allTipos.length - 1 ? '4px' : '0'; let zIdx = isActive ? 2 : 1;
-        htmlTipos += `<button onclick="toggleFiltroUnidades('tipo', '${t}')" style="padding: 6px 14px; font-size: 0.75rem; font-weight: 600; background: ${bg}; color: ${col}; border: 1px solid #d1d5db; border-radius: ${brL} ${brR} ${brR} ${brL}; cursor: pointer; margin-left: -1px; transition: all 0.2s; position: relative; z-index: ${zIdx}; outline: none;">${t}</button>`;
-    }); htmlTipos += `</div></div>`;
-
+    let tipos = [...new Set(unidades.map(u => (u.tipo || '').toUpperCase().trim()))].filter(t => t !== ''); let servicios = [...new Set(unidades.map(u => (u.servicio || '').toUpperCase().trim()))].filter(s => s !== ''); let allTipos = ['TODOS', ...tipos];
+    let htmlTipos = `<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom: 6px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px;">
+        <span style="font-size:0.7rem; font-weight:800; color:#6b7280; width: 65px; letter-spacing:0.5px;">TIPO:</span><div style="display: flex; gap: 0; flex-wrap: wrap;">`;
+    allTipos.forEach((t, i) => { let isActive = (fActivoUnidadTipo === t); let bg = isActive ? '#0284c7' : '#ffffff'; let col = isActive ? '#ffffff' : '#4b5563'; let brL = i === 0 ? '4px' : '0'; let brR = i === allTipos.length - 1 ? '4px' : '0'; let zIdx = isActive ? 2 : 1; htmlTipos += `<button onclick="toggleFiltroUnidades('tipo', '${t}')" style="padding: 4px 12px; font-size: 0.7rem; font-weight: 700; background: ${bg}; color: ${col}; border: 1px solid #d1d5db; border-radius: ${brL} ${brR} ${brR} ${brL}; cursor: pointer; margin-left: -1px; transition: all 0.2s; position: relative; z-index: ${zIdx}; outline: none;">${t}</button>`; }); htmlTipos += `</div></div>`;
     let allServs = ['TODOS', ...servicios];
-    let htmlServs = `<div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-        <span style="font-size:0.75rem; font-weight:800; color:#6b7280; width: 70px; letter-spacing:0.5px;">SERVICIO:</span>
-        <div style="display: flex; gap: 0; flex-wrap: wrap;">`;
-    allServs.forEach((s, i) => {
-        let isActive = (fActivoUnidadServicio === s); let bg = isActive ? '#0284c7' : '#ffffff'; let col = isActive ? '#ffffff' : '#4b5563';
-        let brL = i === 0 ? '4px' : '0'; let brR = i === allServs.length - 1 ? '4px' : '0'; let zIdx = isActive ? 2 : 1;
-        htmlServs += `<button onclick="toggleFiltroUnidades('servicio', '${s}')" style="padding: 6px 14px; font-size: 0.75rem; font-weight: 600; background: ${bg}; color: ${col}; border: 1px solid #d1d5db; border-radius: ${brL} ${brR} ${brR} ${brL}; cursor: pointer; margin-left: -1px; transition: all 0.2s; position: relative; z-index: ${zIdx}; outline: none;">${s}</button>`;
-    }); htmlServs += `</div></div>`;
-
+    let htmlServs = `<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;"><span style="font-size:0.7rem; font-weight:800; color:#6b7280; width: 65px; letter-spacing:0.5px;">SERVICIO:</span><div style="display: flex; gap: 0; flex-wrap: wrap;">`;
+    allServs.forEach((s, i) => { let isActive = (fActivoUnidadServicio === s); let bg = isActive ? '#0284c7' : '#ffffff'; let col = isActive ? '#ffffff' : '#4b5563'; let brL = i === 0 ? '4px' : '0'; let brR = i === allServs.length - 1 ? '4px' : '0'; let zIdx = isActive ? 2 : 1; htmlServs += `<button onclick="toggleFiltroUnidades('servicio', '${s}')" style="padding: 4px 12px; font-size: 0.7rem; font-weight: 700; background: ${bg}; color: ${col}; border: 1px solid #d1d5db; border-radius: ${brL} ${brR} ${brR} ${brL}; cursor: pointer; margin-left: -1px; transition: all 0.2s; position: relative; z-index: ${zIdx}; outline: none;">${s}</button>`; }); htmlServs += `</div></div>`;
     let panel = document.getElementById('contenedorChipsFiltros'); if(panel) panel.innerHTML = htmlTipos + htmlServs;
-    if(document.getElementById('kpiTotalUnidades')) {
-        document.getElementById('kpiTotalUnidades').innerText = unidades.length; document.getElementById('kpiOperativas').innerText = unidades.filter(u => u.estado !== 'TALLER').length; document.getElementById('kpiTaller').innerText = unidades.filter(u => u.estado === 'TALLER').length;
-    }
+    if(document.getElementById('kpiTotalUnidades')) { document.getElementById('kpiTotalUnidades').innerText = unidades.length; document.getElementById('kpiOperativas').innerText = unidades.filter(u => u.estado !== 'TALLER').length; document.getElementById('kpiTaller').innerText = unidades.filter(u => u.estado === 'TALLER').length; }
 }
 function toggleFiltroUnidades(categoria, valor) { if (categoria === 'tipo') fActivoUnidadTipo = valor; if (categoria === 'servicio') fActivoUnidadServicio = valor; actualizarFiltrosDinamicosUnidades(); renderizarUnidades(); }
 function cambiarEstadoUnidad(idx, nuevoEstado) { unidades[idx].estado = nuevoEstado; guardarUnidades(); actualizarFiltrosDinamicosUnidades(); renderizarUnidades(); }
 
-// DASHBOARD
 function actualizarDashboard() {
     if (conductores && conductores.length > 0) {
         let elTotal = document.getElementById('dashTotalConductores'); if (elTotal) elTotal.innerText = conductores.length;
         let induccionCount = conductores.filter(c => (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '').toUpperCase().trim() === 'INDUCCION').length; let elInd = document.getElementById('dashInduccion'); if (elInd) elInd.innerText = induccionCount;
         let hoy = new Date(); let dia = String(hoy.getDate()).padStart(2, '0'); let mes = String(hoy.getMonth() + 1).padStart(2, '0'); let fechaHoy = dia + '/' + mes; 
-        
         let cumpleaneros = conductores.filter(c => { let nacVal = c["FECHA NACIMIENTO"] || c.nac || c.fechaNacimiento || c.FECHA_NACIMIENTO; if(!nacVal) return false; return String(nacVal).trim().substring(0, 5) === fechaHoy; });
         let elCumple = document.getElementById('dashCumpleanos');
-        if (elCumple) {
-            elCumple.innerText = cumpleaneros.length; let cardElement = elCumple.closest('.card');
-            if(cardElement) { if(cumpleaneros.length > 0) { let listaNombres = cumpleaneros.map(c => "🎂 " + (c.nombre || c.CONDUCTOR || c.NOMBRE)).join('\n'); cardElement.title = "Cumpleañeros de hoy:\n" + listaNombres; cardElement.style.cursor = "help"; } else { cardElement.title = "No hay cumpleaños hoy"; cardElement.style.cursor = "default"; } }
-        }
-        let cVan = 0, cMinibus = 0, cBus = 0;
-        conductores.forEach(c => { let cat = determinarTipoConductor(c.contrato || c.CONTRATO); if(cat === 'VAN') cVan++; else if(cat === 'MINIBUS') cMinibus++; else if(cat === 'BUS') cBus++; });
+        if (elCumple) { elCumple.innerText = cumpleaneros.length; let cardElement = elCumple.closest('.card'); if(cardElement) { if(cumpleaneros.length > 0) { let listaNombres = cumpleaneros.map(c => "🎂 " + (c.nombre || c.CONDUCTOR || c.NOMBRE)).join('\n'); cardElement.title = "Cumpleañeros de hoy:\n" + listaNombres; cardElement.style.cursor = "help"; } else { cardElement.title = "No hay cumpleaños hoy"; cardElement.style.cursor = "default"; } } }
+        let cVan = 0, cMinibus = 0, cBus = 0; conductores.forEach(c => { let cat = determinarTipoConductor(c.contrato || c.CONTRATO); if(cat === 'VAN') cVan++; else if(cat === 'MINIBUS') cMinibus++; else if(cat === 'BUS') cBus++; });
         if(document.getElementById('dashAcredVan')) document.getElementById('dashAcredVan').innerText = cVan; if(document.getElementById('dashAcredMinibus')) document.getElementById('dashAcredMinibus').innerText = cMinibus; if(document.getElementById('dashAcredBus')) document.getElementById('dashAcredBus').innerText = cBus;
     }
     if (unidades && unidades.length > 0) {
-        let fVan = 0, fMinibus = 0, fBus = 0, fCamioneta = 0;
-        unidades.forEach(u => { let t = (u.tipo || '').toUpperCase().trim(); if(t === 'VAN') fVan++; else if(t === 'MINIBUS') fMinibus++; else if(t === 'BUS') fBus++; else if(t === 'CAMIONETA') fCamioneta++; });
+        let fVan = 0, fMinibus = 0, fBus = 0, fCamioneta = 0; unidades.forEach(u => { let t = (u.tipo || '').toUpperCase().trim(); if(t === 'VAN') fVan++; else if(t === 'MINIBUS') fMinibus++; else if(t === 'BUS') fBus++; else if(t === 'CAMIONETA') fCamioneta++; });
         if(document.getElementById('dashFlotaVan')) document.getElementById('dashFlotaVan').innerText = fVan; if(document.getElementById('dashFlotaMinibus')) document.getElementById('dashFlotaMinibus').innerText = fMinibus; if(document.getElementById('dashFlotaBus')) document.getElementById('dashFlotaBus').innerText = fBus; if(document.getElementById('dashFlotaCamioneta')) document.getElementById('dashFlotaCamioneta').innerText = fCamioneta;
     }
 }
-
-function actualizarFiltrosDinamicos() {
-    let selectServicio = document.getElementById('filtroServicioCond'); if (!selectServicio) return; let valorActual = selectServicio.value;
-    let serviciosUnicos = [...new Set(conductores.map(c => (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '').toUpperCase().trim()))].filter(s => s !== ''); serviciosUnicos.sort();
-    let html = '<option value="TODOS">Todos los Servicios</option>'; serviciosUnicos.forEach(serv => { let selected = (serv === valorActual) ? 'selected' : ''; html += `<option value="${serv}" ${selected}>${serv}</option>`; }); selectServicio.innerHTML = html;
-}
+function actualizarFiltrosDinamicos() { let selectServicio = document.getElementById('filtroServicioCond'); if (!selectServicio) return; let valorActual = selectServicio.value; let serviciosUnicos = [...new Set(conductores.map(c => (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '').toUpperCase().trim()))].filter(s => s !== ''); serviciosUnicos.sort(); let html = '<option value="TODOS">Todos los Servicios</option>'; serviciosUnicos.forEach(serv => { let selected = (serv === valorActual) ? 'selected' : ''; html += `<option value="${serv}" ${selected}>${serv}</option>`; }); selectServicio.innerHTML = html; }
 
 function renderizarConductores() {
-    let tbody = document.getElementById('tbodyConductores'); if(!tbody) return;
-    let search = (document.getElementById('searchConductores')?.value || '').toLowerCase();
-    
-    let filtrados = conductores.filter(c => {
-        let dniStr = String(c.dni || c.DNI || '').toLowerCase(); let nomStr = String(c.nombre || c.CONDUCTOR || c.NOMBRE || '').toLowerCase();
-        let matchSearch = dniStr.includes(search) || nomStr.includes(search); let matchContrato = (filtroActivoContratoCond === 'TODOS' || (c.contrato || c.CONTRATO || '').toUpperCase() === filtroActivoContratoCond.toUpperCase()); let matchServicio = (filtroActivoServicioCond === 'TODOS' || (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '').toUpperCase() === filtroActivoServicioCond.toUpperCase());
-        return matchSearch && matchContrato && matchServicio;
-    });
-
-    actualizarSideKpisConductores(filtrados, conductores);
-    tbody.innerHTML = '';
+    let tbody = document.getElementById('tbodyConductores'); if(!tbody) return; let search = (document.getElementById('searchConductores')?.value || '').toLowerCase();
+    let filtrados = conductores.filter(c => { let dniStr = String(c.dni || c.DNI || '').toLowerCase(); let nomStr = String(c.nombre || c.CONDUCTOR || c.NOMBRE || '').toLowerCase(); let matchSearch = dniStr.includes(search) || nomStr.includes(search); let matchContrato = (filtroActivoContratoCond === 'TODOS' || (c.contrato || c.CONTRATO || '').toUpperCase() === filtroActivoContratoCond.toUpperCase()); let matchServicio = (filtroActivoServicioCond === 'TODOS' || (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '').toUpperCase() === filtroActivoServicioCond.toUpperCase()); return matchSearch && matchContrato && matchServicio; });
+    actualizarSideKpisConductores(filtrados, conductores); tbody.innerHTML = '';
     filtrados.forEach((c, index) => {
-        let rawNac = c["FECHA NACIMIENTO"] || c.nac || c.fechaNacimiento || c.FECHA_NACIMIENTO || c.nacimiento;
-        let rawIng = c["FECHA INGRESO"] || c.ingreso || c.fechaIngreso || c.FECHA_INGRESO || c.tiempoLaborando;
-        let edadObj = obtenerEdadProcesada(rawNac); let tiempo = obtenerTiempoLaborandoExacto(rawIng);
-        let contrato = c.contrato || c.CONTRATO || '-'; let servicio = c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '-';
-        let estado = c.ESTADO || c.estado || c.estadoAbrev || c.ESTADO_ABREV || '-'; let estiloEstado = obtenerEstiloEstado(estado);
-        let nombre = c.nombre || c.CONDUCTOR || c.NOMBRE || '-'; let dni = c.dni || c.DNI || '-';
+        let rawNac = c["FECHA NACIMIENTO"] || c.nac || c.fechaNacimiento || c.FECHA_NACIMIENTO || c.nacimiento; let rawIng = c["FECHA INGRESO"] || c.ingreso || c.fechaIngreso || c.FECHA_INGRESO || c.tiempoLaborando;
+        let edadObj = obtenerEdadProcesada(rawNac); let tiempo = obtenerTiempoLaborandoExacto(rawIng); let contrato = c.contrato || c.CONTRATO || '-'; let servicio = c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '-'; let estado = c.ESTADO || c.estado || c.estadoAbrev || c.ESTADO_ABREV || '-'; let estiloEstado = obtenerEstiloEstado(estado); let nombre = c.nombre || c.CONDUCTOR || c.NOMBRE || '-'; let dni = c.dni || c.DNI || '-';
         let badgeCumple = edadObj.esCumple ? `<span class="badge-birthday" style="background:#fce7f3; color:#db2777; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;"><i class="fa-solid fa-cake-candles"></i> Hoy</span>` : '';
-
-        let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${index + 1}</td> <td>${dni}</td> <td><b>${nombre}</b> ${badgeCumple}</td> <td>${edadObj.texto}</td> <td>${tiempo}</td>
-            <td><span class="badge-abrev badge-van">${contrato}</span></td> <td><span class="badge-abrev badge-minibus">${servicio}</span></td>
-            <td><span style="${estiloEstado}">${estado}</span></td>
-            <td style="color:#9ca3af; font-size: 0.8rem; text-align:center;" title="Solo lectura (Editar en Excel)"><i class="fa-solid fa-lock"></i></td>
-        `;
-        tbody.appendChild(tr);
+        let tr = document.createElement('tr'); tr.innerHTML = `<td>${index + 1}</td> <td>${dni}</td> <td><b>${nombre}</b> ${badgeCumple}</td> <td>${edadObj.texto}</td> <td>${tiempo}</td> <td><span class="badge-abrev badge-van">${contrato}</span></td> <td><span class="badge-abrev badge-minibus">${servicio}</span></td> <td><span style="${estiloEstado}">${estado}</span></td> <td style="color:#9ca3af; font-size: 0.8rem; text-align:center;" title="Solo lectura (Editar en Excel)"><i class="fa-solid fa-lock"></i></td>`; tbody.appendChild(tr);
     });
 }
 
 function actualizarSideKpisConductores(filtrados, todosConductores) {
     let sideKpis = document.getElementById('sideKpisConductores'); if (!sideKpis) return;
 
-    // --- MAGIA DOM: ALINEAR TÍTULO Y KPIS EN LA MISMA FILA CON ESTILO CORPORATIVO ---
-    let vista = document.getElementById('vistaConductores');
-    if (vista) {
-        // Buscar el título H1, H2 o H3 que dice "Fuerza Laboral"
-        let headerElement = vista.querySelector('h1, h2, h3');
-        
-        // Si lo encuentra y aún no lo hemos envuelto en nuestro contenedor flex...
-        if (headerElement && !headerElement.parentElement.classList.contains('header-flex-wrapper')) {
-            let wrapper = document.createElement('div');
-            wrapper.className = 'header-flex-wrapper';
-            // Configurar el wrapper como Flexbox para poner título y KPIs uno al lado del otro
-            wrapper.style.display = 'flex';
-            wrapper.style.alignItems = 'center';
-            wrapper.style.justifyContent = 'flex-start'; // Alinea a la izquierda y los KPIs lo siguen
-            wrapper.style.gap = '25px';
-            wrapper.style.marginBottom = '20px';
-            wrapper.style.flexWrap = 'wrap';
-            wrapper.style.borderBottom = '2px solid #e5e7eb'; // Línea separadora elegante
-            wrapper.style.paddingBottom = '15px';
-            
-            // Re-estilizar el título para que se vea muy profesional
-            headerElement.style.margin = '0';
-            headerElement.style.fontSize = '1.7rem';
-            headerElement.style.fontWeight = '900';
-            headerElement.style.color = '#1f2937';
-            headerElement.style.borderLeft = '6px solid #cc0000'; // Barra roja corporativa a la izquierda
-            headerElement.style.paddingLeft = '12px';
-            headerElement.style.textTransform = 'uppercase';
-            headerElement.style.letterSpacing = '0.5px';
-
-            // Insertar el wrapper en el DOM e introducir el título y los KPIs dentro
-            headerElement.parentNode.insertBefore(wrapper, headerElement);
-            wrapper.appendChild(headerElement);
-            wrapper.appendChild(sideKpis);
-        }
-    }
-
-    // Estilos del contenedor de los KPIs (Ahora al lado del título)
-    sideKpis.style.position = 'relative';
+    // Configuración pura para alineación perfecta dentro de nuestro Flexbox
     sideKpis.style.display = 'flex';
     sideKpis.style.flexDirection = 'row';
     sideKpis.style.flexWrap = 'wrap';
+    sideKpis.style.alignItems = 'center';
     sideKpis.style.gap = '8px';
-    sideKpis.style.margin = '0'; // Le quitamos márgenes porque el wrapper ya los tiene
-    sideKpis.style.width = 'auto'; // Toma solo el ancho que necesita
+    sideKpis.style.margin = '0'; // Sin márgenes rebeldes
+    sideKpis.style.width = 'auto'; 
     sideKpis.style.background = 'transparent';
     sideKpis.style.boxShadow = 'none';
 
@@ -399,27 +291,23 @@ function actualizarSideKpisConductores(filtrados, todosConductores) {
     let configServicios = { 'REGULAR': { icon: 'fa-route', color: '#059669' }, 'DOMICILIOS': { icon: 'fa-house-user', color: '#f59e0b' }, 'SIN SERVICIO': { icon: 'fa-ban', color: '#64748b' }, 'INDUCCION': { icon: 'fa-graduation-cap', color: '#8b5cf6' }, 'RETEN PARADA': { icon: 'fa-clock', color: '#0284c7' }, 'MOLLENDO': { icon: 'fa-map-pin', color: '#dc2626' }, 'AMBULANCIA': { icon: 'fa-truck-medical', color: '#10b981' } };
 
     let html = `
-        <div style="background: var(--card-bg, #fff); padding: 4px 10px; border-radius: 6px; cursor:pointer; display:flex; align-items:center; gap:8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #d1d5db; transition: transform 0.1s;" onclick="setFiltroServicioCond('TODOS')" title="Ver Todos" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="background: var(--card-bg, #fff); padding: 4px 10px; border-radius: 6px; cursor:pointer; display:flex; align-items:center; gap:8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #d1d5db; transition: transform 0.1s; height: 100%;" onclick="setFiltroServicioCond('TODOS')" title="Ver Todos" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
             <div style="color:var(--primary, #cc0000); font-size: 1rem;"><i class="fa-solid fa-users"></i></div>
             <div style="display:flex; flex-direction:column; justify-content:center;">
                 <span style="font-size: 0.6rem; color:#6b7280; font-weight:800; line-height: 1;">TODOS</span>
-                <h3 style="font-size: 1.1rem; margin:0; line-height: 1.1; color: #1f2937;">${todosConductores.length}</h3>
+                <h3 style="font-size: 1.1rem; margin:0; line-height: 1; color: #1f2937;">${todosConductores.length}</h3>
             </div>
         </div>
     `;
 
     serviciosUnicos.forEach(serv => {
-        let count = todosConductores.filter(c => ((c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()) === serv).length;
-        let cfg = configServicios[serv] || { icon: 'fa-circle-dot', color: '#2563eb' };
-        let isActive = (filtroActivoServicioCond.toUpperCase() === serv);
-        let bgStyle = isActive ? 'background: #f3f4f6;' : 'background: var(--card-bg, #fff);';
-
+        let count = todosConductores.filter(c => ((c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()) === serv).length; let cfg = configServicios[serv] || { icon: 'fa-circle-dot', color: '#2563eb' }; let isActive = (filtroActivoServicioCond.toUpperCase() === serv); let bgStyle = isActive ? 'background: #f3f4f6;' : 'background: var(--card-bg, #fff);';
         html += `
-            <div style="${bgStyle} padding: 4px 10px; border-radius: 6px; border-left: 4px solid ${cfg.color}; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; border-right: 1px solid #d1d5db; cursor:pointer; display:flex; align-items:center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.1s;" onclick="setFiltroServicioCond('${serv}')" title="Filtrar por ${serv}" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="${bgStyle} padding: 4px 10px; border-radius: 6px; border-left: 4px solid ${cfg.color}; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; border-right: 1px solid #d1d5db; cursor:pointer; display:flex; align-items:center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.1s; height: 100%;" onclick="setFiltroServicioCond('${serv}')" title="Filtrar por ${serv}" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
                 <div style="color: ${cfg.color}; font-size: 1rem;"><i class="fa-solid ${cfg.icon}"></i></div>
                 <div style="display:flex; flex-direction:column; justify-content:center;">
                     <span style="font-size: 0.6rem; color: #6b7280; font-weight:800; line-height: 1;">${serv}</span>
-                    <h3 style="color: ${cfg.color}; margin:0; font-size: 1.1rem; line-height: 1.1;">${count}</h3>
+                    <h3 style="color: ${cfg.color}; margin:0; font-size: 1.1rem; line-height: 1;">${count}</h3>
                 </div>
             </div>
         `;
@@ -428,9 +316,7 @@ function actualizarSideKpisConductores(filtrados, todosConductores) {
 }
 
 function renderizarUnidades() {
-    let tbody = document.getElementById('tbodyUnidades'); if(!tbody) return; tbody.innerHTML = '';
-    let txt = document.getElementById('searchUnidades') ? document.getElementById('searchUnidades').value.toUpperCase().trim() : '';
-    let correlativo = 1;
+    let tbody = document.getElementById('tbodyUnidades'); if(!tbody) return; tbody.innerHTML = ''; let txt = document.getElementById('searchUnidades') ? document.getElementById('searchUnidades').value.toUpperCase().trim() : ''; let correlativo = 1;
     unidades.forEach((u, idx) => {
         let tStr = (u.tipo || '').toUpperCase().trim(); let sStr = (u.servicio || '').toUpperCase().trim(); let cStr = (u.codigo || '').toUpperCase(); let pStr = (u.placa || '').toUpperCase();
         if (fActivoUnidadTipo !== 'TODOS' && tStr !== fActivoUnidadTipo) return; if (fActivoUnidadServicio !== 'TODOS' && sStr !== fActivoUnidadServicio) return; if (txt && !cStr.includes(txt) && !pStr.includes(txt)) return;
@@ -444,15 +330,7 @@ function renderizarUnidades() {
 
 // ZONAS Y 360
 function restablecerZonasFabrica() { zonasBD = JSON.parse(JSON.stringify(ZONAS_FABRICA)); guardarZonas(); alert("✓ Zonas restablecidas."); }
-function renderizarZonas() { 
-    let tbody = document.getElementById('tbodyZonas'); if(!tbody) return; tbody.innerHTML = ''; 
-    let txt = document.getElementById('searchZonas').value.toUpperCase().trim(); 
-    zonasBD.forEach((z, idx) => { 
-        if (txt && !z.zona.toUpperCase().includes(txt)) return; 
-        let ofi = z.rec_a2_ofic || z.rec_a1_ofic || '-';
-        tbody.insertAdjacentHTML('beforeend', `<tr><td><b>${z.zona}</b></td><td>${z.a1||'-'}</td><td style="color:var(--accent); font-weight:600;">${z.a2_lv||'-'}</td><td>${z.a2p_lv||'-'}</td><td>${z.b1||'-'}</td><td>${z.b2||'-'}</td><td>${z.b2p||'-'}</td><td style="font-size:0.75rem; color:var(--text-muted);">${ofi}</td><td><button class="btn btn-outline" onclick="abrirModalEditZona(${idx})"><i class="fa-solid fa-pen"></i> 360°</button></td></tr>`); 
-    }); 
-}
+function renderizarZonas() { let tbody = document.getElementById('tbodyZonas'); if(!tbody) return; tbody.innerHTML = ''; let txt = document.getElementById('searchZonas').value.toUpperCase().trim(); zonasBD.forEach((z, idx) => { if (txt && !z.zona.toUpperCase().includes(txt)) return; let ofi = z.rec_a2_ofic || z.rec_a1_ofic || '-'; tbody.insertAdjacentHTML('beforeend', `<tr><td><b>${z.zona}</b></td><td>${z.a1||'-'}</td><td style="color:var(--accent); font-weight:600;">${z.a2_lv||'-'}</td><td>${z.a2p_lv||'-'}</td><td>${z.b1||'-'}</td><td>${z.b2||'-'}</td><td>${z.b2p||'-'}</td><td style="font-size:0.75rem; color:var(--text-muted);">${ofi}</td><td><button class="btn btn-outline" onclick="abrirModalEditZona(${idx})"><i class="fa-solid fa-pen"></i> 360°</button></td></tr>`); }); }
 function abrirModalEditZona(idx) {
     idxZonaEdit = idx; let z = zonasBD[idx]; document.getElementById('badgeZonaEditName').innerText = `ZONA ${z.zona}`;
     document.getElementById('zHoraA1').value = z.a1 || ''; document.getElementById('zRutaA1Ofic').value = z.rec_a1_ofic || ''; document.getElementById('zRutaA1Desv1').value = z.rec_a1_desv1 || ''; document.getElementById('zRutaA1Desv2').value = z.rec_a1_desv2 || '';
@@ -484,10 +362,7 @@ function cargarOpcionesZonasSelect() { let sel = document.getElementById('selAgr
 function guardarPlantillas() { localStorage.setItem('bd_plantillas_smcv', JSON.stringify(plantillasBD)); alert("✓ Plantillas guardadas."); }
 function renderizarGestorPlantillas() {
     let tbody = document.getElementById('tbodyPlantillaList'); if(!tbody) return; tbody.innerHTML = ''; let lista = plantillasBD[uiPl][uiTu] || [];
-    lista.forEach((item, idx) => {
-        let badgeColor = item.tipo.includes('BUS') ? 'var(--warning)' : 'var(--accent)'; let nombreDisplay = /^\d/.test(item.zona) ? `ZONA ${item.zona}` : item.zona;
-        tbody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:center;">${idx+1}</td><td><b>${nombreDisplay}</b> <span style="font-size:0.75rem; color:${badgeColor}; font-weight: bold; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${item.tipo}</span></td><td style="text-align:center;"><input type="number" class="input-cant" value="${item.cant}" onchange="plantillasBD['${uiPl}']['${uiTu}'][${idx}].cant=parseInt(this.value)||1"></td><td style="text-align:right;"><button class="btn-icon" style="color:var(--danger);" onclick="plantillasBD['${uiPl}']['${uiTu}'].splice(${idx},1); renderizarGestorPlantillas();"><i class="fa-solid fa-trash"></i></button></td></tr>`);
-    }); if(!lista.length) tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Sin turnos asignados.</td></tr>`;
+    lista.forEach((item, idx) => { let badgeColor = item.tipo.includes('BUS') ? 'var(--warning)' : 'var(--accent)'; let nombreDisplay = /^\d/.test(item.zona) ? `ZONA ${item.zona}` : item.zona; tbody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:center;">${idx+1}</td><td><b>${nombreDisplay}</b> <span style="font-size:0.75rem; color:${badgeColor}; font-weight: bold; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${item.tipo}</span></td><td style="text-align:center;"><input type="number" class="input-cant" value="${item.cant}" onchange="plantillasBD['${uiPl}']['${uiTu}'][${idx}].cant=parseInt(this.value)||1"></td><td style="text-align:right;"><button class="btn-icon" style="color:var(--danger);" onclick="plantillasBD['${uiPl}']['${uiTu}'].splice(${idx},1); renderizarGestorPlantillas();"><i class="fa-solid fa-trash"></i></button></td></tr>`); }); if(!lista.length) tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Sin turnos asignados.</td></tr>`;
 }
 function agregarZonaPlantilla() { let z = document.getElementById('selAgregarZona').value, c = parseInt(document.getElementById('cantAgregarZona').value) || 1; if(!z) return; plantillasBD[uiPl][uiTu].push({ zona: z, cant: c, tipo: document.getElementById('selTipoUnidadAgregar').value }); renderizarGestorPlantillas(); }
 function descargarPlantillaMaestraZonas() { let ws = XLSX.utils.json_to_sheet(zonasBD.map(z => ({ "ZONA": z.zona, "REQ_BUS_48": "", "REQ_VAN_15": "", "REQ_VAN_13": "", "REQ_VAN_09": "" }))); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Demanda_Zonas"); XLSX.writeFile(wb, "Plantilla_Maestra.xlsx"); }
@@ -514,10 +389,8 @@ function renderizarProgramacion() {
             for (let i = 1; i <= cantidadRequerida; i++) {
                 totalFilas++; let key = `${itemPlantilla.zona}_${t}_${i}`; let regEx = regsFecha.find(r => r.key === key) || {}; if (regEx.unidad && regEx.conductor) asignados++;
                 let txtUnidadMult = cantidadRequerida > 1 ? `<br><small style="color:var(--text-muted)">Unidad ${i} de ${cantidadRequerida}</small>` : ''; let txtTipoReq = (itemPlantilla.tipo === 'CUALQUIERA' || !itemPlantilla.tipo) ? 'Cualquier Unidad' : itemPlantilla.tipo; let nombreDisplay = /^\d/.test(itemPlantilla.zona) ? `ZONA ${itemPlantilla.zona}` : itemPlantilla.zona;
-                let uniOptsFiltradas = `<option value="">-- Vehículo --</option>`;
-                unidadesBase.forEach(u => { let match = false, tVehiculo = (u.tipoVehiculo || '').toUpperCase(), cap = parseInt(u.capacidad) || 0; if (itemPlantilla.tipo === 'CUALQUIERA' || !itemPlantilla.tipo) match = true; else if ((itemPlantilla.tipo === 'BUS_48' || itemPlantilla.tipo === 'BUS') && tVehiculo.includes('BUS')) match = true; else if (itemPlantilla.tipo === 'VAN_15' && tVehiculo.includes('VAN') && cap >= 14) match = true; else if (itemPlantilla.tipo === 'VAN_13' && tVehiculo.includes('VAN') && cap >= 12) match = true; else if ((itemPlantilla.tipo === 'VAN_09' || itemPlantilla.tipo === 'VAN') && tVehiculo.includes('VAN')) match = true; if (match) uniOptsFiltradas += `<option value="${u.cod}" ${regEx.unidad === u.cod ? 'selected' : ''}>${u.cod}</option>`; });
-                let condOptsFiltradas = `<option value="">-- Conductor --</option>`;
-                condOptsBase.forEach(c => { let tipoC = determinarTipoConductor(c.contrato || c.CONTRATO), matchCond = false, reqTipo = itemPlantilla.tipo || ''; if (reqTipo === 'CUALQUIERA' || !reqTipo) matchCond = true; else if (reqTipo.includes('VAN') && (tipoC === 'VAN' || tipoC === 'MINIBUS')) matchCond = true; else if (reqTipo.includes('BUS') && (tipoC === 'BUS' || tipoC === 'MINIBUS')) matchCond = true; let cDni = c.dni || c.DNI; let cNom = c.nombre || c.CONDUCTOR || c.NOMBRE; if (matchCond) condOptsFiltradas += `<option value="${cDni}" ${regEx.conductor === cDni ? 'selected' : ''}>${cNom}</option>`; });
+                let uniOptsFiltradas = `<option value="">-- Vehículo --</option>`; unidadesBase.forEach(u => { let match = false, tVehiculo = (u.tipoVehiculo || '').toUpperCase(), cap = parseInt(u.capacidad) || 0; if (itemPlantilla.tipo === 'CUALQUIERA' || !itemPlantilla.tipo) match = true; else if ((itemPlantilla.tipo === 'BUS_48' || itemPlantilla.tipo === 'BUS') && tVehiculo.includes('BUS')) match = true; else if (itemPlantilla.tipo === 'VAN_15' && tVehiculo.includes('VAN') && cap >= 14) match = true; else if (itemPlantilla.tipo === 'VAN_13' && tVehiculo.includes('VAN') && cap >= 12) match = true; else if ((itemPlantilla.tipo === 'VAN_09' || itemPlantilla.tipo === 'VAN') && tVehiculo.includes('VAN')) match = true; if (match) uniOptsFiltradas += `<option value="${u.cod}" ${regEx.unidad === u.cod ? 'selected' : ''}>${u.cod}</option>`; });
+                let condOptsFiltradas = `<option value="">-- Conductor --</option>`; condOptsBase.forEach(c => { let tipoC = determinarTipoConductor(c.contrato || c.CONTRATO), matchCond = false, reqTipo = itemPlantilla.tipo || ''; if (reqTipo === 'CUALQUIERA' || !reqTipo) matchCond = true; else if (reqTipo.includes('VAN') && (tipoC === 'VAN' || tipoC === 'MINIBUS')) matchCond = true; else if (reqTipo.includes('BUS') && (tipoC === 'BUS' || tipoC === 'MINIBUS')) matchCond = true; let cDni = c.dni || c.DNI; let cNom = c.nombre || c.CONDUCTOR || c.NOMBRE; if (matchCond) condOptsFiltradas += `<option value="${cDni}" ${regEx.conductor === cDni ? 'selected' : ''}>${cNom}</option>`; });
                 let repartoOpts = `<option value="">- N/A -</option>`; zonasBD.forEach(z => { repartoOpts += `<option value="${z.zona}" ${regEx.reparto === z.zona ? 'selected' : ''}>Rep. ${z.zona}</option>`; }); let carrilSelect = htmlOpcionesCarril.replace(`value="${regEx.carril || ''}"`, `value="${regEx.carril || ''}" selected`); let adicSelect = htmlOpcionesAdicionales.replace(`value="${regEx.adicional || ''}"`, `value="${regEx.adicional || ''}" selected`);
                 htmlTabla += `<tr><td style="font-weight: bold;">${nombreDisplay} ${txtUnidadMult}</td><td><span class="badge-status status-activo">${t}</span> <br> <span style="font-weight:600; font-size:0.75rem;">${horaDinamica}</span></td><td><span style="font-size: 0.7rem; font-weight: 800; padding: 2px 4px; border-radius: 4px; background: rgba(0,0,0,0.05); color: var(--accent);">${txtTipoReq}</span></td><td><select id="uni_${key}" class="select-prog" onchange="updMem('${key}', 'unidad', this.value)">${uniOptsFiltradas}</select></td><td><select id="cond_${key}" class="select-prog" onchange="updMem('${key}', 'conductor', this.value)">${condOptsFiltradas}</select></td><td><select class="select-prog" onchange="updMem('${key}', 'reparto', this.value)">${repartoOpts}</select></td><td><select class="select-prog" onchange="updMem('${key}', 'carril', this.value)">${carrilSelect}</select></td><td><select class="select-prog" onchange="updMem('${key}', 'adicional', this.value)">${adicSelect}</select></td></tr>`;
             }
@@ -554,7 +427,6 @@ function renderizarRosterOficial() {
 
 function descargarRosterImagen() { let node = document.getElementById('tablaFotografia'); if(!node) return alert("Primero debes cargar una programación."); html2canvas(node, { scale: 2 }).then(canvas => { let imgURL = canvas.toDataURL("image/jpeg", 1.0); let link = document.createElement("a"); let fechaInput = document.getElementById('fechaProgInput'); link.download = `Roster_WhatsApp_${fechaInput ? fechaInput.value : 'prog'}.jpg`; link.href = imgURL; link.click(); }); }
 
-// BACKUP
 function solicitarClaveParaAccion(cb) { callbackAccionPendiente = cb; let inp = document.getElementById('claveAdminInput'); if(inp) inp.value = ''; abrirModal('modalVaciar'); setTimeout(() => { if(inp) inp.focus(); }, 100); }
 function confirmarVaciarDatos() { let inp = document.getElementById('claveAdminInput'); if(inp && inp.value === CLAVE_ADMIN_PERMANENTE) { cerrarModal('modalVaciar'); callbackAccionPendiente?.(); } else alert("Clave incorrecta."); }
 function abrirModalVaciarSeguro(t) { targetVaciar = t; solicitarClaveParaAccion(() => { if(t === 'conductores') { conductores = []; guardarConductores(true); renderizarConductores(); } else { unidades = []; guardarUnidades(true); renderizarUnidades(); } alert("✓ Eliminado."); }); }
@@ -579,6 +451,10 @@ function importarRespaldoSistema(e) {
 // ARRANQUE DEL SISTEMA
 window.onload = async function() { 
     aplicarTema(localStorage.getItem('planner_theme') || 'cerro-verde'); 
+    
+    // >>> APLICAMOS EL ESTILO CORPORATIVO A TODOS LOS TÍTULOS AL INICIAR <<<
+    estilizarTitulosYContenedores();
+
     try { let [resCond, resUni] = await Promise.all([ fetch(URL_API_CONDUCTORES + "?t=" + new Date().getTime()), fetch(URL_API_UNIDADES + "?t=" + new Date().getTime()) ]);
         if(resCond.ok) { let dC = await resCond.json(); if(dC && dC.length > 0) { conductores = dC; guardarConductores(false); } }
         if(resUni.ok) { let dU = await resUni.json(); if(dU && dU.length > 0) { unidades = dU; guardarUnidades(false); } }
@@ -587,7 +463,6 @@ window.onload = async function() {
     renderizarConductores(); renderizarUnidades(); actualizarDashboard(); cambiarVista('dashboard'); 
 };
 
-// IMPORTAR EXCEL MANTENIMIENTO
 function importarExcelMantenimiento(e) {
     let file = e.target.files[0]; if(!file) return; let r = new FileReader();
     r.onload = function(evt) {

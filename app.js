@@ -58,10 +58,7 @@ const URL_API_CONDUCTORES = "https://script.google.com/macros/s/AKfycbwYiiV2_-zS
 const URL_API_UNIDADES = "https://script.google.com/macros/s/AKfycbz95bAXTt3TdLqWrHswVEtSWEjA1Qb5RCdb9QfUnRqsGOgilnNzrpcR8V6l4mkhZCBlZA/exec";
 
 // CARGA DE DATOS SEGUROS
-function cargarDatosSeguros(k, fb) { 
-    try { let d = localStorage.getItem(k); return d ? JSON.parse(d) : fb; } catch(e) { return fb; } 
-}
-
+function cargarDatosSeguros(k, fb) { try { let d = localStorage.getItem(k); return d ? JSON.parse(d) : fb; } catch(e) { return fb; } }
 let conductores = cargarDatosSeguros('bd_conductores_smcv', []);
 let unidades = cargarDatosSeguros('bd_unidades_smcv', []);
 let zonasBD = cargarDatosSeguros('bd_zonas_oficial_smcv', ZONAS_FABRICA);
@@ -69,58 +66,49 @@ let plantillasBD = cargarDatosSeguros('bd_plantillas_smcv', { LV: {A1:[],A2:[],A
 let programacionDiaria = cargarDatosSeguros('bd_prog_diaria_smcv', {});
 let datosCapacitacion = cargarDatosSeguros('bd_capacitaciones_smcv', { titulo: "", lista: [] });
 
-// GUARDADOS CENTRALIZADOS
 function guardarConductores(refrescar = true) { localStorage.setItem('bd_conductores_smcv', JSON.stringify(conductores)); if(refrescar) actualizarDashboard(); }
 function guardarUnidades(refrescar = true) { localStorage.setItem('bd_unidades_smcv', JSON.stringify(unidades)); if(refrescar) actualizarDashboard(); }
 function guardarZonas() { localStorage.setItem('bd_zonas_oficial_smcv', JSON.stringify(zonasBD)); renderizarZonas(); }
-
-// FUNCIONES UTILITARIAS
 function normalizarTexto(txt) { if(!txt) return ""; return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g," ").trim().toUpperCase(); }
 function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
 function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
 function aplicarTema(t) { document.body.setAttribute('data-theme', t); localStorage.setItem('planner_theme', t); }
 
-// ==========================================
-// MAGIA DOM: ESTILO GLOBAL PARA TODOS LOS TÍTULOS
-// ==========================================
+// =========================================================
+// CORRECCIÓN MAGIA DOM: ALINEACIÓN PERFECTA DE TÍTULOS 
+// =========================================================
 function estilizarTitulosYContenedores() {
     document.querySelectorAll('.view-section').forEach(vista => {
         let header = vista.querySelector('h1, h2, h3');
-        // Si tiene título y aún no lo hemos estilizado (enlazado a nuestro flex-wrapper)
         if (header && !header.parentElement.classList.contains('header-flex-wrapper')) {
-            
-            // Creamos un contenedor Flex para alinear verticalmente a la perfección
+            // Contenedor Flex Global
             let wrapper = document.createElement('div');
             wrapper.className = 'header-flex-wrapper';
             wrapper.style.display = 'flex';
-            wrapper.style.alignItems = 'center'; // ALINEACIÓN VERTICAL EXACTA
-            wrapper.style.justifyContent = 'flex-start';
-            wrapper.style.gap = '15px';
-            wrapper.style.marginBottom = '10px'; // ESPACIO REDUCIDO
-            wrapper.style.paddingBottom = '8px'; // ESPACIO REDUCIDO
-            wrapper.style.borderBottom = '2px solid #e5e7eb';
+            wrapper.style.alignItems = 'center'; 
+            wrapper.style.justifyContent = 'space-between'; // Título a la izquierda, KPIs a la derecha
             wrapper.style.flexWrap = 'wrap';
+            wrapper.style.marginBottom = '12px'; // Reducimos espacios perdidos
+            wrapper.style.borderBottom = '2px solid #e5e7eb';
+            wrapper.style.paddingBottom = '8px';
+            wrapper.style.width = '100%';
 
-            // Damos el formato corporativo al texto para TODAS las pestañas
+            // Título unificado para TODAS las pestañas
             header.style.margin = '0';
-            header.style.fontSize = '1.6rem';
+            header.style.fontSize = '1.5rem';
             header.style.fontWeight = '900';
             header.style.color = '#1f2937';
             header.style.borderLeft = '6px solid #cc0000';
             header.style.paddingLeft = '12px';
             header.style.textTransform = 'uppercase';
-            header.style.letterSpacing = '0.5px';
-            header.style.lineHeight = '1'; // Elimina el margen invisible del texto
+            header.style.lineHeight = '1';
 
-            // Insertamos el wrapper en el HTML y metemos el título dentro
             header.parentNode.insertBefore(wrapper, header);
             wrapper.appendChild(header);
-
-            // Si es la pestaña Conductores, jalamos automáticamente los KPIs a su lado
-            if (vista.id === 'vistaConductores') {
-                let kpis = document.getElementById('sideKpisConductores');
-                if (kpis) wrapper.appendChild(kpis);
-            }
+            
+            // Eliminamos márgenes perdidos en la tarjeta blanca (card)
+            let card = vista.querySelector('.card');
+            if(card) { card.style.marginTop = '0px'; }
         }
     });
 }
@@ -128,7 +116,6 @@ function estilizarTitulosYContenedores() {
 function cambiarVista(vista) {
     document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
     document.querySelectorAll('.nav-btn, .dropdown-content a').forEach(btn => btn.classList.remove('active'));
-
     let vistaId = ""; let btnId = ""; let parentBtnId = "";
     if (vista === 'dashboard') { vistaId = 'vistaDashboard'; btnId = 'btnNavDashboard'; }
     if (vista === 'conductores') { vistaId = 'vistaConductores'; btnId = 'btnNavConductores'; parentBtnId = 'btnNavMaestros'; }
@@ -147,11 +134,9 @@ function cambiarVista(vista) {
     if (vista === 'unidades') { actualizarFiltrosDinamicosUnidades(); renderizarUnidades(); }
 }
 
-// CÁLCULO ROBUSTO DE FECHAS
 function parsearFechaGenerica(f) {
     if (!f) return null; if (f instanceof Date) return f; if (typeof f === 'number') return new Date((f - (25567 + 2)) * 86400 * 1000);
-    let s = String(f).trim();
-    if (/^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/.test(s)) { let d = new Date(s); return isNaN(d.getTime()) ? null : d; }
+    let s = String(f).trim(); if (/^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/.test(s)) { let d = new Date(s); return isNaN(d.getTime()) ? null : d; }
     let p = s.split(/[\/\-\.]/); if (p.length === 3) { if (p[0].length === 4) return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])); else return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0])); }
     let d2 = new Date(s); return isNaN(d2.getTime()) ? null : d2;
 }
@@ -177,19 +162,16 @@ function obtenerEstiloEstado(estado) {
     if(e === 'DM') return 'background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Rojo 
     if(e === 'MO') return 'background-color: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Morado
     if(e === 'AL' || e === 'ADI') return 'background-color: #ffedd5; color: #c2410c; border: 1px solid #fdba74; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Naranja fuerte
-    return 'background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Default gris
+    if(e === 'PA') return 'background-color: #f3f4f6; color: #4b5563; border: 1px solid #9ca3af; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Gris Oscuro para PA
+    return 'background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Default
 }
 
 let filtroActivoContratoCond = "TODOS"; let filtroActivoServicioCond = "TODOS";
-
 function actualizarFiltrosDinamicosConductores() {
     let contenedor = document.getElementById('contenedorChipsFiltrosCond'); if (!contenedor || !conductores) return;
-    let contratos = ["TODOS", ...new Set(conductores.map(c => c.contrato || c.CONTRATO).filter(Boolean))];
-    let servicios = ["TODOS", ...new Set(conductores.map(c => c["SERVICIO ASIG"] || c.servicio || c.SERVICIO).filter(Boolean))];
-
-    // Espaciado inferior reducido radicalmente
+    let contratos = ["TODOS", ...new Set(conductores.map(c => c.contrato || c.CONTRATO).filter(Boolean))]; let servicios = ["TODOS", ...new Set(conductores.map(c => c["SERVICIO ASIG"] || c.servicio || c.SERVICIO).filter(Boolean))];
     let html = `
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">
             <span style="font-size: 0.7rem; font-weight: 800; color: #6b7280; width: 65px; letter-spacing: 0.5px;">CONTRATO:</span>
             <div style="display: flex; gap: 0; flex-wrap: wrap;">
                 ${contratos.map((c, i) => {
@@ -231,7 +213,7 @@ async function sincronizarDatosSegundoPlano() {
 
 function actualizarFiltrosDinamicosUnidades() {
     let tipos = [...new Set(unidades.map(u => (u.tipo || '').toUpperCase().trim()))].filter(t => t !== ''); let servicios = [...new Set(unidades.map(u => (u.servicio || '').toUpperCase().trim()))].filter(s => s !== ''); let allTipos = ['TODOS', ...tipos];
-    let htmlTipos = `<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom: 6px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px;">
+    let htmlTipos = `<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom: 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">
         <span style="font-size:0.7rem; font-weight:800; color:#6b7280; width: 65px; letter-spacing:0.5px;">TIPO:</span><div style="display: flex; gap: 0; flex-wrap: wrap;">`;
     allTipos.forEach((t, i) => { let isActive = (fActivoUnidadTipo === t); let bg = isActive ? '#0284c7' : '#ffffff'; let col = isActive ? '#ffffff' : '#4b5563'; let brL = i === 0 ? '4px' : '0'; let brR = i === allTipos.length - 1 ? '4px' : '0'; let zIdx = isActive ? 2 : 1; htmlTipos += `<button onclick="toggleFiltroUnidades('tipo', '${t}')" style="padding: 4px 12px; font-size: 0.7rem; font-weight: 700; background: ${bg}; color: ${col}; border: 1px solid #d1d5db; border-radius: ${brL} ${brR} ${brR} ${brL}; cursor: pointer; margin-left: -1px; transition: all 0.2s; position: relative; z-index: ${zIdx}; outline: none;">${t}</button>`; }); htmlTipos += `</div></div>`;
     let allServs = ['TODOS', ...servicios];
@@ -273,25 +255,43 @@ function renderizarConductores() {
     });
 }
 
+// =========================================================
+// CORRECCIÓN MAGIA DOM: KPIS SEGUROS (Sin choques de CSS)
+// =========================================================
 function actualizarSideKpisConductores(filtrados, todosConductores) {
-    let sideKpis = document.getElementById('sideKpisConductores'); if (!sideKpis) return;
+    // 1. OCULTAMOS EL KPI VIEJO para evitar que tu CSS original lo vuelva loco (position absolute, etc.)
+    let kpiAntiguo = document.getElementById('sideKpisConductores');
+    if (kpiAntiguo && kpiAntiguo.parentElement && !kpiAntiguo.parentElement.classList.contains('header-flex-wrapper')) {
+        kpiAntiguo.style.display = 'none';
+        kpiAntiguo.id = 'sideKpisConductores_OCULTO'; 
+    }
 
-    // Configuración pura para alineación perfecta dentro de nuestro Flexbox
-    sideKpis.style.display = 'flex';
-    sideKpis.style.flexDirection = 'row';
-    sideKpis.style.flexWrap = 'wrap';
-    sideKpis.style.alignItems = 'center';
-    sideKpis.style.gap = '8px';
-    sideKpis.style.margin = '0'; // Sin márgenes rebeldes
-    sideKpis.style.width = 'auto'; 
-    sideKpis.style.background = 'transparent';
-    sideKpis.style.boxShadow = 'none';
+    // 2. BUSCAMOS O CREAMOS NUESTRO NUEVO CONTENEDOR SEGURO AL LADO DEL TÍTULO
+    let vista = document.getElementById('vistaConductores'); if (!vista) return;
+    let header = vista.querySelector('h1, h2, h3'); if (!header) return;
+    
+    // Validamos que exista el Wrapper Global (creado en estilizarTitulos)
+    let wrapper = header.parentElement;
+    if (!wrapper.classList.contains('header-flex-wrapper')) return; 
 
+    // Creamos nuestro nuevo elemento div que no está manchado por el viejo CSS
+    let safeKpiBox = document.getElementById('safeKpiBox_Conductores');
+    if (!safeKpiBox) {
+        safeKpiBox = document.createElement('div');
+        safeKpiBox.id = 'safeKpiBox_Conductores';
+        safeKpiBox.style.display = 'flex';
+        safeKpiBox.style.gap = '8px';
+        safeKpiBox.style.flexWrap = 'wrap';
+        safeKpiBox.style.alignItems = 'center';
+        wrapper.appendChild(safeKpiBox);
+    }
+
+    // 3. GENERAMOS EL HTML DE LOS KPIS DIRECTAMENTE EN EL NUEVO CONTENEDOR SEGURO
     let serviciosUnicos = [...new Set(todosConductores.map(c => (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()))]; serviciosUnicos.sort();
     let configServicios = { 'REGULAR': { icon: 'fa-route', color: '#059669' }, 'DOMICILIOS': { icon: 'fa-house-user', color: '#f59e0b' }, 'SIN SERVICIO': { icon: 'fa-ban', color: '#64748b' }, 'INDUCCION': { icon: 'fa-graduation-cap', color: '#8b5cf6' }, 'RETEN PARADA': { icon: 'fa-clock', color: '#0284c7' }, 'MOLLENDO': { icon: 'fa-map-pin', color: '#dc2626' }, 'AMBULANCIA': { icon: 'fa-truck-medical', color: '#10b981' } };
 
     let html = `
-        <div style="background: var(--card-bg, #fff); padding: 4px 10px; border-radius: 6px; cursor:pointer; display:flex; align-items:center; gap:8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #d1d5db; transition: transform 0.1s; height: 100%;" onclick="setFiltroServicioCond('TODOS')" title="Ver Todos" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="background: var(--card-bg, #fff); padding: 4px 10px; border-radius: 6px; cursor:pointer; display:flex; align-items:center; gap:8px; border: 1px solid #d1d5db; transition: transform 0.1s;" onclick="setFiltroServicioCond('TODOS')" title="Ver Todos" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
             <div style="color:var(--primary, #cc0000); font-size: 1rem;"><i class="fa-solid fa-users"></i></div>
             <div style="display:flex; flex-direction:column; justify-content:center;">
                 <span style="font-size: 0.6rem; color:#6b7280; font-weight:800; line-height: 1;">TODOS</span>
@@ -303,7 +303,7 @@ function actualizarSideKpisConductores(filtrados, todosConductores) {
     serviciosUnicos.forEach(serv => {
         let count = todosConductores.filter(c => ((c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()) === serv).length; let cfg = configServicios[serv] || { icon: 'fa-circle-dot', color: '#2563eb' }; let isActive = (filtroActivoServicioCond.toUpperCase() === serv); let bgStyle = isActive ? 'background: #f3f4f6;' : 'background: var(--card-bg, #fff);';
         html += `
-            <div style="${bgStyle} padding: 4px 10px; border-radius: 6px; border-left: 4px solid ${cfg.color}; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; border-right: 1px solid #d1d5db; cursor:pointer; display:flex; align-items:center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.1s; height: 100%;" onclick="setFiltroServicioCond('${serv}')" title="Filtrar por ${serv}" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="${bgStyle} padding: 4px 10px; border-radius: 6px; border-left: 4px solid ${cfg.color}; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; border-right: 1px solid #d1d5db; cursor:pointer; display:flex; align-items:center; gap: 8px; transition: transform 0.1s;" onclick="setFiltroServicioCond('${serv}')" title="Filtrar por ${serv}" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
                 <div style="color: ${cfg.color}; font-size: 1rem;"><i class="fa-solid ${cfg.icon}"></i></div>
                 <div style="display:flex; flex-direction:column; justify-content:center;">
                     <span style="font-size: 0.6rem; color: #6b7280; font-weight:800; line-height: 1;">${serv}</span>
@@ -312,7 +312,7 @@ function actualizarSideKpisConductores(filtrados, todosConductores) {
             </div>
         `;
     });
-    sideKpis.innerHTML = html;
+    safeKpiBox.innerHTML = html;
 }
 
 function renderizarUnidades() {
@@ -328,7 +328,6 @@ function renderizarUnidades() {
     });
 }
 
-// ZONAS Y 360
 function restablecerZonasFabrica() { zonasBD = JSON.parse(JSON.stringify(ZONAS_FABRICA)); guardarZonas(); alert("✓ Zonas restablecidas."); }
 function renderizarZonas() { let tbody = document.getElementById('tbodyZonas'); if(!tbody) return; tbody.innerHTML = ''; let txt = document.getElementById('searchZonas').value.toUpperCase().trim(); zonasBD.forEach((z, idx) => { if (txt && !z.zona.toUpperCase().includes(txt)) return; let ofi = z.rec_a2_ofic || z.rec_a1_ofic || '-'; tbody.insertAdjacentHTML('beforeend', `<tr><td><b>${z.zona}</b></td><td>${z.a1||'-'}</td><td style="color:var(--accent); font-weight:600;">${z.a2_lv||'-'}</td><td>${z.a2p_lv||'-'}</td><td>${z.b1||'-'}</td><td>${z.b2||'-'}</td><td>${z.b2p||'-'}</td><td style="font-size:0.75rem; color:var(--text-muted);">${ofi}</td><td><button class="btn btn-outline" onclick="abrirModalEditZona(${idx})"><i class="fa-solid fa-pen"></i> 360°</button></td></tr>`); }); }
 function abrirModalEditZona(idx) {
@@ -354,7 +353,6 @@ function guardarCambiosZonaConfirmado() {
 }
 function guardarNuevaZona() { let n = document.getElementById('nuevaZonaNombre').value.trim().toUpperCase(); if(!n) return alert("Nombre vacío."); zonasBD.push({ zona: n }); guardarZonas(); cerrarModal('modalNuevaZona'); }
 
-// PLANTILLAS
 let uiPl = 'LV', uiTu = 'A1';
 function switchPlantilla(p) { uiPl = p; document.querySelectorAll('#vistaPlantillas .tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tabPl' + p).classList.add('active'); renderizarGestorPlantillas(); }
 function switchTurnoPlantilla(tu) { uiTu = tu; document.querySelectorAll('#vistaPlantillas .sub-tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('st' + tu).classList.add('active'); renderizarGestorPlantillas(); }
@@ -369,11 +367,9 @@ function descargarPlantillaMaestraZonas() { let ws = XLSX.utils.json_to_sheet(zo
 function abrirModalCopiarPlantilla() { document.getElementById('lblDestinoCopia').innerText = `[${uiPl}] - [${uiTu}]`; abrirModal('modalCopiarPlantilla'); }
 function confirmarCopiaPlantilla() { let sp = document.getElementById('selCopiaPlantilla').value, st = document.getElementById('selCopiaTurno').value; if(plantillasBD[sp][st]?.length) { plantillasBD[uiPl][uiTu] = JSON.parse(JSON.stringify(plantillasBD[sp][st])); renderizarGestorPlantillas(); cerrarModal('modalCopiarPlantilla'); } else alert("Origen vacío."); }
 
-// BUZÓN CAPACITACIÓN
 function limpiarCapacitacion() { document.getElementById('txtTituloCapacitacion').value = ''; document.getElementById('txtListaCapacitacion').value = ''; }
 function guardarCapacitacion() { let titulo = document.getElementById('txtTituloCapacitacion').value.trim(); let listaLimpia = document.getElementById('txtListaCapacitacion').value.split('\n').map(n => normalizarTexto(n)).filter(n => n !== ""); datosCapacitacion = { titulo: titulo, lista: listaLimpia }; localStorage.setItem('bd_capacitaciones_smcv', JSON.stringify(datosCapacitacion)); cerrarModal('modalCapacitacion'); alert(`✓ Registrados ${listaLimpia.length} conductores.`); }
 
-// PROGRAMACIÓN DIARIA
 function procesarCambioFechaProg() { let input = document.getElementById('fechaProgInput'); if(!input.value) input.value = new Date().toISOString().split('T')[0]; let d = new Date(input.value + 'T00:00:00'); document.getElementById('tipoPlantillaProg').value = (d.getDay() === 0 || d.getDay() === 6) ? 'SD' : 'LV'; if(!programacionDiaria[input.value]) programacionDiaria[input.value] = []; renderizarProgramacion(); }
 function guardarProgramacionDiaria() { localStorage.setItem('bd_prog_diaria_smcv', JSON.stringify(programacionDiaria)); alert("✓ Programación guardada correctamente."); }
 function renderizarProgramacion() {
@@ -401,7 +397,6 @@ function renderizarProgramacion() {
 }
 function updMem(key, campo, valor) { let fechaSel = document.getElementById('fechaProgInput').value; if (!programacionDiaria[fechaSel]) programacionDiaria[fechaSel] = []; let reg = programacionDiaria[fechaSel].find(r => r.key === key); if (!reg) { reg = { key: key }; programacionDiaria[fechaSel].push(reg); } reg[campo] = valor; }
 
-// ROSTER OFICIAL WHATSAPP
 function sumar20Min(hStr) { let r = String(hStr).trim(); let m = r.match(/(\d{1,2}):(\d{2})/); if(!m) return r; let h = parseInt(m[1]), min = parseInt(m[2]); min += 20; if(min >= 60) { h++; min -= 60; } return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`; }
 function renderizarRosterOficial() {
     let fechaSel = document.getElementById('fechaProgInput').value; let dObj = new Date(fechaSel + 'T00:00:00'); let fechaAyerObj = new Date(dObj); fechaAyerObj.setDate(fechaAyerObj.getDate() - 1); let ayerStr = fechaAyerObj.toISOString().split('T')[0];
@@ -452,7 +447,7 @@ function importarRespaldoSistema(e) {
 window.onload = async function() { 
     aplicarTema(localStorage.getItem('planner_theme') || 'cerro-verde'); 
     
-    // >>> APLICAMOS EL ESTILO CORPORATIVO A TODOS LOS TÍTULOS AL INICIAR <<<
+    // >>> EJECUTAMOS LA ESTILIZACIÓN DE TÍTULOS EN TODAS LAS PESTAÑAS <<<
     estilizarTitulosYContenedores();
 
     try { let [resCond, resUni] = await Promise.all([ fetch(URL_API_CONDUCTORES + "?t=" + new Date().getTime()), fetch(URL_API_UNIDADES + "?t=" + new Date().getTime()) ]);

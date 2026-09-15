@@ -552,8 +552,16 @@ window.onload = async function() {
         if(resCond.ok) { let dC = await resCond.json(); if(dC && dC.length > 0) { conductores = dC; guardarConductores(false); } }
         if(resUni.ok) { let dU = await resUni.json(); if(dU && dU.length > 0) { unidades = dU; guardarUnidades(false); } }
     } catch(e) { console.log("Modo offline o error de red."); }
-    actualizarFiltrosDinamicos(); actualizarFiltrosDinamicosUnidades(); actualizarFiltrosDinamicosConductores();
-    renderizarConductores(); renderizarUnidades(); actualizarDashboard(); cambiarVista('dashboard'); renderizarZonas();
+    
+    actualizarFiltrosDinamicos(); 
+    actualizarFiltrosDinamicosUnidades(); 
+    actualizarFiltrosDinamicosConductores();
+    
+    renderizarConductores(); 
+    renderizarUnidades(); 
+    renderizarZonas(); // <--- ESTO EVITARÁ QUE LA PÁGINA SE VEA VACÍA
+    actualizarDashboard(); 
+    cambiarVista('dashboard'); 
 };
 
 function importarExcelMantenimiento(e) {

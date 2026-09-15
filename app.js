@@ -579,3 +579,44 @@ function importarExcelMantenimiento(e) {
         } catch(err) { alert("Error al leer el Excel de mantenimiento: " + err.message); } e.target.value = '';
     }; r.readAsArrayBuffer(file);
 }
+
+// =========================================================
+// GENERADOR DE PLANTILLA EXCEL PARA BASE DE DATOS DE ZONAS
+// =========================================================
+function descargarPlantillaZonasBD() {
+    let exportData = ZONAS_FABRICA.map(z => ({
+        "ZONA": z.zona || "",
+        "HORA_A1": z.a1 || "",
+        "RUTA_A1_OFIC": z.rec_a1_ofic || "",
+        "RUTA_A1_DESV1": z.rec_a1_desv1 || "",
+        "RUTA_A1_DESV2": z.rec_a1_desv2 || "",
+        "HORA_A2_LV": z.a2_lv || "",
+        "HORA_A2_SDFER": z.a2_sd || "",
+        "RUTA_A2_OFIC": z.rec_a2_ofic || "",
+        "RUTA_A2_DESV1": z.rec_a2_desv1 || "",
+        "RUTA_A2_DESV2": z.rec_a2_desv2 || "",
+        "HORA_A2P_LV": z.a2p_lv || "",
+        "HORA_A2P_SDFER": z.a2p_sd || "",
+        "RUTA_A2P_OFIC": z.rec_a2p_ofic || "",
+        "RUTA_A2P_DESV1": z.rec_a2p_desv1 || "",
+        "RUTA_A2P_DESV2": z.rec_a2p_desv2 || "",
+        "HORA_B1": z.b1 || "",
+        "RUTA_B1_OFIC": z.rec_b1_ofic || "",
+        "RUTA_B1_DESV1": z.rec_b1_desv1 || "",
+        "RUTA_B1_DESV2": z.rec_b1_desv2 || "",
+        "HORA_B2": z.b2 || "",
+        "RUTA_B2_OFIC": z.rec_b2_ofic || "",
+        "RUTA_B2_DESV1": z.rec_b2_desv1 || "",
+        "RUTA_B2_DESV2": z.rec_b2_desv2 || "",
+        "HORA_B2P": z.b2p || "",
+        "RUTA_B2P_OFIC": z.rec_b2p_ofic || "",
+        "RUTA_B2P_DESV1": z.rec_b2p_desv1 || "",
+        "RUTA_B2P_DESV2": z.rec_b2p_desv2 || ""
+    }));
+
+    let ws = XLSX.utils.json_to_sheet(exportData);
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Zonas_SMCV");
+    XLSX.writeFile(wb, "Plantilla_BD_Zonas_SMCV.xlsx");
+}
+

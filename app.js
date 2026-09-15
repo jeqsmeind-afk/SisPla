@@ -312,11 +312,11 @@ function actualizarFiltrosDinamicos() { let selectServicio = document.getElement
 function renderizarConductores() {
     let tbody = document.getElementById('tbodyConductores'); if(!tbody) return; let search = (document.getElementById('searchConductores')?.value || '').toLowerCase();
     let filtrados = conductores.filter(c => { 
-        let dniStr = String(getProp(c, "DNI") || c.DNI || '').toLowerCase(); 
-        let nomStr = String(getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || '').toLowerCase(); 
+        let dniStr = String(getProp(c, "DNI") || c.dni || c.DNI || '').toLowerCase(); 
+        let nomStr = String(getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || c.nombre || '').toLowerCase(); 
         let matchSearch = dniStr.includes(search) || nomStr.includes(search); 
-        let matchContrato = (filtroActivoContratoCond === 'TODOS' || (getProp(c, "CONTRATO") || '').toUpperCase() === filtroActivoContratoCond.toUpperCase()); 
-        let matchServicio = (filtroActivoServicioCond === 'TODOS' || (getProp(c, "SERVICIO") || '').toUpperCase() === filtroActivoServicioCond.toUpperCase()); 
+        let matchContrato = (filtroActivoContratoCond === 'TODOS' || (getProp(c, "CONTRATO") || c.contrato || '').toUpperCase() === filtroActivoContratoCond.toUpperCase()); 
+        let matchServicio = (filtroActivoServicioCond === 'TODOS' || (getProp(c, "SERVICIO") || c.servicio || '').toUpperCase() === filtroActivoServicioCond.toUpperCase()); 
         return matchSearch && matchContrato && matchServicio; 
     });
     
@@ -324,17 +324,19 @@ function renderizarConductores() {
     
     filtrados.forEach((c, index) => {
         let rawNac = getProp(c, "NACIMIENTO") || c.nacimiento || c.nac;
-        let rawIng = getProp(c, "INGRESO") || getProp(c, "LABORANDO") || c.ingreso || c.tiempoLaborando;
-        let contrato = getProp(c, "CONTRATO") || '-';
-        let servicio = getProp(c, "SERVICIO") || '-';
-        let estado = getProp(c, "ESTADO") || getProp(c, "ABREV") || '-';
-        let nombre = getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || '-';
-        let dni = getProp(c, "DNI") || '-';
+        
+        // AQUÍ ESTABA EL DETALLE: Agregamos "c.ing" al final para que atrape el dato de tu API
+        let rawIng = getProp(c, "INGRESO") || getProp(c, "LABORANDO") || c.ingreso || c.tiempoLaborando || c.ing;
+        
+        let contrato = getProp(c, "CONTRATO") || c.contrato || '-';
+        let servicio = getProp(c, "SERVICIO") || c.servicio || '-';
+        let estado = getProp(c, "ESTADO") || getProp(c, "ABREV") || c.estadoAbrev || '-';
+        let nombre = getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || c.nombre || '-';
+        let dni = getProp(c, "DNI") || c.dni || '-';
 
         let edadObj = obtenerEdadProcesada(rawNac); 
         let tiempo = obtenerTiempoLaborandoExacto(rawIng); 
         
-        // CHIVATO DE DIAGNÓSTICO: Si sigue saliendo el guion, se pondrá rojito.
         if (tiempo === '-') {
             let llavesDetectadas = Object.keys(c).join(", ");
             tiempo = `<span title="El sistema recibe: '${rawIng}'. Columnas leídas: ${llavesDetectadas}" style="cursor:help; border-bottom: 2px dotted #cc0000; color: #cc0000; font-weight:bold; padding: 0 5px;">-</span>`;
@@ -347,7 +349,6 @@ function renderizarConductores() {
         tbody.appendChild(tr);
     });
 }
-
 function actualizarSideKpisConductores(filtrados, todosConductores) {
     let vista = document.getElementById('vistaConductores'); if (!vista) return; let header = vista.querySelector('h1, h2, h3'); if (!header) return; let wrapper = header.parentElement; if (!wrapper.classList.contains('header-flex-wrapper')) return; 
 

@@ -74,14 +74,25 @@ function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
 function aplicarTema(t) { document.body.setAttribute('data-theme', t); localStorage.setItem('planner_theme', t); }
 
 // =========================================================
+// BUSCADOR INTELIGENTE DE COLUMNAS (A PRUEBA DE SALTOS DE LÍNEA Y ESPACIOS)
+// =========================================================
+function getProp(obj, keyword) {
+    for (let key in obj) {
+        // Limpiamos la cabecera eliminando saltos de línea (\n), retornos (\r) y espacios
+        if (key.toUpperCase().replace(/[\s\n\r]/g, "").includes(keyword.toUpperCase())) {
+            return obj[key];
+        }
+    }
+    return null;
+}
+
+// =========================================================
 // MAGIA DOM: COMPACIDAD MÁXIMA PARA TÍTULOS Y ETIQUETAS
 // =========================================================
 function estilizarTitulosYContenedores() {
     document.querySelectorAll('.view-section').forEach(vista => {
         let header = vista.querySelector('h1, h2, h3');
         if (header && !header.parentElement.classList.contains('header-flex-wrapper')) {
-            
-            // Creamos el Wrapper Flex que une Título + KPIs + Botones
             let wrapper = document.createElement('div');
             wrapper.className = 'header-flex-wrapper';
             wrapper.style.display = 'flex';
@@ -89,7 +100,7 @@ function estilizarTitulosYContenedores() {
             wrapper.style.justifyContent = 'space-between';
             wrapper.style.flexWrap = 'wrap';
             wrapper.style.gap = '10px';
-            wrapper.style.marginBottom = '2px'; // << ESPACIO TOTALMENTE REDUCIDO AQUI
+            wrapper.style.marginBottom = '2px'; 
             wrapper.style.borderBottom = '2px solid #e5e7eb';
             wrapper.style.paddingBottom = '4px';
             wrapper.style.width = '100%';
@@ -106,13 +117,11 @@ function estilizarTitulosYContenedores() {
             header.parentNode.insertBefore(wrapper, header);
             wrapper.appendChild(header);
             
-            // Si la tarjeta (card) tiene un margin-top por defecto en CSS, lo matamos
             let card = vista.querySelector('.card');
             if(card) { card.style.marginTop = '0px'; }
         }
     });
 
-    // Inyectar un CSS global para matar TODAS las lengüetas y estorbos transparentes del pasado
     if(!document.getElementById('css-limpiador')) {
         let style = document.createElement('style');
         style.id = 'css-limpiador';
@@ -149,40 +158,73 @@ function cambiarVista(vista) {
 }
 
 function parsearFechaGenerica(f) {
-    if (!f) return null; if (f instanceof Date) return f; if (typeof f === 'number') return new Date((f - (25567 + 2)) * 86400 * 1000);
-    let s = String(f).trim(); if (/^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/.test(s)) { let d = new Date(s); return isNaN(d.getTime()) ? null : d; }
-    let p = s.split(/[\/\-\.]/); if (p.length === 3) { if (p[0].length === 4) return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])); else return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0])); }
-    let d2 = new Date(s); return isNaN(d2.getTime()) ? null : d2;
+    if (!f) return null; 
+    if (f instanceof Date) return f; 
+    if (typeof f === 'number') return new Date((f - (25567 + 2)) * 86400 * 1000); 
+    
+    let s = String(f).trim(); 
+    let datePart = s;
+    if (s.includes('T')) datePart = s.split('T')[0];
+    else if (s.includes(' ')) datePart = s.split(' ')[0];
+    
+    if (/^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/.test(datePart)) { 
+        let d = new Date(datePart); 
+        return isNaN(d.getTime()) ? null : d; 
+    }
+    
+    let p = datePart.split(/[\/\-\.]/); 
+    if (p.length === 3) { 
+        if (p[0].length === 4) return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])); 
+        else return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0])); 
+    }
+    
+    let d2 = new Date(s); 
+    return isNaN(d2.getTime()) ? null : d2;
 }
+
 function obtenerEdadProcesada(f) { 
-    let nac = parsearFechaGenerica(f); if (!nac || isNaN(nac.getTime())) return { texto: '-', esCumple: false }; 
+    if (!f || f === '-') return { texto: '-', esCumple: false };
+    let nac = parsearFechaGenerica(f); 
+    if (!nac || isNaN(nac.getTime())) return { texto: '-', esCumple: false }; 
     let hoy = new Date(); let edad = hoy.getFullYear() - nac.getFullYear(); let m = hoy.getMonth() - nac.getMonth(); let d = hoy.getDate() - nac.getDate(); 
     if (m < 0 || (m === 0 && d < 0)) edad--; let esCumple = (hoy.getMonth() === nac.getMonth() && hoy.getDate() === nac.getDate());
     return { texto: isNaN(edad) || edad < 0 ? '-' : `${edad} años`, esCumple: esCumple }; 
 }
+
 function obtenerTiempoLaborandoExacto(f) { 
-    if (!f) return '-'; let ing = parsearFechaGenerica(f); if (!ing || isNaN(ing.getTime())) return f; 
-    let hoy = new Date(); let a = hoy.getFullYear() - ing.getFullYear(); let m = hoy.getMonth() - ing.getMonth(); let d = hoy.getDate() - ing.getDate(); 
-    if (d < 0) { m--; d += new Date(hoy.getFullYear(), hoy.getMonth(), 0).getDate(); } if (m < 0) { a--; m += 12; } 
+    if (!f || f === '-') return '-'; 
+    let ing = parsearFechaGenerica(f); 
+    if (!ing || isNaN(ing.getTime())) return '-'; 
+    let hoy = new Date(); 
+    let a = hoy.getFullYear() - ing.getFullYear(); 
+    let m = hoy.getMonth() - ing.getMonth(); 
+    let d = hoy.getDate() - ing.getDate(); 
+    if (d < 0) { m--; d += new Date(hoy.getFullYear(), hoy.getMonth(), 0).getDate(); } 
+    if (m < 0) { a--; m += 12; } 
     return a < 0 ? '0 a / 0 m' : `${a} a / ${m} m`; 
 }
+
 function determinarTipoConductor(contrato) { if(!contrato) return 'VAN'; let txt = contrato.toUpperCase(); if (txt.includes('ESPECIALIZADO M')) return 'MINIBUS'; if (txt.includes('ESPECIALIZADO')) return 'BUS'; return 'VAN'; }
 function obtenerEstiloEstado(estado) {
     let e = String(estado).toUpperCase().trim();
-    if(e === 'A') return 'background-color: #d1fae5; color: #065f46; border: 1px solid #34d399; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Verde
-    if(e === 'B') return 'background-color: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Azul
-    if(e === 'D' || e === 'V') return 'background-color: #fef3c7; color: #b45309; border: 1px solid #fbd38d; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Naranja/Amarillo
-    if(e === 'DM') return 'background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Rojo 
-    if(e === 'MO') return 'background-color: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Morado
-    if(e === 'AL' || e === 'ADI') return 'background-color: #ffedd5; color: #c2410c; border: 1px solid #fdba74; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Naranja fuerte
-    if(e === 'PA') return 'background-color: #f3f4f6; color: #4b5563; border: 1px solid #9ca3af; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Gris Oscuro para PA
-    return 'background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; font-weight: bold; padding: 4px 8px; border-radius: 4px;'; // Default
+    if(e === 'A') return 'background-color: #d1fae5; color: #065f46; border: 1px solid #34d399; font-weight: bold; padding: 4px 8px; border-radius: 4px;';
+    if(e === 'B') return 'background-color: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; font-weight: bold; padding: 4px 8px; border-radius: 4px;';
+    if(e === 'D' || e === 'V') return 'background-color: #fef3c7; color: #b45309; border: 1px solid #fbd38d; font-weight: bold; padding: 4px 8px; border-radius: 4px;';
+    if(e === 'DM') return 'background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; font-weight: bold; padding: 4px 8px; border-radius: 4px;';
+    if(e === 'MO') return 'background-color: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; font-weight: bold; padding: 4px 8px; border-radius: 4px;';
+    if(e === 'AL' || e === 'ADI') return 'background-color: #ffedd5; color: #c2410c; border: 1px solid #fdba74; font-weight: bold; padding: 4px 8px; border-radius: 4px;';
+    if(e === 'PA') return 'background-color: #f3f4f6; color: #4b5563; border: 1px solid #9ca3af; font-weight: bold; padding: 4px 8px; border-radius: 4px;';
+    return 'background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; font-weight: bold; padding: 4px 8px; border-radius: 4px;';
 }
 
 let filtroActivoContratoCond = "TODOS"; let filtroActivoServicioCond = "TODOS";
 function actualizarFiltrosDinamicosConductores() {
     let contenedor = document.getElementById('contenedorChipsFiltrosCond'); if (!contenedor || !conductores) return;
-    let contratos = ["TODOS", ...new Set(conductores.map(c => c.contrato || c.CONTRATO).filter(Boolean))]; let servicios = ["TODOS", ...new Set(conductores.map(c => c["SERVICIO ASIG"] || c.servicio || c.SERVICIO).filter(Boolean))];
+    
+    // Uso del buscador inteligente para los filtros cruzados
+    let contratos = ["TODOS", ...new Set(conductores.map(c => getProp(c, "CONTRATO") || c.CONTRATO).filter(Boolean))]; 
+    let servicios = ["TODOS", ...new Set(conductores.map(c => getProp(c, "SERVICIO") || c.SERVICIO).filter(Boolean))];
+    
     let html = `
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">
             <span style="font-size: 0.7rem; font-weight: 800; color: #6b7280; width: 65px; letter-spacing: 0.5px;">CONTRATO:</span>
@@ -240,12 +282,22 @@ function cambiarEstadoUnidad(idx, nuevoEstado) { unidades[idx].estado = nuevoEst
 function actualizarDashboard() {
     if (conductores && conductores.length > 0) {
         let elTotal = document.getElementById('dashTotalConductores'); if (elTotal) elTotal.innerText = conductores.length;
-        let induccionCount = conductores.filter(c => (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '').toUpperCase().trim() === 'INDUCCION').length; let elInd = document.getElementById('dashInduccion'); if (elInd) elInd.innerText = induccionCount;
+        let induccionCount = conductores.filter(c => (getProp(c, "SERVICIO") || c.SERVICIO || '').toUpperCase().trim() === 'INDUCCION').length; let elInd = document.getElementById('dashInduccion'); if (elInd) elInd.innerText = induccionCount;
         let hoy = new Date(); let dia = String(hoy.getDate()).padStart(2, '0'); let mes = String(hoy.getMonth() + 1).padStart(2, '0'); let fechaHoy = dia + '/' + mes; 
-        let cumpleaneros = conductores.filter(c => { let nacVal = c["FECHA NACIMIENTO"] || c.nac || c.fechaNacimiento || c.FECHA_NACIMIENTO; if(!nacVal) return false; return String(nacVal).trim().substring(0, 5) === fechaHoy; });
+        
+        let cumpleaneros = conductores.filter(c => { 
+            let nacVal = getProp(c, "NACIMIENTO") || c.nac || c.nacimiento; 
+            if(!nacVal) return false; 
+            let dObj = parsearFechaGenerica(nacVal);
+            if(!dObj || isNaN(dObj.getTime())) return false;
+            let dStr = String(dObj.getDate()).padStart(2, '0');
+            let mStr = String(dObj.getMonth() + 1).padStart(2, '0');
+            return `${dStr}/${mStr}` === fechaHoy; 
+        });
+
         let elCumple = document.getElementById('dashCumpleanos');
-        if (elCumple) { elCumple.innerText = cumpleaneros.length; let cardElement = elCumple.closest('.card'); if(cardElement) { if(cumpleaneros.length > 0) { let listaNombres = cumpleaneros.map(c => "🎂 " + (c.nombre || c.CONDUCTOR || c.NOMBRE)).join('\n'); cardElement.title = "Cumpleañeros de hoy:\n" + listaNombres; cardElement.style.cursor = "help"; } else { cardElement.title = "No hay cumpleaños hoy"; cardElement.style.cursor = "default"; } } }
-        let cVan = 0, cMinibus = 0, cBus = 0; conductores.forEach(c => { let cat = determinarTipoConductor(c.contrato || c.CONTRATO); if(cat === 'VAN') cVan++; else if(cat === 'MINIBUS') cMinibus++; else if(cat === 'BUS') cBus++; });
+        if (elCumple) { elCumple.innerText = cumpleaneros.length; let cardElement = elCumple.closest('.card'); if(cardElement) { if(cumpleaneros.length > 0) { let listaNombres = cumpleaneros.map(c => "🎂 " + (getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || c.NOMBRE)).join('\n'); cardElement.title = "Cumpleañeros de hoy:\n" + listaNombres; cardElement.style.cursor = "help"; } else { cardElement.title = "No hay cumpleaños hoy"; cardElement.style.cursor = "default"; } } }
+        let cVan = 0, cMinibus = 0, cBus = 0; conductores.forEach(c => { let cat = determinarTipoConductor(getProp(c, "CONTRATO") || c.CONTRATO); if(cat === 'VAN') cVan++; else if(cat === 'MINIBUS') cMinibus++; else if(cat === 'BUS') cBus++; });
         if(document.getElementById('dashAcredVan')) document.getElementById('dashAcredVan').innerText = cVan; if(document.getElementById('dashAcredMinibus')) document.getElementById('dashAcredMinibus').innerText = cMinibus; if(document.getElementById('dashAcredBus')) document.getElementById('dashAcredBus').innerText = cBus;
     }
     if (unidades && unidades.length > 0) {
@@ -253,46 +305,62 @@ function actualizarDashboard() {
         if(document.getElementById('dashFlotaVan')) document.getElementById('dashFlotaVan').innerText = fVan; if(document.getElementById('dashFlotaMinibus')) document.getElementById('dashFlotaMinibus').innerText = fMinibus; if(document.getElementById('dashFlotaBus')) document.getElementById('dashFlotaBus').innerText = fBus; if(document.getElementById('dashFlotaCamioneta')) document.getElementById('dashFlotaCamioneta').innerText = fCamioneta;
     }
 }
-function actualizarFiltrosDinamicos() { let selectServicio = document.getElementById('filtroServicioCond'); if (!selectServicio) return; let valorActual = selectServicio.value; let serviciosUnicos = [...new Set(conductores.map(c => (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '').toUpperCase().trim()))].filter(s => s !== ''); serviciosUnicos.sort(); let html = '<option value="TODOS">Todos los Servicios</option>'; serviciosUnicos.forEach(serv => { let selected = (serv === valorActual) ? 'selected' : ''; html += `<option value="${serv}" ${selected}>${serv}</option>`; }); selectServicio.innerHTML = html; }
+function actualizarFiltrosDinamicos() { let selectServicio = document.getElementById('filtroServicioCond'); if (!selectServicio) return; let valorActual = selectServicio.value; let serviciosUnicos = [...new Set(conductores.map(c => (getProp(c, "SERVICIO") || c.SERVICIO || '').toUpperCase().trim()))].filter(s => s !== ''); serviciosUnicos.sort(); let html = '<option value="TODOS">Todos los Servicios</option>'; serviciosUnicos.forEach(serv => { let selected = (serv === valorActual) ? 'selected' : ''; html += `<option value="${serv}" ${selected}>${serv}</option>`; }); selectServicio.innerHTML = html; }
 
 function renderizarConductores() {
     let tbody = document.getElementById('tbodyConductores'); if(!tbody) return; let search = (document.getElementById('searchConductores')?.value || '').toLowerCase();
-    let filtrados = conductores.filter(c => { let dniStr = String(c.dni || c.DNI || '').toLowerCase(); let nomStr = String(c.nombre || c.CONDUCTOR || c.NOMBRE || '').toLowerCase(); let matchSearch = dniStr.includes(search) || nomStr.includes(search); let matchContrato = (filtroActivoContratoCond === 'TODOS' || (c.contrato || c.CONTRATO || '').toUpperCase() === filtroActivoContratoCond.toUpperCase()); let matchServicio = (filtroActivoServicioCond === 'TODOS' || (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '').toUpperCase() === filtroActivoServicioCond.toUpperCase()); return matchSearch && matchContrato && matchServicio; });
+    let filtrados = conductores.filter(c => { 
+        let dniStr = String(getProp(c, "DNI") || c.DNI || '').toLowerCase(); 
+        let nomStr = String(getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || '').toLowerCase(); 
+        let matchSearch = dniStr.includes(search) || nomStr.includes(search); 
+        let matchContrato = (filtroActivoContratoCond === 'TODOS' || (getProp(c, "CONTRATO") || '').toUpperCase() === filtroActivoContratoCond.toUpperCase()); 
+        let matchServicio = (filtroActivoServicioCond === 'TODOS' || (getProp(c, "SERVICIO") || '').toUpperCase() === filtroActivoServicioCond.toUpperCase()); 
+        return matchSearch && matchContrato && matchServicio; 
+    });
+    
     actualizarSideKpisConductores(filtrados, conductores); tbody.innerHTML = '';
+    
     filtrados.forEach((c, index) => {
-        let rawNac = c["FECHA NACIMIENTO"] || c.nac || c.fechaNacimiento || c.FECHA_NACIMIENTO || c.nacimiento; let rawIng = c["FECHA INGRESO"] || c.ingreso || c.fechaIngreso || c.FECHA_INGRESO || c.tiempoLaborando;
-        let edadObj = obtenerEdadProcesada(rawNac); let tiempo = obtenerTiempoLaborandoExacto(rawIng); let contrato = c.contrato || c.CONTRATO || '-'; let servicio = c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || '-'; let estado = c.ESTADO || c.estado || c.estadoAbrev || c.ESTADO_ABREV || '-'; let estiloEstado = obtenerEstiloEstado(estado); let nombre = c.nombre || c.CONDUCTOR || c.NOMBRE || '-'; let dni = c.dni || c.DNI || '-';
+        // RADAR DE COLUMNAS A PRUEBA DE BALAS
+        let rawNac = getProp(c, "NACIMIENTO") || c.nacimiento || c.nac;
+        let rawIng = getProp(c, "INGRESO") || c.ingreso || c.tiempoLaborando;
+        let contrato = getProp(c, "CONTRATO") || '-';
+        let servicio = getProp(c, "SERVICIO") || '-';
+        let estado = getProp(c, "ESTADO") || getProp(c, "ABREV") || '-';
+        let nombre = getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || '-';
+        let dni = getProp(c, "DNI") || '-';
+
+        let edadObj = obtenerEdadProcesada(rawNac); 
+        let tiempo = obtenerTiempoLaborandoExacto(rawIng); 
+        let estiloEstado = obtenerEstiloEstado(estado); 
+        
         let badgeCumple = edadObj.esCumple ? `<span class="badge-birthday" style="background:#fce7f3; color:#db2777; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;"><i class="fa-solid fa-cake-candles"></i> Hoy</span>` : '';
-        let tr = document.createElement('tr'); tr.innerHTML = `<td>${index + 1}</td> <td>${dni}</td> <td><b>${nombre}</b> ${badgeCumple}</td> <td>${edadObj.texto}</td> <td>${tiempo}</td> <td><span class="badge-abrev badge-van">${contrato}</span></td> <td><span class="badge-abrev badge-minibus">${servicio}</span></td> <td><span style="${estiloEstado}">${estado}</span></td> <td style="color:#9ca3af; font-size: 0.8rem; text-align:center;" title="Solo lectura (Editar en Excel)"><i class="fa-solid fa-lock"></i></td>`; tbody.appendChild(tr);
+        let tr = document.createElement('tr'); 
+        tr.innerHTML = `<td>${index + 1}</td> <td>${dni}</td> <td><b>${nombre}</b> ${badgeCumple}</td> <td>${edadObj.texto}</td> <td>${tiempo}</td> <td><span class="badge-abrev badge-van">${contrato}</span></td> <td><span class="badge-abrev badge-minibus">${servicio}</span></td> <td><span style="${estiloEstado}">${estado}</span></td> <td style="color:#9ca3af; font-size: 0.8rem; text-align:center;" title="Solo lectura (Editar en Excel)"><i class="fa-solid fa-lock"></i></td>`; 
+        tbody.appendChild(tr);
     });
 }
 
 function actualizarSideKpisConductores(filtrados, todosConductores) {
-    let kpiAntiguo = document.getElementById('sideKpisConductores'); if (kpiAntiguo && kpiAntiguo.parentElement && !kpiAntiguo.parentElement.classList.contains('header-flex-wrapper')) { kpiAntiguo.style.display = 'none'; kpiAntiguo.id = 'sideKpisConductores_OCULTO'; }
     let vista = document.getElementById('vistaConductores'); if (!vista) return; let header = vista.querySelector('h1, h2, h3'); if (!header) return; let wrapper = header.parentElement; if (!wrapper.classList.contains('header-flex-wrapper')) return; 
 
     let safeKpiBox = document.getElementById('safeKpiBox_Conductores');
     if (!safeKpiBox) { safeKpiBox = document.createElement('div'); safeKpiBox.id = 'safeKpiBox_Conductores'; safeKpiBox.style.display = 'flex'; safeKpiBox.style.gap = '8px'; safeKpiBox.style.flexWrap = 'wrap'; safeKpiBox.style.alignItems = 'center'; wrapper.appendChild(safeKpiBox); }
 
-    let serviciosUnicos = [...new Set(todosConductores.map(c => (c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()))]; serviciosUnicos.sort();
+    let serviciosUnicos = [...new Set(todosConductores.map(c => (getProp(c, "SERVICIO") || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()))]; serviciosUnicos.sort();
     let configServicios = { 'REGULAR': { icon: 'fa-route', color: '#059669' }, 'DOMICILIOS': { icon: 'fa-house-user', color: '#f59e0b' }, 'SIN SERVICIO': { icon: 'fa-ban', color: '#64748b' }, 'INDUCCION': { icon: 'fa-graduation-cap', color: '#8b5cf6' }, 'RETEN PARADA': { icon: 'fa-clock', color: '#0284c7' }, 'MOLLENDO': { icon: 'fa-map-pin', color: '#dc2626' }, 'AMBULANCIA': { icon: 'fa-truck-medical', color: '#10b981' } };
 
     let html = `<div style="background: var(--card-bg, #fff); padding: 4px 10px; border-radius: 6px; cursor:pointer; display:flex; align-items:center; gap:8px; border: 1px solid #d1d5db; transition: transform 0.1s;" onclick="setFiltroServicioCond('TODOS')" title="Ver Todos"><div style="color:var(--primary, #cc0000); font-size: 1rem;"><i class="fa-solid fa-users"></i></div><div style="display:flex; flex-direction:column; justify-content:center;"><span style="font-size: 0.6rem; color:#6b7280; font-weight:800; line-height: 1;">TODOS</span><h3 style="font-size: 1.1rem; margin:0; line-height: 1; color: #1f2937;">${todosConductores.length}</h3></div></div>`;
 
     serviciosUnicos.forEach(serv => {
-        let count = todosConductores.filter(c => ((c["SERVICIO ASIG"] || c.servicio || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()) === serv).length; let cfg = configServicios[serv] || { icon: 'fa-circle-dot', color: '#2563eb' }; let isActive = (filtroActivoServicioCond.toUpperCase() === serv); let bgStyle = isActive ? 'background: #f3f4f6;' : 'background: var(--card-bg, #fff);';
+        let count = todosConductores.filter(c => ((getProp(c, "SERVICIO") || c.SERVICIO || 'SIN SERVICIO').toUpperCase().trim()) === serv).length; let cfg = configServicios[serv] || { icon: 'fa-circle-dot', color: '#2563eb' }; let isActive = (filtroActivoServicioCond.toUpperCase() === serv); let bgStyle = isActive ? 'background: #f3f4f6;' : 'background: var(--card-bg, #fff);';
         html += `<div style="${bgStyle} padding: 4px 10px; border-radius: 6px; border-left: 4px solid ${cfg.color}; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; border-right: 1px solid #d1d5db; cursor:pointer; display:flex; align-items:center; gap: 8px;" onclick="setFiltroServicioCond('${serv}')" title="Filtrar por ${serv}"><div style="color: ${cfg.color}; font-size: 1rem;"><i class="fa-solid ${cfg.icon}"></i></div><div style="display:flex; flex-direction:column; justify-content:center;"><span style="font-size: 0.6rem; color: #6b7280; font-weight:800; line-height: 1;">${serv}</span><h3 style="color: ${cfg.color}; margin:0; font-size: 1.1rem; line-height: 1;">${count}</h3></div></div>`;
     });
     safeKpiBox.innerHTML = html;
 }
 
-// =========================================================
-// NUEVA FUNCIÓN: KPIS Y BOTÓN IMPORTAR PARA UNIDADES
-// =========================================================
 function actualizarSideKpisUnidades() {
     let vista = document.getElementById('vistaUnidades'); if (!vista) return;
-    
-    // Ocultar cualquier botón viejo de importar que ande suelto por ahí y no en nuestro wrapper
     vista.querySelectorAll('.btn-importar, button[onclick*="importarExcel"]').forEach(b => {
         if(!b.classList.contains('btn-compact-seguro')) b.style.display = 'none';
     });
@@ -302,20 +370,11 @@ function actualizarSideKpisUnidades() {
 
     let safeKpiBox = document.getElementById('safeKpiBox_Unidades');
     if (!safeKpiBox) { 
-        safeKpiBox = document.createElement('div'); 
-        safeKpiBox.id = 'safeKpiBox_Unidades'; 
-        safeKpiBox.style.display = 'flex'; 
-        safeKpiBox.style.gap = '8px'; 
-        safeKpiBox.style.flexWrap = 'wrap'; 
-        safeKpiBox.style.alignItems = 'center'; 
-        wrapper.appendChild(safeKpiBox); 
+        safeKpiBox = document.createElement('div'); safeKpiBox.id = 'safeKpiBox_Unidades'; safeKpiBox.style.display = 'flex'; safeKpiBox.style.gap = '8px'; safeKpiBox.style.flexWrap = 'wrap'; safeKpiBox.style.alignItems = 'center'; wrapper.appendChild(safeKpiBox); 
     }
 
-    let total = unidades.length;
-    let operativas = unidades.filter(u => u.estado !== 'TALLER').length;
-    let taller = unidades.filter(u => u.estado === 'TALLER').length;
+    let total = unidades.length; let operativas = unidades.filter(u => u.estado !== 'TALLER').length; let taller = unidades.filter(u => u.estado === 'TALLER').length;
 
-    // Etiquetas + Botón Verde Compacto
     let html = `
         <div style="background: var(--card-bg, #fff); padding: 4px 10px; border-radius: 6px; display:flex; align-items:center; gap:8px; border: 1px solid #d1d5db; border-left: 4px solid #3b82f6;">
             <div style="color:#3b82f6; font-size: 1rem;"><i class="fa-solid fa-bus"></i></div>
@@ -339,22 +398,17 @@ function actualizarSideKpisUnidades() {
             </div>
         </div>
         
-        <!-- Botón Compacto Importar Mantto -->
         <label for="excelMantenimiento_compact" title="Importar Reporte de Mantenimiento" class="btn-compact-seguro" style="margin-left: 5px; padding: 6px 12px; border-radius: 6px; background: #10b981; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: all 0.2s; font-size: 1.2rem;">
             <i class="fa-solid fa-file-excel"></i>
         </label>
         <input type="file" id="excelMantenimiento_compact" accept=".xlsx, .xls" style="display:none;" onchange="importarExcelMantenimiento(event)">
     `;
-    
     safeKpiBox.innerHTML = html;
 }
 
 function renderizarUnidades() {
     let tbody = document.getElementById('tbodyUnidades'); if(!tbody) return; tbody.innerHTML = ''; let txt = document.getElementById('searchUnidades') ? document.getElementById('searchUnidades').value.toUpperCase().trim() : ''; let correlativo = 1;
-    
-    // Invocamos la generación de KPIs de Unidades sin lengüetas
     actualizarSideKpisUnidades();
-
     unidades.forEach((u, idx) => {
         let tStr = (u.tipo || '').toUpperCase().trim(); let sStr = (u.servicio || '').toUpperCase().trim(); let cStr = (u.codigo || '').toUpperCase(); let pStr = (u.placa || '').toUpperCase();
         if (fActivoUnidadTipo !== 'TODOS' && tStr !== fActivoUnidadTipo) return; if (fActivoUnidadServicio !== 'TODOS' && sStr !== fActivoUnidadServicio) return; if (txt && !cStr.includes(txt) && !pStr.includes(txt)) return;
@@ -412,7 +466,7 @@ function procesarCambioFechaProg() { let input = document.getElementById('fechaP
 function guardarProgramacionDiaria() { localStorage.setItem('bd_prog_diaria_smcv', JSON.stringify(programacionDiaria)); alert("✓ Programación guardada correctamente."); }
 function renderizarProgramacion() {
     let fechaSel = document.getElementById('fechaProgInput').value, tipoPlantilla = document.getElementById('tipoPlantillaProg').value, turnoSel = document.getElementById('filtroTurnoProg').value; let turnosLista = turnoSel !== 'TODOS' ? [turnoSel] : ['A1', 'A2', 'A2P', 'B1', 'B2', 'B2P'];
-    let condOptsBase = conductores.filter(c => { let e = (c.ESTADO || c.estadoAbrev || '').toUpperCase(); return e==='A'||e==='B'||e==='AL'; }); let unidadesBase = unidades.filter(u => u.estado === 'OPERATIVO'); let regsFecha = programacionDiaria[fechaSel] || [];
+    let condOptsBase = conductores.filter(c => { let e = (getProp(c, "ESTADO") || c.estadoAbrev || '').toUpperCase(); return e==='A'||e==='B'||e==='AL'; }); let unidadesBase = unidades.filter(u => u.estado === 'OPERATIVO'); let regsFecha = programacionDiaria[fechaSel] || [];
     let totalFilas = 0, asignados = 0, htmlTabla = ''; let htmlOpcionesAdicionales = `<option value="">-- Normal --</option>`; Object.keys(DIC_ADICIONALES).forEach(k => htmlOpcionesAdicionales += `<option value="${k}">${k}</option>`); let htmlOpcionesCarril = ''; OPCIONES_CARRILES.forEach(c => htmlOpcionesCarril += `<option value="${c}">${c || '-- Carril --'}</option>`);
     turnosLista.forEach(t => {
         let listaZonasTurno = plantillasBD[tipoPlantilla][t] || [];
@@ -424,7 +478,7 @@ function renderizarProgramacion() {
                 totalFilas++; let key = `${itemPlantilla.zona}_${t}_${i}`; let regEx = regsFecha.find(r => r.key === key) || {}; if (regEx.unidad && regEx.conductor) asignados++;
                 let txtUnidadMult = cantidadRequerida > 1 ? `<br><small style="color:var(--text-muted)">Unidad ${i} de ${cantidadRequerida}</small>` : ''; let txtTipoReq = (itemPlantilla.tipo === 'CUALQUIERA' || !itemPlantilla.tipo) ? 'Cualquier Unidad' : itemPlantilla.tipo; let nombreDisplay = /^\d/.test(itemPlantilla.zona) ? `ZONA ${itemPlantilla.zona}` : itemPlantilla.zona;
                 let uniOptsFiltradas = `<option value="">-- Vehículo --</option>`; unidadesBase.forEach(u => { let match = false, tVehiculo = (u.tipoVehiculo || '').toUpperCase(), cap = parseInt(u.capacidad) || 0; if (itemPlantilla.tipo === 'CUALQUIERA' || !itemPlantilla.tipo) match = true; else if ((itemPlantilla.tipo === 'BUS_48' || itemPlantilla.tipo === 'BUS') && tVehiculo.includes('BUS')) match = true; else if (itemPlantilla.tipo === 'VAN_15' && tVehiculo.includes('VAN') && cap >= 14) match = true; else if (itemPlantilla.tipo === 'VAN_13' && tVehiculo.includes('VAN') && cap >= 12) match = true; else if ((itemPlantilla.tipo === 'VAN_09' || itemPlantilla.tipo === 'VAN') && tVehiculo.includes('VAN')) match = true; if (match) uniOptsFiltradas += `<option value="${u.cod}" ${regEx.unidad === u.cod ? 'selected' : ''}>${u.cod}</option>`; });
-                let condOptsFiltradas = `<option value="">-- Conductor --</option>`; condOptsBase.forEach(c => { let tipoC = determinarTipoConductor(c.contrato || c.CONTRATO), matchCond = false, reqTipo = itemPlantilla.tipo || ''; if (reqTipo === 'CUALQUIERA' || !reqTipo) matchCond = true; else if (reqTipo.includes('VAN') && (tipoC === 'VAN' || tipoC === 'MINIBUS')) matchCond = true; else if (reqTipo.includes('BUS') && (tipoC === 'BUS' || tipoC === 'MINIBUS')) matchCond = true; let cDni = c.dni || c.DNI; let cNom = c.nombre || c.CONDUCTOR || c.NOMBRE; if (matchCond) condOptsFiltradas += `<option value="${cDni}" ${regEx.conductor === cDni ? 'selected' : ''}>${cNom}</option>`; });
+                let condOptsFiltradas = `<option value="">-- Conductor --</option>`; condOptsBase.forEach(c => { let tipoC = determinarTipoConductor(getProp(c, "CONTRATO") || c.CONTRATO), matchCond = false, reqTipo = itemPlantilla.tipo || ''; if (reqTipo === 'CUALQUIERA' || !reqTipo) matchCond = true; else if (reqTipo.includes('VAN') && (tipoC === 'VAN' || tipoC === 'MINIBUS')) matchCond = true; else if (reqTipo.includes('BUS') && (tipoC === 'BUS' || tipoC === 'MINIBUS')) matchCond = true; let cDni = getProp(c, "DNI") || c.DNI; let cNom = getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || c.NOMBRE; if (matchCond) condOptsFiltradas += `<option value="${cDni}" ${regEx.conductor === cDni ? 'selected' : ''}>${cNom}</option>`; });
                 let repartoOpts = `<option value="">- N/A -</option>`; zonasBD.forEach(z => { repartoOpts += `<option value="${z.zona}" ${regEx.reparto === z.zona ? 'selected' : ''}>Rep. ${z.zona}</option>`; }); let carrilSelect = htmlOpcionesCarril.replace(`value="${regEx.carril || ''}"`, `value="${regEx.carril || ''}" selected`); let adicSelect = htmlOpcionesAdicionales.replace(`value="${regEx.adicional || ''}"`, `value="${regEx.adicional || ''}" selected`);
                 htmlTabla += `<tr><td style="font-weight: bold;">${nombreDisplay} ${txtUnidadMult}</td><td><span class="badge-status status-activo">${t}</span> <br> <span style="font-weight:600; font-size:0.75rem;">${horaDinamica}</span></td><td><span style="font-size: 0.7rem; font-weight: 800; padding: 2px 4px; border-radius: 4px; background: rgba(0,0,0,0.05); color: var(--accent);">${txtTipoReq}</span></td><td><select id="uni_${key}" class="select-prog" onchange="updMem('${key}', 'unidad', this.value)">${uniOptsFiltradas}</select></td><td><select id="cond_${key}" class="select-prog" onchange="updMem('${key}', 'conductor', this.value)">${condOptsFiltradas}</select></td><td><select class="select-prog" onchange="updMem('${key}', 'reparto', this.value)">${repartoOpts}</select></td><td><select class="select-prog" onchange="updMem('${key}', 'carril', this.value)">${carrilSelect}</select></td><td><select class="select-prog" onchange="updMem('${key}', 'adicional', this.value)">${adicSelect}</select></td></tr>`;
             }
@@ -442,7 +496,7 @@ function renderizarRosterOficial() {
     let tablaHTML = `<table class="roster-table" id="tablaFotografia"><thead><tr><th colspan="7" class="roster-header-top">PROGRAMACION RECOJO ZONAS - VEST. SUR / TRUCKSHOP - ZONAS</th><th colspan="${4 + (hayCapacitacion?1:0)}" class="roster-header-top" style="text-align:right;">${dObj.toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit', year:'numeric'})}</th></tr><tr><th colspan="7" class="roster-header-sub">EN BASE DEBERAN ESTAR SEGÚN LA HORA ESTIPULADA</th><th colspan="${4 + (hayCapacitacion?1:0)}" class="roster-header-sub">A1 (Y DEMÁS TURNOS)</th></tr><tr style="background:#f0f0f0;"><th style="width:20px; background:#cc0000; color:white;">N°</th><th class="col-gris-oscuro">Hr. Ingreso</th><th class="col-gris-oscuro">Salida Base</th><th style="width:60px; background:#cc0000; color:white;">Zona</th><th style="background:#cc0000; color:white;">Hora Inicio Servicio</th><th class="col-gris-claro">Conductor A</th><th class="col-gris-oscuro">Tipo Unidad</th><th class="col-gris-claro">OBSERVACION ZONA</th><th style="background:#cc0000; color:white;">CARRIL INGRESO</th><th class="col-gris-claro">OBS. Conductor</th><th style="background:#3498db; color:white;">ZONA REPARTO</th>${headCap}</tr></thead><tbody>`;
     let contadorFilas = 1;
     progHoy.forEach(reg => {
-        let zName = reg.key.split('_')[0], turno = reg.key.split('_')[1]; let zObj = zonasBD.find(z => z.zona === zName) || {}; let condObj = conductores.find(c => (c.dni || c.DNI) === reg.conductor) || { nombre: '--', contrato: '' }; let uniObj = unidades.find(u => u.cod === reg.unidad) || { cod: '', tipoVehiculo: '' };
+        let zName = reg.key.split('_')[0], turno = reg.key.split('_')[1]; let zObj = zonasBD.find(z => z.zona === zName) || {}; let condObj = conductores.find(c => (getProp(c, "DNI") || c.DNI) === reg.conductor) || { nombre: '--', contrato: '' }; let uniObj = unidades.find(u => u.cod === reg.unidad) || { cod: '', tipoVehiculo: '' };
         let hrInicioServicio = '--:--'; if (turno === 'A1') hrInicioServicio = zObj.a1; else if (turno === 'A2') hrInicioServicio = zObj.a2_lv; else if (turno === 'A2P') hrInicioServicio = zObj.a2p_lv; else if (turno === 'B1') hrInicioServicio = zObj.b1; else if (turno === 'B2') hrInicioServicio = zObj.b2; else if (turno === 'B2P') hrInicioServicio = zObj.b2p;
         let hrIngresoFinal = hrInicioServicio; if(reg.adicional && DIC_ADICIONALES[reg.adicional] && DIC_ADICIONALES[reg.adicional].h) { hrIngresoFinal = DIC_ADICIONALES[reg.adicional].h; } let hrSalidaFinal = sumar20Min(hrIngresoFinal);
         let bgConductor = ""; if (reg.adicional === "DESCANSO") { bgConductor = "background: #f1c40f;"; } else if (progAyer !== null && reg.conductor) { let hizoAyer = progAyer.find(a => a.conductor === reg.conductor); let zonaAyer = hizoAyer ? hizoAyer.key.split('_')[0] : null; if(zonaAyer && zonaAyer !== zName) { bgConductor = "background: #2ecc71; color: #000; font-weight: bold;"; } }
@@ -451,7 +505,7 @@ function renderizarRosterOficial() {
         let tdObsZona = `<td class="celda-texto-largo">${rutaOficial || '-'}</td>`; let tdCarril = `<td>${reg.carril || ''}</td>`;
         let tdAdic = `<td></td>`; if(reg.adicional && DIC_ADICIONALES[reg.adicional]) { let d = DIC_ADICIONALES[reg.adicional]; tdAdic = `<td style="background:${d.bg}; color:${d.col}; font-weight:bold; font-size:0.75rem;">${reg.adicional}</td>`; }
         let tdReparto = reg.reparto ? `<td style="background:#3498db; color:white; font-weight:bold;">REPARTO ${reg.reparto}</td>` : `<td></td>`;
-        let tdCapacitacion = ''; let cNom = condObj.nombre || condObj.CONDUCTOR || condObj.NOMBRE || '--';
+        let tdCapacitacion = ''; let cNom = getProp(condObj, "CONDUCTOR") || getProp(condObj, "NOMBRE") || condObj.NOMBRE || '--';
         if (hayCapacitacion) { let nombreNorm = normalizarTexto(cNom); let leToca = datosCapacitacion.lista.some(n => nombreNorm.includes(n) || n.includes(nombreNorm)); tdCapacitacion = leToca ? `<td style="background:#8e44ad; color:white; font-weight:bold; font-size:0.75rem; border:2px solid #000;">${datosCapacitacion.titulo}</td>` : `<td></td>`; }
         tablaHTML += `<tr><td style="background:#cc0000; color:white; font-weight:bold;">${contadorFilas++}</td><td style="background:#c0392b; color:#fff; font-weight:bold;">${hrIngresoFinal || '-'}</td><td class="col-gris-oscuro">${hrSalidaFinal || '-'}</td><td class="col-amarillo">${zName}</td><td class="col-amarillo">${hrInicioServicio || '-'}</td><td style="${bgConductor}">${cNom}</td>${tdUnidad}${tdObsZona}${tdCarril}${tdAdic}${tdReparto}${tdCapacitacion}</tr>`;
     });

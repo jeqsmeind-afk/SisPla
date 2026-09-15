@@ -74,12 +74,13 @@ function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
 function aplicarTema(t) { document.body.setAttribute('data-theme', t); localStorage.setItem('planner_theme', t); }
 
 // =========================================================
-// BUSCADOR INTELIGENTE DE COLUMNAS (A PRUEBA DE SALTOS DE LÍNEA Y ESPACIOS)
+// BUSCADOR INTELIGENTE V3 (A PRUEBA DE BALAS)
+// Elimina absolutamente todo lo que no sea letra para comparar
 // =========================================================
 function getProp(obj, keyword) {
+    let cleanKeyword = keyword.toUpperCase().replace(/[^A-Z]/g, "");
     for (let key in obj) {
-        // Limpiamos la cabecera eliminando saltos de línea (\n), retornos (\r) y espacios
-        if (key.toUpperCase().replace(/[\s\n\r]/g, "").includes(keyword.toUpperCase())) {
+        if (key.toUpperCase().replace(/[^A-Z]/g, "").includes(cleanKeyword)) {
             return obj[key];
         }
     }
@@ -160,9 +161,11 @@ function cambiarVista(vista) {
 function parsearFechaGenerica(f) {
     if (!f) return null; 
     if (f instanceof Date) return f; 
-    if (typeof f === 'number') return new Date((f - (25567 + 2)) * 86400 * 1000); 
+    if (typeof f === 'number') return new Date((f - 25569) * 86400 * 1000); 
     
     let s = String(f).trim(); 
+    if (/^\d{5}$/.test(s)) return new Date((parseInt(s) - 25569) * 86400 * 1000); // Por si lee seriales de Excel como texto
+
     let datePart = s;
     if (s.includes('T')) datePart = s.split('T')[0];
     else if (s.includes(' ')) datePart = s.split(' ')[0];
@@ -221,7 +224,6 @@ let filtroActivoContratoCond = "TODOS"; let filtroActivoServicioCond = "TODOS";
 function actualizarFiltrosDinamicosConductores() {
     let contenedor = document.getElementById('contenedorChipsFiltrosCond'); if (!contenedor || !conductores) return;
     
-    // Uso del buscador inteligente para los filtros cruzados
     let contratos = ["TODOS", ...new Set(conductores.map(c => getProp(c, "CONTRATO") || c.CONTRATO).filter(Boolean))]; 
     let servicios = ["TODOS", ...new Set(conductores.map(c => getProp(c, "SERVICIO") || c.SERVICIO).filter(Boolean))];
     
@@ -321,9 +323,8 @@ function renderizarConductores() {
     actualizarSideKpisConductores(filtrados, conductores); tbody.innerHTML = '';
     
     filtrados.forEach((c, index) => {
-        // RADAR DE COLUMNAS A PRUEBA DE BALAS
         let rawNac = getProp(c, "NACIMIENTO") || c.nacimiento || c.nac;
-        let rawIng = getProp(c, "INGRESO") || c.ingreso || c.tiempoLaborando;
+        let rawIng = getProp(c, "INGRESO") || getProp(c, "LABORANDO") || c.ingreso || c.tiempoLaborando;
         let contrato = getProp(c, "CONTRATO") || '-';
         let servicio = getProp(c, "SERVICIO") || '-';
         let estado = getProp(c, "ESTADO") || getProp(c, "ABREV") || '-';
@@ -332,8 +333,14 @@ function renderizarConductores() {
 
         let edadObj = obtenerEdadProcesada(rawNac); 
         let tiempo = obtenerTiempoLaborandoExacto(rawIng); 
-        let estiloEstado = obtenerEstiloEstado(estado); 
         
+        // CHIVATO DE DIAGNÓSTICO: Si sigue saliendo el guion, se pondrá rojito.
+        if (tiempo === '-') {
+            let llavesDetectadas = Object.keys(c).join(", ");
+            tiempo = `<span title="El sistema recibe: '${rawIng}'. Columnas leídas: ${llavesDetectadas}" style="cursor:help; border-bottom: 2px dotted #cc0000; color: #cc0000; font-weight:bold; padding: 0 5px;">-</span>`;
+        }
+
+        let estiloEstado = obtenerEstiloEstado(estado); 
         let badgeCumple = edadObj.esCumple ? `<span class="badge-birthday" style="background:#fce7f3; color:#db2777; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:5px;"><i class="fa-solid fa-cake-candles"></i> Hoy</span>` : '';
         let tr = document.createElement('tr'); 
         tr.innerHTML = `<td>${index + 1}</td> <td>${dni}</td> <td><b>${nombre}</b> ${badgeCumple}</td> <td>${edadObj.texto}</td> <td>${tiempo}</td> <td><span class="badge-abrev badge-van">${contrato}</span></td> <td><span class="badge-abrev badge-minibus">${servicio}</span></td> <td><span style="${estiloEstado}">${estado}</span></td> <td style="color:#9ca3af; font-size: 0.8rem; text-align:center;" title="Solo lectura (Editar en Excel)"><i class="fa-solid fa-lock"></i></td>`; 

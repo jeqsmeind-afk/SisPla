@@ -553,7 +553,7 @@ window.onload = async function() {
         if(resUni.ok) { let dU = await resUni.json(); if(dU && dU.length > 0) { unidades = dU; guardarUnidades(false); } }
     } catch(e) { console.log("Modo offline o error de red."); }
     actualizarFiltrosDinamicos(); actualizarFiltrosDinamicosUnidades(); actualizarFiltrosDinamicosConductores();
-    renderizarConductores(); renderizarUnidades(); actualizarDashboard(); cambiarVista('dashboard'); 
+    renderizarConductores(); renderizarUnidades(); actualizarDashboard(); cambiarVista('dashboard'); renderizarZonas();
 };
 
 function importarExcelMantenimiento(e) {

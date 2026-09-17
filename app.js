@@ -78,14 +78,14 @@ function estilizarTitulosYContenedores() {
             wrapper.style.paddingBottom = '4px';
             wrapper.style.width = '100%';
 
-            header.style.margin = '0';
-            header.style.fontSize = '1.5rem';
-            header.style.fontWeight = '900';
-            header.style.color = '#1f2937';
-            header.style.borderLeft = '6px solid #cc0000';
-            header.style.paddingLeft = '12px';
-            header.style.textTransform = 'uppercase';
-            header.style.lineHeight = '1';
+            //header.style.margin = '0';
+            //header.style.fontSize = '1.5rem';
+            //header.style.fontWeight = '900';
+            //header.style.color = '#1f2937';
+            //header.style.borderLeft = '6px solid #cc0000';
+            //header.style.paddingLeft = '12px';
+            //header.style.textTransform = 'uppercase';
+            //header.style.lineHeight = '1';
 
             header.parentNode.insertBefore(wrapper, header);
             wrapper.appendChild(header);
@@ -226,6 +226,44 @@ function actualizarFiltrosDinamicosConductores() {
 function setFiltroContratoCond(val) { filtroActivoContratoCond = val; actualizarFiltrosDinamicosConductores(); renderizarConductores(); }
 function setFiltroServicioCond(val) { filtroActivoServicioCond = val; actualizarFiltrosDinamicosConductores(); renderizarConductores(); }
 function mostrarToast(mensaje, tipo = 'info', duracion = 4000) { let container = document.getElementById('toast-container'); if (!container) return; let toast = document.createElement('div'); toast.className = `toast ${tipo}`; let icon = tipo === 'success' ? 'fa-circle-check' : (tipo === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info'); toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${mensaje}</span>`; container.appendChild(toast); setTimeout(() => { toast.style.animation = 'fadeOut 0.5s ease forwards'; setTimeout(() => toast.remove(), 500); }, duracion); }
+
+function actualizarSideKpisZonas() {
+    let vista = document.getElementById('vistaZonas'); if (!vista) return;
+    let header = vista.querySelector('h1, h2, h3'); if (!header) return; 
+    let wrapper = header.parentElement; if (!wrapper.classList.contains('header-flex-wrapper')) return;
+
+    let safeKpiBox = document.getElementById('safeKpiBox_Zonas');
+    if (!safeKpiBox) { 
+        safeKpiBox = document.createElement('div'); 
+        safeKpiBox.id = 'safeKpiBox_Zonas'; 
+        safeKpiBox.style.display = 'flex'; 
+        safeKpiBox.style.gap = '10px'; 
+        safeKpiBox.style.flexWrap = 'wrap'; 
+        safeKpiBox.style.alignItems = 'center'; 
+        wrapper.appendChild(safeKpiBox); 
+    }
+
+    let totalZonas = zonasBD.length;
+
+    let html = `
+        <div style="background: var(--card-bg, #1f2937); padding: 4px 10px; border-radius: 6px; display:flex; align-items:center; gap:8px; border: 1px solid #4b5563; border-left: 4px solid #f59e0b;">
+            <div style="color:#f59e0b; font-size: 1rem;"><i class="fa-solid fa-map-location-dot"></i></div>
+            <div style="display:flex; flex-direction:column; justify-content:center;">
+                <span style="font-size: 0.6rem; color:#9ca3af; font-weight:800; line-height: 1;">TOTAL ZONAS</span>
+                <h3 style="font-size: 1.1rem; margin:0; line-height: 1; color: var(--text-color, inherit);">${totalZonas}</h3>
+            </div>
+        </div>
+        
+        <button class="btn btn-primary" onclick="abrirModal('modalNuevaZona')" style="padding: 6px 12px; border-radius: 6px; display: flex; align-items: center; gap: 6px; font-weight: bold; border: none; cursor: pointer;">
+            <i class="fa-solid fa-plus"></i> Nueva Zona
+        </button>
+        
+        <button class="btn-compact-seguro" onclick="descargarPlantillaZonasBD()" title="Descargar BD Zonas (Excel)" style="padding: 6px 12px; border-radius: 6px; background: #10b981; color: #fff; cursor: pointer; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: all 0.2s; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-file-excel"></i>
+        </button>
+    `;
+    safeKpiBox.innerHTML = html;
+}
 
 async function sincronizarDatosSegundoPlano() {
     let btnGlobal = document.getElementById('btnSyncGlobal'); 
@@ -431,7 +469,7 @@ function renderizarUnidades() {
     });
 }
 
-function renderizarZonas() { let tbody = document.getElementById('tbodyZonas'); if(!tbody) return; tbody.innerHTML = ''; let txt = document.getElementById('searchZonas').value.toUpperCase().trim(); zonasBD.forEach((z, idx) => { if (txt && !z.zona.toUpperCase().includes(txt)) return; let ofi = z.rec_a2_ofic || z.rec_a1_ofic || '-'; tbody.insertAdjacentHTML('beforeend', `<tr><td><b>${z.zona}</b></td><td>${z.a1||'-'}</td><td style="color:var(--accent); font-weight:600;">${z.a2_lv||'-'}</td><td>${z.a2p_lv||'-'}</td><td>${z.b1||'-'}</td><td>${z.b2||'-'}</td><td>${z.b2p||'-'}</td><td style="font-size:0.75rem; color:var(--text-muted);">${ofi}</td><td><button class="btn btn-outline" onclick="abrirModalEditZona(${idx})"><i class="fa-solid fa-pen"></i> 360°</button></td></tr>`); }); }
+function renderizarZonas() { let tbody = document.getElementById('tbodyZonas'); if(!tbody) return; tbody.innerHTML = ''; actualizarSideKpisZonas(); let txt = document.getElementById('searchZonas').value.toUpperCase().trim(); zonasBD.forEach((z, idx) => { if (txt && !z.zona.toUpperCase().includes(txt)) return; let ofi = z.rec_a2_ofic || z.rec_a1_ofic || '-'; tbody.insertAdjacentHTML('beforeend', `<tr><td><b>${z.zona}</b></td><td>${z.a1||'-'}</td><td style="color:var(--accent); font-weight:600;">${z.a2_lv||'-'}</td><td>${z.a2p_lv||'-'}</td><td>${z.b1||'-'}</td><td>${z.b2||'-'}</td><td>${z.b2p||'-'}</td><td style="font-size:0.75rem; color:var(--text-muted);">${ofi}</td><td><button class="btn btn-outline" onclick="abrirModalEditZona(${idx})"><i class="fa-solid fa-pen"></i> 360°</button></td></tr>`); }); }
 function abrirModalEditZona(idx) {
     idxZonaEdit = idx; let z = zonasBD[idx]; document.getElementById('badgeZonaEditName').innerText = `ZONA ${z.zona}`;
     document.getElementById('zHoraA1').value = z.a1 || ''; document.getElementById('zRutaA1Ofic').value = z.rec_a1_ofic || ''; document.getElementById('zRutaA1Desv1').value = z.rec_a1_desv1 || ''; document.getElementById('zRutaA1Desv2').value = z.rec_a1_desv2 || '';

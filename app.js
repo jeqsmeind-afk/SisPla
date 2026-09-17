@@ -431,7 +431,6 @@ function renderizarUnidades() {
     });
 }
 
-function restablecerZonasFabrica() { zonasBD = JSON.parse(JSON.stringify(ZONAS_FABRICA)); guardarZonas(); alert("✓ Zonas restablecidas."); }
 function renderizarZonas() { let tbody = document.getElementById('tbodyZonas'); if(!tbody) return; tbody.innerHTML = ''; let txt = document.getElementById('searchZonas').value.toUpperCase().trim(); zonasBD.forEach((z, idx) => { if (txt && !z.zona.toUpperCase().includes(txt)) return; let ofi = z.rec_a2_ofic || z.rec_a1_ofic || '-'; tbody.insertAdjacentHTML('beforeend', `<tr><td><b>${z.zona}</b></td><td>${z.a1||'-'}</td><td style="color:var(--accent); font-weight:600;">${z.a2_lv||'-'}</td><td>${z.a2p_lv||'-'}</td><td>${z.b1||'-'}</td><td>${z.b2||'-'}</td><td>${z.b2p||'-'}</td><td style="font-size:0.75rem; color:var(--text-muted);">${ofi}</td><td><button class="btn btn-outline" onclick="abrirModalEditZona(${idx})"><i class="fa-solid fa-pen"></i> 360°</button></td></tr>`); }); }
 function abrirModalEditZona(idx) {
     idxZonaEdit = idx; let z = zonasBD[idx]; document.getElementById('badgeZonaEditName').innerText = `ZONA ${z.zona}`;
@@ -446,6 +445,12 @@ function abrirModalEditZona(idx) {
 function switchTabZona(evt, tabId) { document.querySelectorAll('#modalEditZona .tab-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('#modalEditZona .tab-content').forEach(c => c.classList.remove('active')); if (evt) evt.currentTarget.classList.add('active'); else document.querySelector(`button[onclick*="${tabId}"]`).classList.add('active'); document.getElementById(tabId).classList.add('active'); }
 function guardarCambiosZonaConfirmado() {
     let z = zonasBD[idxZonaEdit];
+    
+    // 1. Agregamos la confirmación
+    if (!confirm(`¿Estás seguro de guardar y subir los cambios de la ZONA ${z.zona} a la nube?`)) {
+        return; // Si cancela, se detiene la función
+    }
+
     z.a1 = document.getElementById('zHoraA1').value; z.rec_a1_ofic = document.getElementById('zRutaA1Ofic').value; z.rec_a1_desv1 = document.getElementById('zRutaA1Desv1').value; z.rec_a1_desv2 = document.getElementById('zRutaA1Desv2').value;
     z.a2_lv = document.getElementById('zHoraA2LV').value; z.a2_sd = document.getElementById('zHoraA2SDFER').value; z.rec_a2_ofic = document.getElementById('zRutaA2Ofic').value; z.rec_a2_desv1 = document.getElementById('zRutaA2Desv1').value; z.rec_a2_desv2 = document.getElementById('zRutaA2Desv2').value;
     z.a2p_lv = document.getElementById('zHoraA2PLV').value; z.a2p_sd = document.getElementById('zHoraA2PSDFER').value; z.rec_a2p_ofic = document.getElementById('zRutaA2POfic').value; z.rec_a2p_desv1 = document.getElementById('zRutaA2PDesv1').value; z.rec_a2p_desv2 = document.getElementById('zRutaA2PDesv2').value;
@@ -453,17 +458,30 @@ function guardarCambiosZonaConfirmado() {
     z.b2 = document.getElementById('zHoraB2').value; z.rec_b2_ofic = document.getElementById('zRutaB2Ofic').value; z.rec_b2_desv1 = document.getElementById('zRutaB2Desv1').value; z.rec_b2_desv2 = document.getElementById('zRutaB2Desv2').value;
     z.b2p = document.getElementById('zHoraB2P').value; z.rec_b2p_ofic = document.getElementById('zRutaB2POfic').value; z.rec_b2p_desv1 = document.getElementById('zRutaB2PDesv1').value; z.rec_b2p_desv2 = document.getElementById('zRutaB2PDesv2').value;
     
-    // ==========================================
-    // INYECTAMOS LA NUEVA ZONA A GOOGLE SHEETS
-    // ==========================================
     sincronizarZonaConBD(z); 
-    // ==========================================
-
     guardarZonas(); 
     cerrarModal('modalEditZona'); 
-    alert("✓ Cambios guardados e inyectados a la nube.");
+    mostrarToast(`✓ ZONA ${z.zona} actualizada en la nube.`, 'success');
 }
-function guardarNuevaZona() { let n = document.getElementById('nuevaZonaNombre').value.trim().toUpperCase(); if(!n) return alert("Nombre vacío."); zonasBD.push({ zona: n }); guardarZonas(); cerrarModal('modalNuevaZona'); }
+function guardarNuevaZona() { 
+    let n = document.getElementById('nuevaZonaNombre').value.trim().toUpperCase(); 
+    if(!n) return alert("Nombre vacío."); 
+    
+    // 1. Confirmación
+    if (!confirm(`¿Estás seguro de crear la nueva ZONA ${n} en la base de datos?`)) {
+        return;
+    }
+
+    let nuevaZona = { zona: n };
+    zonasBD.push(nuevaZona); 
+    
+    // 2. Ahora también lo mandamos al Drive
+    sincronizarZonaConBD(nuevaZona);
+    
+    guardarZonas(); 
+    cerrarModal('modalNuevaZona'); 
+    mostrarToast(`✓ ZONA ${n} creada en la nube.`, 'success');
+}
 
 let uiPl = 'LV', uiTu = 'A1';
 function switchPlantilla(p) { uiPl = p; document.querySelectorAll('#vistaPlantillas .tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tabPl' + p).classList.add('active'); renderizarGestorPlantillas(); }

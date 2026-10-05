@@ -27,6 +27,7 @@ const OPCIONES_CARRILES = ["", "MOV. TIERR / CARR. 3", "TRUCKSHOP / CARR. 1", "T
 const URL_API_CONDUCTORES = "https://script.google.com/macros/s/AKfycbwYiiV2_-zSTcLUft_xcPTXl03LxcyTNcZ2l2u8RfTtPsrvyrzOcPR9NVJCd4AxhLfR/exec";
 const URL_API_UNIDADES = "https://script.google.com/macros/s/AKfycbz95bAXTt3TdLqWrHswVEtSWEjA1Qb5RCdb9QfUnRqsGOgilnNzrpcR8V6l4mkhZCBlZA/exec";
 const URL_API_ZONAS = "https://script.google.com/macros/s/AKfycbxwkga_TEexggYPg6a4kiRMmYHjW4JSdauGwjipDuXFXd_nVacl8KnzC74KZiAGsoGRSA/exec";
+const URL_API_PLANTILLAS = "https://script.google.com/macros/s/AKfycbxqor4UEnPQl8xGO0pJNxxEzbrQrRu7pzmYf89WGjya8Pm3uCcyRmd62i3_it6XAAbt/exec";
 
 // CARGA DE DATOS SEGUROS
 function cargarDatosSeguros(k, fb) { try { let d = localStorage.getItem(k); return d ? JSON.parse(d) : fb; } catch(e) { return fb; } }
@@ -525,7 +526,50 @@ let uiPl = 'LV', uiTu = 'A1';
 function switchPlantilla(p) { uiPl = p; document.querySelectorAll('#vistaPlantillas .tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tabPl' + p).classList.add('active'); renderizarGestorPlantillas(); }
 function switchTurnoPlantilla(tu) { uiTu = tu; document.querySelectorAll('#vistaPlantillas .sub-tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('st' + tu).classList.add('active'); renderizarGestorPlantillas(); }
 function cargarOpcionesZonasSelect() { let sel = document.getElementById('selAgregarZona'); if(!sel) return; sel.innerHTML = '<option value="">-- Seleccionar --</option>'; zonasBD.forEach(z => sel.innerHTML += `<option value="${z.zona}">ZONA ${z.zona}</option>`); }
-function guardarPlantillas() { localStorage.setItem('bd_plantillas_smcv', JSON.stringify(plantillasBD)); alert("✓ Plantillas guardadas."); }
+async function sincronizarPlantillasConBD() {
+    let btnGuardar = document.getElementById('btnGuardarPlantillas');
+    if(btnGuardar) { btnGuardar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...'; btnGuardar.disabled = true; }
+
+    // Convertimos la estructura 3D a la tabla plana de Excel
+    let flatData = [];
+    for(let dia in plantillasBD) {
+        for(let turno in plantillasBD[dia]) {
+            plantillasBD[dia][turno].forEach(item => {
+                flatData.push({ DIA: dia, TURNO: turno, ZONA: item.zona, TIPO_VEHICULO: item.tipo || 'CUALQUIERA', CANTIDAD: item.cant });
+            });
+        }
+    }
+
+    try {
+        let response = await fetch(URL_API_PLANTILLAS, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'save_all', data: flatData })
+        });
+        
+        let result = await response.json();
+        if(result.success) {
+            localStorage.setItem('bd_plantillas_smcv', JSON.stringify(plantillasBD));
+            mostrarToast("✓ Plantillas actualizadas en la nube", "success");
+        } else {
+            alert("Error al guardar en BD: " + result.error);
+        }
+    } catch(e) {
+        alert("Error de conexión al guardar plantillas.");
+    } finally {
+        if(btnGuardar) { btnGuardar.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Guardar Cambios'; btnGuardar.disabled = false; }
+    }
+}
+
+function procesarPlantillasPlanas(dFlat) {
+    let p = { LV: {A1:[],A2:[],A2P:[],B1:[],B2:[],B2P:[]}, SD: {A1:[],A2:[],A2P:[],B1:[],B2:[],B2P:[]}, FER: {A1:[],A2:[],A2P:[],B1:[],B2:[],B2P:[]} };
+    dFlat.forEach(r => {
+        if(p[r.DIA] && p[r.DIA][r.TURNO]) {
+            p[r.DIA][r.TURNO].push({ zona: r.ZONA, cant: parseInt(r.CANTIDAD)||1, tipo: r.TIPO_VEHICULO });
+        }
+    });
+    return p;
+}
 function renderizarGestorPlantillas() {
     let tbody = document.getElementById('tbodyPlantillaList'); if(!tbody) return; tbody.innerHTML = ''; let lista = plantillasBD[uiPl][uiTu] || [];
     lista.forEach((item, idx) => { let badgeColor = item.tipo.includes('BUS') ? 'var(--warning)' : 'var(--accent)'; let nombreDisplay = /^\d/.test(item.zona) ? `ZONA ${item.zona}` : item.zona; tbody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:center;">${idx+1}</td><td><b>${nombreDisplay}</b> <span style="font-size:0.75rem; color:${badgeColor}; font-weight: bold; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${item.tipo}</span></td><td style="text-align:center;"><input type="number" class="input-cant" value="${item.cant}" onchange="plantillasBD['${uiPl}']['${uiTu}'][${idx}].cant=parseInt(this.value)||1"></td><td style="text-align:right;"><button class="btn-icon" style="color:var(--danger);" onclick="plantillasBD['${uiPl}']['${uiTu}'].splice(${idx},1); renderizarGestorPlantillas();"><i class="fa-solid fa-trash"></i></button></td></tr>`); }); if(!lista.length) tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Sin turnos asignados.</td></tr>`;

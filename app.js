@@ -2,11 +2,9 @@ const CLAVE_ADMIN_PERMANENTE = "J0s3hp";
 let targetVaciar = '', callbackAccionPendiente = null;
 let idxConductorEdit = null, idxUnidadEdit = null, idxZonaEdit = null;
 
-// --- VARIABLES GLOBALES PARA FILTROS CRUZADOS DE UNIDADES ---
 let fActivoUnidadTipo = 'TODOS';
 let fActivoUnidadServicio = 'TODOS';
 
-// LA BASE COMPLETA DE ZONAS (Viene de la nube, por lo que iniciamos vacío)
 const ZONAS_FABRICA = [];
 const DIC_ADICIONALES = { 
     "TOXICOLOGIA": { bg: "#d35400", col: "#ffffff", h: null }, 
@@ -27,9 +25,8 @@ const OPCIONES_CARRILES = ["", "MOV. TIERR / CARR. 3", "TRUCKSHOP / CARR. 1", "T
 const URL_API_CONDUCTORES = "https://script.google.com/macros/s/AKfycbwYiiV2_-zSTcLUft_xcPTXl03LxcyTNcZ2l2u8RfTtPsrvyrzOcPR9NVJCd4AxhLfR/exec";
 const URL_API_UNIDADES = "https://script.google.com/macros/s/AKfycbz95bAXTt3TdLqWrHswVEtSWEjA1Qb5RCdb9QfUnRqsGOgilnNzrpcR8V6l4mkhZCBlZA/exec";
 const URL_API_ZONAS = "https://script.google.com/macros/s/AKfycbxwkga_TEexggYPg6a4kiRMmYHjW4JSdauGwjipDuXFXd_nVacl8KnzC74KZiAGsoGRSA/exec";
-const URL_API_PLANTILLAS = "https://script.google.com/macros/s/AKfycbxqor4UEnPQl8xGO0pJNxxEzbrQrRu7pzmYf89WGjya8Pm3uCcyRmd62i3_it6XAAbt/exec"; // <-- CONFIRMA QUE ESTA ES TU API NUEVA
+const URL_API_PLANTILLAS = "https://script.google.com/macros/s/AKfycbxqor4UEnPQl8xGO0pJNxxEzbrQrRu7pzmYf89WGjya8Pm3uCcyRmd62i3_it6XAAbt/exec";
 
-// CARGA DE DATOS SEGUROS
 function cargarDatosSeguros(k, fb) { try { let d = localStorage.getItem(k); return d ? JSON.parse(d) : fb; } catch(e) { return fb; } }
 let conductores = cargarDatosSeguros('bd_conductores_smcv', []);
 let unidades = cargarDatosSeguros('bd_unidades_smcv', []);
@@ -46,9 +43,6 @@ function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
 function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
 function aplicarTema(t) { document.body.setAttribute('data-theme', t); localStorage.setItem('planner_theme', t); }
 
-// =========================================================
-// BUSCADOR INTELIGENTE V3 (A PRUEBA DE BALAS)
-// =========================================================
 function getProp(obj, keyword) {
     let cleanKeyword = keyword.toUpperCase().replace(/[^A-Z]/g, "");
     for (let key in obj) {
@@ -59,9 +53,6 @@ function getProp(obj, keyword) {
     return null;
 }
 
-// =========================================================
-// MAGIA DOM: COMPACIDAD MÁXIMA PARA TÍTULOS Y ETIQUETAS
-// =========================================================
 function estilizarTitulosYContenedores() {
     document.querySelectorAll('.view-section').forEach(vista => {
         let header = vista.querySelector('h1, h2, h3');
@@ -89,12 +80,29 @@ function estilizarTitulosYContenedores() {
     if(!document.getElementById('css-limpiador')) {
         let style = document.createElement('style');
         style.id = 'css-limpiador';
+        // AQUÍ INYECTAMOS LOS ESTILOS PARA LA FLECHA DE BÚSQUEDA Y COLORES
         style.innerHTML = `
             #vistaUnidades > div[style*="fixed"], 
             #vistaUnidades > div[style*="absolute"],
             #vistaUnidades .floating-kpis,
             #vistaUnidades .side-tabs,
             #vistaUnidades .right-tabs { display: none !important; }
+
+            input[list]::-webkit-calendar-picker-indicator {
+                opacity: 0.6 !important;
+                display: block !important;
+                cursor: pointer;
+                transition: opacity 0.2s;
+            }
+            input[list]:hover::-webkit-calendar-picker-indicator {
+                opacity: 1 !important;
+            }
+            input[list]:focus {
+                background-color: #fff !important;
+                color: #000 !important;
+                border: 2px solid #3b82f6 !important;
+            }
+            input.select-prog { transition: background-color 0.3s ease, color 0.3s ease; }
         `;
         document.head.appendChild(style);
     }
@@ -256,9 +264,6 @@ function actualizarSideKpisZonas() {
     safeKpiBox.innerHTML = html;
 }
 
-// =========================================================
-// SINCRONIZACIÓN DE SEGUNDO PLANO INTELIGENTE (SIN PERDER DATOS)
-// =========================================================
 async function sincronizarDatosSegundoPlano() {
     let btnGlobal = document.getElementById('btnSyncGlobal'); 
     if(btnGlobal) { btnGlobal.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...'; btnGlobal.disabled = true; } 
@@ -283,8 +288,6 @@ async function sincronizarDatosSegundoPlano() {
             actualizarFiltrosDinamicos(); actualizarFiltrosDinamicosUnidades(); actualizarFiltrosDinamicosConductores(); 
             
             let vistaActiva = document.querySelector('.view-section.active')?.id; 
-            
-            // SOLO re-renderizamos las pantallas informativas para NO interrumpir al usuario si está editando Programación o Plantillas
             if(vistaActiva === 'vistaDashboard') actualizarDashboard(); 
             if(vistaActiva === 'vistaConductores') renderizarConductores(); 
             if(vistaActiva === 'vistaUnidades') renderizarUnidades(); 
@@ -383,6 +386,7 @@ function renderizarConductores() {
         tbody.appendChild(tr);
     });
 }
+
 function actualizarSideKpisConductores(filtrados, todosConductores) {
     let vista = document.getElementById('vistaConductores'); if (!vista) return; let header = vista.querySelector('h1, h2, h3'); if (!header) return; let wrapper = header.parentElement; if (!wrapper.classList.contains('header-flex-wrapper')) return; 
 
@@ -476,11 +480,7 @@ function abrirModalEditZona(idx) {
 function switchTabZona(evt, tabId) { document.querySelectorAll('#modalEditZona .tab-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('#modalEditZona .tab-content').forEach(c => c.classList.remove('active')); if (evt) evt.currentTarget.classList.add('active'); else document.querySelector(`button[onclick*="${tabId}"]`).classList.add('active'); document.getElementById(tabId).classList.add('active'); }
 function guardarCambiosZonaConfirmado() {
     let z = zonasBD[idxZonaEdit];
-    
-    // 1. Agregamos la confirmación
-    if (!confirm(`¿Estás seguro de guardar y subir los cambios de la ZONA ${z.zona} a la nube?`)) {
-        return; // Si cancela, se detiene la función
-    }
+    if (!confirm(`¿Estás seguro de guardar y subir los cambios de la ZONA ${z.zona} a la nube?`)) return;
 
     z.a1 = document.getElementById('zHoraA1').value; z.rec_a1_ofic = document.getElementById('zRutaA1Ofic').value; z.rec_a1_desv1 = document.getElementById('zRutaA1Desv1').value; z.rec_a1_desv2 = document.getElementById('zRutaA1Desv2').value;
     z.a2_lv = document.getElementById('zHoraA2LV').value; z.a2_sd = document.getElementById('zHoraA2SDFER').value; z.rec_a2_ofic = document.getElementById('zRutaA2Ofic').value; z.rec_a2_desv1 = document.getElementById('zRutaA2Desv1').value; z.rec_a2_desv2 = document.getElementById('zRutaA2Desv2').value;
@@ -497,18 +497,11 @@ function guardarCambiosZonaConfirmado() {
 function guardarNuevaZona() { 
     let n = document.getElementById('nuevaZonaNombre').value.trim().toUpperCase(); 
     if(!n) return alert("Nombre vacío."); 
-    
-    // 1. Confirmación
-    if (!confirm(`¿Estás seguro de crear la nueva ZONA ${n} en la base de datos?`)) {
-        return;
-    }
+    if (!confirm(`¿Estás seguro de crear la nueva ZONA ${n} en la base de datos?`)) return;
 
     let nuevaZona = { zona: n };
     zonasBD.push(nuevaZona); 
-    
-    // 2. Ahora también lo mandamos al Drive
     sincronizarZonaConBD(nuevaZona);
-    
     guardarZonas(); 
     cerrarModal('modalNuevaZona'); 
     mostrarToast(`✓ ZONA ${n} creada en la nube.`, 'success');
@@ -518,11 +511,11 @@ let uiPl = 'LV', uiTu = 'A1';
 function switchPlantilla(p) { uiPl = p; document.querySelectorAll('#vistaPlantillas .tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tabPl' + p).classList.add('active'); renderizarGestorPlantillas(); }
 function switchTurnoPlantilla(tu) { uiTu = tu; document.querySelectorAll('#vistaPlantillas .sub-tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('st' + tu).classList.add('active'); renderizarGestorPlantillas(); }
 function cargarOpcionesZonasSelect() { let sel = document.getElementById('selAgregarZona'); if(!sel) return; sel.innerHTML = '<option value="">-- Seleccionar --</option>'; zonasBD.forEach(z => sel.innerHTML += `<option value="${z.zona}">ZONA ${z.zona}</option>`); }
+
 async function sincronizarPlantillasConBD() {
     let btnGuardar = document.getElementById('btnGuardarPlantillas');
     if(btnGuardar) { btnGuardar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...'; btnGuardar.disabled = true; }
 
-    // Convertimos la estructura 3D a la tabla plana de Excel
     let flatData = [];
     for(let dia in plantillasBD) {
         for(let turno in plantillasBD[dia]) {
@@ -561,13 +554,11 @@ function procesarPlantillasPlanas(dFlat) {
         }
     });
     
-    // NUEVO: Ordenar cada turno estrictamente según el orden del Maestro de Zonas
     for(let dia in p) {
         for(let turno in p[dia]) {
             p[dia][turno].sort((a, b) => {
                 let idxA = zonasBD.findIndex(z => z.zona === a.zona);
                 let idxB = zonasBD.findIndex(z => z.zona === b.zona);
-                // Si la zona es nueva y aún no está en la BD, la mandamos al final
                 if (idxA === -1) idxA = 9999; 
                 if (idxB === -1) idxB = 9999;
                 return idxA - idxB;
@@ -578,10 +569,10 @@ function procesarPlantillasPlanas(dFlat) {
 }
 
 function renderizarGestorPlantillas() {
+    cargarOpcionesZonasSelect();
     let tbody = document.getElementById('tbodyPlantillaList'); if(!tbody) return; tbody.innerHTML = ''; 
     let lista = plantillasBD[uiPl][uiTu] || [];
     
-    // NUEVO: Re-ordenar en vivo por si agregas una zona manualmente desde el sistema
     lista.sort((a, b) => {
         let idxA = zonasBD.findIndex(z => z.zona === a.zona);
         let idxB = zonasBD.findIndex(z => z.zona === b.zona);
@@ -598,6 +589,7 @@ function renderizarGestorPlantillas() {
     
     if(!lista.length) tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Sin turnos asignados.</td></tr>`;
 }
+
 function agregarZonaPlantilla() { 
     let z = document.getElementById('selAgregarZona').value; 
     let c = parseInt(document.getElementById('cantAgregarZona').value) || 1; 
@@ -605,31 +597,21 @@ function agregarZonaPlantilla() {
     
     if(!z) return alert("Por favor selecciona una zona."); 
     
-    // 1. Agregamos el registro a la plantilla actual
     plantillasBD[uiPl][uiTu].push({ zona: z, cant: c, tipo: tipoVehiculo }); 
     
-    // 2. MAGIA DE ORDENAMIENTO AUTOMÁTICO: 
-    // Ordenamos la lista basándonos estrictamente en el índice de la matriz zonasBD
     plantillasBD[uiPl][uiTu].sort((a, b) => {
         let idxA = zonasBD.findIndex(item => item.zona === a.zona);
         let idxB = zonasBD.findIndex(item => item.zona === b.zona);
-        
-        // Si por alguna razón una zona no estuviera en la BD, la mandamos al fondo temporalmente
         if (idxA === -1) idxA = 9999;
         if (idxB === -1) idxB = 9999;
-        
         return idxA - idxB;
     });
 
-    // 3. Renderizamos de nuevo para mostrarlo ordenado en pantalla
     renderizarGestorPlantillas(); 
-    
-    // Limpiamos el selector de cantidad opcionalmente si deseas
     document.getElementById('cantAgregarZona').value = '1';
     document.getElementById('selAgregarZona').value = '';
 }
 
-// CORRECCIÓN: Se actualiza para exportar desde la base viva de Zonas, no la de fábrica
 function descargarPlantillaMaestraZonas() { let ws = XLSX.utils.json_to_sheet(zonasBD.map(z => ({ "ZONA": z.zona, "REQ_BUS_48": "", "REQ_VAN_15": "", "REQ_VAN_13": "", "REQ_VAN_09": "" }))); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Demanda_Zonas"); XLSX.writeFile(wb, "Plantilla_Maestra.xlsx"); }
 function abrirModalCopiarPlantilla() { document.getElementById('lblDestinoCopia').innerText = `[${uiPl}] - [${uiTu}]`; abrirModal('modalCopiarPlantilla'); }
 function confirmarCopiaPlantilla() { let sp = document.getElementById('selCopiaPlantilla').value, st = document.getElementById('selCopiaTurno').value; if(plantillasBD[sp][st]?.length) { plantillasBD[uiPl][uiTu] = JSON.parse(JSON.stringify(plantillasBD[sp][st])); renderizarGestorPlantillas(); cerrarModal('modalCopiarPlantilla'); } else alert("Origen vacío."); }
@@ -639,6 +621,10 @@ function guardarCapacitacion() { let titulo = document.getElementById('txtTitulo
 
 function procesarCambioFechaProg() { let input = document.getElementById('fechaProgInput'); if(!input.value) input.value = new Date().toISOString().split('T')[0]; let d = new Date(input.value + 'T00:00:00'); document.getElementById('tipoPlantillaProg').value = (d.getDay() === 0 || d.getDay() === 6) ? 'SD' : 'LV'; if(!programacionDiaria[input.value]) programacionDiaria[input.value] = []; renderizarProgramacion(); }
 function guardarProgramacionDiaria() { localStorage.setItem('bd_prog_diaria_smcv', JSON.stringify(programacionDiaria)); alert("✓ Programación guardada correctamente."); }
+
+// =========================================================================
+// MÚCLEO DE PROGRAMACIÓN DIARIA (CON COLORES VIVOS Y FILTROS RELAJADOS)
+// =========================================================================
 function renderizarProgramacion() {
     let fechaSel = document.getElementById('fechaProgInput').value, 
         tipoPlantilla = document.getElementById('tipoPlantillaProg').value, 
@@ -686,28 +672,31 @@ function renderizarProgramacion() {
                 let txtTipoReq = reqTipo === 'CUALQUIERA' ? 'Cualquier Unidad' : reqTipo; 
                 let nombreDisplay = /^\d/.test(itemPlantilla.zona) ? `ZONA ${itemPlantilla.zona}` : itemPlantilla.zona;
                 
-                // --- 1. MEJORA VISUAL EN VEHÍCULOS (Ahora muestra código + [TIPO]) ---
+                // --- 1. UNIDADES: FILTRADO SEGURO + COLORES DINÁMICOS ---
                 let uniOptsFiltradas = `<datalist id="dl_uni_${key}">`; 
                 unidadesBase.forEach(u => { 
                     let match = false; 
-                    let tVehiculo = (u.tipo || u.tipoVehiculo || '').toUpperCase(); 
-                    let cap = parseInt(u.capacidad) || 0;
+                    let tVehiculo = (u.tipo || u.tipoVehiculo || '').toUpperCase().trim(); 
                     
                     if (reqTipo === 'CUALQUIERA' || !reqTipo) match = true; 
                     else if (reqTipo.includes('BUS') && tVehiculo.includes('BUS')) match = true; 
-                    else if (reqTipo === 'VAN_15' && tVehiculo.includes('VAN') && (cap >= 14 || cap === 0)) match = true; 
-                    else if (reqTipo === 'VAN_13' && tVehiculo.includes('VAN') && (cap >= 12 || cap === 0)) match = true; 
-                    else if (reqTipo.includes('VAN') && tVehiculo.includes('VAN')) match = true; 
+                    // RELAJADO: Si pide VAN, muestra cualquier VAN o CAMIONETA sin discriminar por la capacidad vacía
+                    else if (reqTipo.includes('VAN') && (tVehiculo.includes('VAN') || tVehiculo.includes('CAMIONETA'))) match = true; 
                     
                     let codU = u.codigo || u.cod;
-                    if (match && codU) {
-                        uniOptsFiltradas += `<option value="${codU} [${tVehiculo}]">`; 
-                    }
+                    if (match && codU) { uniOptsFiltradas += `<option value="${codU} [${tVehiculo}]">`; }
                 });
                 uniOptsFiltradas += `</datalist>`;
-                let inputUni = `<input list="dl_uni_${key}" class="select-prog" placeholder="- Escriba Vehículo -" value="${regEx.unidad_desc || regEx.unidad || ''}" onchange="updMemUni('${key}', this)" style="width:100%; box-sizing:border-box; cursor:text;"> ${uniOptsFiltradas}`;
+                
+                // Aplicamos colores base para que cargue bonito desde el principio
+                let bgUni = '#ffffff', colUni = 'inherit';
+                let descU = regEx.unidad_desc || regEx.unidad || '';
+                if (descU.includes('[BUS')) { bgUni = '#fef3c7'; colUni = '#92400e'; }
+                else if (descU.includes('[VAN') || descU.includes('[CAMIONETA')) { bgUni = '#e0f2fe'; colUni = '#0369a1'; }
 
-                // --- 2. FILTRADO ESTRICTO DE CONDUCTORES ---
+                let inputUni = `<input list="dl_uni_${key}" class="select-prog" placeholder="- Escriba Vehículo -" value="${descU}" onchange="updMemUni('${key}', this)" style="width:100%; box-sizing:border-box; cursor:text; background-color:${bgUni}; color:${colUni}; font-weight:bold; border-radius:4px; padding-left:5px;"> ${uniOptsFiltradas}`;
+
+                // --- 2. CONDUCTORES: FILTRADO SEGURO ---
                 let condOptsFiltradas = `<datalist id="dl_cond_${key}">`; 
                 condOptsBase.forEach(c => { 
                     let tipoC = determinarTipoConductor(getProp(c, "CONTRATO") || c.CONTRATO);
@@ -718,12 +707,10 @@ function renderizarProgramacion() {
                     let cDni = getProp(c, "DNI") || c.DNI || ''; 
                     let cNom = getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || c.NOMBRE || ''; 
                     
-                    if (matchCond && cNom) {
-                        condOptsFiltradas += `<option value="${cNom} [${cDni}]">`; 
-                    }
+                    if (matchCond && cNom) { condOptsFiltradas += `<option value="${cNom} [${cDni}]">`; }
                 });
                 condOptsFiltradas += `</datalist>`;
-                let inputCond = `<input list="dl_cond_${key}" class="select-prog" placeholder="- Escriba Conductor -" value="${regEx.conductor_desc || ''}" onchange="updMemCond('${key}', this)" style="width:100%; box-sizing:border-box; cursor:text;"> ${condOptsFiltradas}`;
+                let inputCond = `<input list="dl_cond_${key}" class="select-prog" placeholder="- Escriba Conductor -" value="${regEx.conductor_desc || ''}" onchange="updMemCond('${key}', this)" style="width:100%; box-sizing:border-box; cursor:text; border-radius:4px; padding-left:5px;"> ${condOptsFiltradas}`;
                 
                 let repartoOpts = `<option value="">- N/A -</option>`; 
                 zonasBD.forEach(z => { repartoOpts += `<option value="${z.zona}" ${regEx.reparto === z.zona ? 'selected' : ''}>Rep. ${z.zona}</option>`; }); 
@@ -740,59 +727,89 @@ function renderizarProgramacion() {
     if(document.getElementById('statAsignaciones')) document.getElementById('statAsignaciones').innerText = `${asignados} / ${totalFilas} Asignados`;
 }
 
-// --- ACTUALIZADO: VALIDACIÓN Y EXTRACCIÓN DE UNIDAD ---
+// --- ACTUALIZADO: UNIDADES (SNAP AUTOCOMPLETADO Y COLOR DINÁMICO) ---
 function updMemUni(key, inputElem) {
-    let valorStr = inputElem.value.trim();
+    let valorStr = inputElem.value.trim().toUpperCase();
     let fechaSel = document.getElementById('fechaProgInput').value; 
     if (!programacionDiaria[fechaSel]) programacionDiaria[fechaSel] = []; 
     let reg = programacionDiaria[fechaSel].find(r => r.key === key); 
     if (!reg) { reg = { key: key }; programacionDiaria[fechaSel].push(reg); }
 
     if (!valorStr) {
-        reg.unidad_desc = '';
-        reg.unidad = '';
+        reg.unidad_desc = ''; reg.unidad = '';
+        inputElem.style.backgroundColor = '#ffffff'; inputElem.style.color = 'inherit';
         return;
     }
 
     let datalist = document.getElementById(`dl_uni_${key}`);
-    let opcionesValidas = Array.from(datalist.options).map(opt => opt.value);
+    let opcionesValidas = Array.from(datalist.options).map(opt => opt.value.toUpperCase());
 
-    if (opcionesValidas.includes(valorStr)) {
-        reg.unidad_desc = valorStr; // Guarda lo que ves: "v120 [VAN]"
-        let match = valorStr.match(/^(.*?)\s*\[/);  // Extrae solo lo que está antes del corchete
-        reg.unidad = match ? match[1].trim() : valorStr; // Guarda internamente: "v120"
+    // Buscamos si hay coincidencia exacta o si al menos inicia con el código ("V120")
+    let matchExacto = opcionesValidas.find(opt => opt === valorStr);
+    let matchParcial = opcionesValidas.find(opt => opt.startsWith(valorStr + " ["));
+    let opcionFinal = matchExacto || matchParcial;
+
+    if (opcionFinal) {
+        inputElem.value = opcionFinal; 
+        reg.unidad_desc = opcionFinal; 
+        let match = opcionFinal.match(/^(.*?)\s*\[/);  
+        reg.unidad = match ? match[1].trim() : opcionFinal; 
+
+        if (opcionFinal.includes('[BUS')) {
+            inputElem.style.backgroundColor = '#fef3c7'; inputElem.style.color = '#92400e';
+        } else {
+            inputElem.style.backgroundColor = '#e0f2fe'; inputElem.style.color = '#0369a1';
+        }
     } else {
-        inputElem.value = '';
-        reg.unidad_desc = '';
-        reg.unidad = '';
+        inputElem.value = ''; reg.unidad_desc = ''; reg.unidad = '';
+        inputElem.style.backgroundColor = '#ffffff'; inputElem.style.color = 'inherit';
         mostrarToast("⚠️ Vehículo no válido o no autorizado para esta ruta.", "error");
     }
 }
 
-// --- ACTUALIZADO: RE-CARGA DE ZONAS EN PLANTILLAS ---
-function renderizarGestorPlantillas() {
-    // 1. Forzamos a recargar la lista de zonas para que siempre salgan las nuevas
-    cargarOpcionesZonasSelect();
+// --- ACTUALIZADO: CONDUCTORES (SNAP AUTOCOMPLETADO) ---
+function updMemCond(key, inputElem) { 
+    let valorStr = inputElem.value.trim().toUpperCase();
+    let fechaSel = document.getElementById('fechaProgInput').value; 
+    if (!programacionDiaria[fechaSel]) programacionDiaria[fechaSel] = []; 
+    let reg = programacionDiaria[fechaSel].find(r => r.key === key); 
+    if (!reg) { reg = { key: key }; programacionDiaria[fechaSel].push(reg); } 
     
-    let tbody = document.getElementById('tbodyPlantillaList'); if(!tbody) return; tbody.innerHTML = ''; 
-    let lista = plantillasBD[uiPl][uiTu] || [];
-    
-    lista.sort((a, b) => {
-        let idxA = zonasBD.findIndex(z => z.zona === a.zona);
-        let idxB = zonasBD.findIndex(z => z.zona === b.zona);
-        if (idxA === -1) idxA = 9999;
-        if (idxB === -1) idxB = 9999;
-        return idxA - idxB;
-    });
+    if (!valorStr) {
+        reg.conductor_desc = ''; reg.conductor = '';
+        return;
+    }
 
-    lista.forEach((item, idx) => { 
-        let badgeColor = item.tipo.includes('BUS') ? 'var(--warning)' : 'var(--accent)'; 
-        let nombreDisplay = /^\d/.test(item.zona) ? `ZONA ${item.zona}` : item.zona; 
-        tbody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:center; font-weight:bold; color: var(--text-muted);">${idx+1}</td><td><b>${nombreDisplay}</b> <span style="font-size:0.75rem; color:${badgeColor}; font-weight: bold; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${item.tipo}</span></td><td style="text-align:center;"><input type="number" class="input-cant" value="${item.cant}" onchange="plantillasBD['${uiPl}']['${uiTu}'][${idx}].cant=parseInt(this.value)||1"></td><td style="text-align:right;"><button class="btn-icon" style="color:var(--danger);" onclick="plantillasBD['${uiPl}']['${uiTu}'].splice(${idx},1); renderizarGestorPlantillas();"><i class="fa-solid fa-trash"></i></button></td></tr>`); 
-    }); 
-    
-    if(!lista.length) tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Sin turnos asignados.</td></tr>`;
+    let datalist = document.getElementById(`dl_cond_${key}`);
+    let opcionesValidas = Array.from(datalist.options).map(opt => opt.value.toUpperCase());
+
+    let matchExacto = opcionesValidas.find(opt => opt === valorStr);
+    let matchDni = opcionesValidas.find(opt => opt.includes(`[${valorStr}]`));
+    let opcionFinal = matchExacto || matchDni;
+
+    if (!opcionFinal && valorStr.length >= 3) {
+        opcionFinal = opcionesValidas.find(opt => opt.includes(valorStr));
+    }
+
+    if (opcionFinal) {
+        inputElem.value = opcionFinal;
+        reg.conductor_desc = opcionFinal; 
+        let match = opcionFinal.match(/\[(.*?)\]/); 
+        reg.conductor = match ? match[1].trim() : opcionFinal; 
+    } else {
+        inputElem.value = ''; reg.conductor_desc = ''; reg.conductor = '';
+        mostrarToast("⚠️ Conductor no válido o no habilitado para esta ruta.", "error");
+    }
 }
+
+function updMem(key, campo, valor) {
+    let fechaSel = document.getElementById('fechaProgInput').value;
+    if (!programacionDiaria[fechaSel]) programacionDiaria[fechaSel] = [];
+    let reg = programacionDiaria[fechaSel].find(r => r.key === key);
+    if (!reg) { reg = { key: key }; programacionDiaria[fechaSel].push(reg); }
+    reg[campo] = valor;
+}
+
 function sumar20Min(hStr) { let r = String(hStr).trim(); let m = r.match(/(\d{1,2}):(\d{2})/); if(!m) return r; let h = parseInt(m[1]), min = parseInt(m[2]); min += 20; if(min >= 60) { h++; min -= 60; } return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`; }
 function renderizarRosterOficial() {
     let fechaSel = document.getElementById('fechaProgInput').value; let dObj = new Date(fechaSel + 'T00:00:00'); let fechaAyerObj = new Date(dObj); fechaAyerObj.setDate(fechaAyerObj.getDate() - 1); let ayerStr = fechaAyerObj.toISOString().split('T')[0];
@@ -800,11 +817,12 @@ function renderizarRosterOficial() {
     let tablaHTML = `<table class="roster-table" id="tablaFotografia"><thead><tr><th colspan="7" class="roster-header-top">PROGRAMACION RECOJO ZONAS - VEST. SUR / TRUCKSHOP - ZONAS</th><th colspan="${4 + (hayCapacitacion?1:0)}" class="roster-header-top" style="text-align:right;">${dObj.toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit', year:'numeric'})}</th></tr><tr><th colspan="7" class="roster-header-sub">EN BASE DEBERAN ESTAR SEGÚN LA HORA ESTIPULADA</th><th colspan="${4 + (hayCapacitacion?1:0)}" class="roster-header-sub">A1 (Y DEMÁS TURNOS)</th></tr><tr style="background:#f0f0f0;"><th style="width:20px; background:#cc0000; color:white;">N°</th><th class="col-gris-oscuro">Hr. Ingreso</th><th class="col-gris-oscuro">Salida Base</th><th style="width:60px; background:#cc0000; color:white;">Zona</th><th style="background:#cc0000; color:white;">Hora Inicio Servicio</th><th class="col-gris-claro">Conductor A</th><th class="col-gris-oscuro">Tipo Unidad</th><th class="col-gris-claro">OBSERVACION ZONA</th><th style="background:#cc0000; color:white;">CARRIL INGRESO</th><th class="col-gris-claro">OBS. Conductor</th><th style="background:#3498db; color:white;">ZONA REPARTO</th>${headCap}</tr></thead><tbody>`;
     let contadorFilas = 1;
     progHoy.forEach(reg => {
-        let zName = reg.key.split('_')[0], turno = reg.key.split('_')[1]; let zObj = zonasBD.find(z => z.zona === zName) || {}; let condObj = conductores.find(c => (getProp(c, "DNI") || c.DNI) === reg.conductor) || { nombre: '--', contrato: '' }; let uniObj = unidades.find(u => u.cod === reg.unidad) || { cod: '', tipoVehiculo: '' };
+        let zName = reg.key.split('_')[0], turno = reg.key.split('_')[1]; let zObj = zonasBD.find(z => z.zona === zName) || {}; let condObj = conductores.find(c => (getProp(c, "DNI") || c.DNI) === reg.conductor) || { nombre: '--', contrato: '' }; let uniObj = unidades.find(u => u.cod === reg.unidad || u.codigo === reg.unidad) || { cod: '', tipoVehiculo: '' };
         let hrInicioServicio = '--:--'; if (turno === 'A1') hrInicioServicio = zObj.a1; else if (turno === 'A2') hrInicioServicio = zObj.a2_lv; else if (turno === 'A2P') hrInicioServicio = zObj.a2p_lv; else if (turno === 'B1') hrInicioServicio = zObj.b1; else if (turno === 'B2') hrInicioServicio = zObj.b2; else if (turno === 'B2P') hrInicioServicio = zObj.b2p;
         let hrIngresoFinal = hrInicioServicio; if(reg.adicional && DIC_ADICIONALES[reg.adicional] && DIC_ADICIONALES[reg.adicional].h) { hrIngresoFinal = DIC_ADICIONALES[reg.adicional].h; } let hrSalidaFinal = sumar20Min(hrIngresoFinal);
         let bgConductor = ""; if (reg.adicional === "DESCANSO") { bgConductor = "background: #f1c40f;"; } else if (progAyer !== null && reg.conductor) { let hizoAyer = progAyer.find(a => a.conductor === reg.conductor); let zonaAyer = hizoAyer ? hizoAyer.key.split('_')[0] : null; if(zonaAyer && zonaAyer !== zName) { bgConductor = "background: #2ecc71; color: #000; font-weight: bold;"; } }
-        let tdUnidad = (uniObj.tipoVehiculo && uniObj.tipoVehiculo.includes('BUS')) ? `<td style="background:#95a5a6; color:#fff; font-weight:bold;">BUS / VOLV <br><small>${uniObj.cod}</small></td>` : `<td style="background:#f39c12; color:#fff; font-weight:bold;">VAN / MERC <br><small>${uniObj.cod}</small></td>`;
+        let typeU = (uniObj.tipoVehiculo || uniObj.tipo || '').toUpperCase();
+        let tdUnidad = (typeU.includes('BUS')) ? `<td style="background:#95a5a6; color:#fff; font-weight:bold;">BUS / VOLV <br><small>${uniObj.cod || uniObj.codigo || reg.unidad}</small></td>` : `<td style="background:#f39c12; color:#fff; font-weight:bold;">VAN / MERC <br><small>${uniObj.cod || uniObj.codigo || reg.unidad}</small></td>`;
         let rutaOficial = ''; if (turno === 'A1') rutaOficial = zObj.rec_a1_ofic; else if (turno === 'A2') rutaOficial = zObj.rec_a2_ofic; else if (turno === 'A2P') rutaOficial = zObj.rec_a2p_ofic; else if (turno === 'B1') rutaOficial = zObj.rec_b1_ofic; else if (turno === 'B2') rutaOficial = zObj.rec_b2_ofic; else if (turno === 'B2P') rutaOficial = zObj.rec_b2p_ofic;
         let tdObsZona = `<td class="celda-texto-largo">${rutaOficial || '-'}</td>`; let tdCarril = `<td>${reg.carril || ''}</td>`;
         let tdAdic = `<td></td>`; if(reg.adicional && DIC_ADICIONALES[reg.adicional]) { let d = DIC_ADICIONALES[reg.adicional]; tdAdic = `<td style="background:${d.bg}; color:${d.col}; font-weight:bold; font-size:0.75rem;">${reg.adicional}</td>`; }
@@ -839,7 +857,6 @@ function importarRespaldoSistema(e) {
     }; r.readAsText(file);
 }
 
-// ARRANQUE DEL SISTEMA
 window.onload = async function() { 
     aplicarTema(localStorage.getItem('planner_theme') || 'cerro-verde'); 
     estilizarTitulosYContenedores();
@@ -849,13 +866,12 @@ window.onload = async function() {
             fetch(URL_API_CONDUCTORES + "?t=" + new Date().getTime()), 
             fetch(URL_API_UNIDADES + "?t=" + new Date().getTime()),
             fetch(URL_API_ZONAS + "?t=" + new Date().getTime()),
-            fetch(URL_API_PLANTILLAS + "?t=" + new Date().getTime()) // <-- NUEVO FETCH DE PLANTILLAS
+            fetch(URL_API_PLANTILLAS + "?t=" + new Date().getTime()) 
         ]);
         
         if(resCond.ok) { let dC = await resCond.json(); if(dC && dC.length > 0) { conductores = dC; guardarConductores(false); } }
         if(resUni.ok) { let dU = await resUni.json(); if(dU && dU.length > 0) { unidades = dU; guardarUnidades(false); } }
         
-        // INTERCEPTAMOS LAS ZONAS DE LA NUBE Y LAS GUARDAMOS EN MEMORIA
         if(resZon.ok) { 
             let dZ = await resZon.json(); 
             if(dZ && !dZ.error && dZ.length > 0) { 
@@ -864,7 +880,6 @@ window.onload = async function() {
             } 
         }
 
-        // INTERCEPTAMOS LAS PLANTILLAS DE LA NUBE Y LAS GUARDAMOS EN MEMORIA
         if(resPlan && resPlan.ok) { 
             let dPlan = await resPlan.json(); 
             if(dPlan && !dPlan.error && dPlan.length > 0) { 

@@ -645,7 +645,6 @@ function renderizarProgramacion() {
         turnoSel = document.getElementById('filtroTurnoProg').value; 
     let turnosLista = turnoSel !== 'TODOS' ? [turnoSel] : ['A1', 'A2', 'A2P', 'B1', 'B2', 'B2P'];
     
-    // Conductores activos
     let condOptsBase = conductores.filter(c => { 
         let e = (getProp(c, "ESTADO") || c.estadoAbrev || '').toUpperCase(); 
         return !['CESADO', 'BAJA', 'INACTIVO'].includes(e); 
@@ -687,7 +686,7 @@ function renderizarProgramacion() {
                 let txtTipoReq = reqTipo === 'CUALQUIERA' ? 'Cualquier Unidad' : reqTipo; 
                 let nombreDisplay = /^\d/.test(itemPlantilla.zona) ? `ZONA ${itemPlantilla.zona}` : itemPlantilla.zona;
                 
-                // --- 1. FILTRADO ESTRICTO DE VEHÍCULOS ---
+                // --- 1. MEJORA VISUAL EN VEHÍCULOS (Ahora muestra código + [TIPO]) ---
                 let uniOptsFiltradas = `<datalist id="dl_uni_${key}">`; 
                 unidadesBase.forEach(u => { 
                     let match = false; 
@@ -702,25 +701,19 @@ function renderizarProgramacion() {
                     
                     let codU = u.codigo || u.cod;
                     if (match && codU) {
-                        uniOptsFiltradas += `<option value="${codU}">`; 
+                        uniOptsFiltradas += `<option value="${codU} [${tVehiculo}]">`; 
                     }
                 });
                 uniOptsFiltradas += `</datalist>`;
-                let inputUni = `<input list="dl_uni_${key}" class="select-prog" placeholder="- Escriba Vehículo -" value="${regEx.unidad || ''}" onchange="updMemUni('${key}', this)" style="width:100%; box-sizing:border-box; cursor:text;"> ${uniOptsFiltradas}`;
+                let inputUni = `<input list="dl_uni_${key}" class="select-prog" placeholder="- Escriba Vehículo -" value="${regEx.unidad_desc || regEx.unidad || ''}" onchange="updMemUni('${key}', this)" style="width:100%; box-sizing:border-box; cursor:text;"> ${uniOptsFiltradas}`;
 
-                // --- 2. FILTRADO ESTRICTO DE CONDUCTORES (JERARQUÍA BUS/VAN) ---
+                // --- 2. FILTRADO ESTRICTO DE CONDUCTORES ---
                 let condOptsFiltradas = `<datalist id="dl_cond_${key}">`; 
                 condOptsBase.forEach(c => { 
                     let tipoC = determinarTipoConductor(getProp(c, "CONTRATO") || c.CONTRATO);
                     let matchCond = false; 
-                    
-                    // REGLA CLAVE: Si la ruta exige BUS, solo entran conductores BUS o MINIBUS.
-                    // Si exige VAN o CUALQUIERA, entran todos (Vaneros y Buseros).
-                    if (reqTipo.includes('BUS')) {
-                        matchCond = (tipoC === 'BUS' || tipoC === 'MINIBUS');
-                    } else {
-                        matchCond = true; 
-                    }
+                    if (reqTipo.includes('BUS')) matchCond = (tipoC === 'BUS' || tipoC === 'MINIBUS');
+                    else matchCond = true; 
                     
                     let cDni = getProp(c, "DNI") || c.DNI || ''; 
                     let cNom = getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || c.NOMBRE || ''; 
@@ -747,7 +740,7 @@ function renderizarProgramacion() {
     if(document.getElementById('statAsignaciones')) document.getElementById('statAsignaciones').innerText = `${asignados} / ${totalFilas} Asignados`;
 }
 
-// --- VALIDACIÓN Y MEMORIA PARA VEHÍCULO ---
+// --- ACTUALIZADO: VALIDACIÓN Y EXTRACCIÓN DE UNIDAD ---
 function updMemUni(key, inputElem) {
     let valorStr = inputElem.value.trim();
     let fechaSel = document.getElementById('fechaProgInput').value; 
@@ -756,51 +749,49 @@ function updMemUni(key, inputElem) {
     if (!reg) { reg = { key: key }; programacionDiaria[fechaSel].push(reg); }
 
     if (!valorStr) {
+        reg.unidad_desc = '';
         reg.unidad = '';
         return;
     }
 
-    // Verificar si el valor ingresado pertenece a la lista permitida
     let datalist = document.getElementById(`dl_uni_${key}`);
     let opcionesValidas = Array.from(datalist.options).map(opt => opt.value);
 
     if (opcionesValidas.includes(valorStr)) {
-        reg.unidad = valorStr;
+        reg.unidad_desc = valorStr; // Guarda lo que ves: "v120 [VAN]"
+        let match = valorStr.match(/^(.*?)\s*\[/);  // Extrae solo lo que está antes del corchete
+        reg.unidad = match ? match[1].trim() : valorStr; // Guarda internamente: "v120"
     } else {
         inputElem.value = '';
+        reg.unidad_desc = '';
         reg.unidad = '';
         mostrarToast("⚠️ Vehículo no válido o no autorizado para esta ruta.", "error");
     }
 }
 
-// --- VALIDACIÓN Y MEMORIA PARA CONDUCTOR ---
-function updMemCond(key, inputElem) { 
-    let valorStr = inputElem.value.trim();
-    let fechaSel = document.getElementById('fechaProgInput').value; 
-    if (!programacionDiaria[fechaSel]) programacionDiaria[fechaSel] = []; 
-    let reg = programacionDiaria[fechaSel].find(r => r.key === key); 
-    if (!reg) { reg = { key: key }; programacionDiaria[fechaSel].push(reg); } 
+// --- ACTUALIZADO: RE-CARGA DE ZONAS EN PLANTILLAS ---
+function renderizarGestorPlantillas() {
+    // 1. Forzamos a recargar la lista de zonas para que siempre salgan las nuevas
+    cargarOpcionesZonasSelect();
     
-    if (!valorStr) {
-        reg.conductor_desc = '';
-        reg.conductor = '';
-        return;
-    }
+    let tbody = document.getElementById('tbodyPlantillaList'); if(!tbody) return; tbody.innerHTML = ''; 
+    let lista = plantillasBD[uiPl][uiTu] || [];
+    
+    lista.sort((a, b) => {
+        let idxA = zonasBD.findIndex(z => z.zona === a.zona);
+        let idxB = zonasBD.findIndex(z => z.zona === b.zona);
+        if (idxA === -1) idxA = 9999;
+        if (idxB === -1) idxB = 9999;
+        return idxA - idxB;
+    });
 
-    // Verificar si el valor ingresado pertenece a la lista permitida de esta ruta
-    let datalist = document.getElementById(`dl_cond_${key}`);
-    let opcionesValidas = Array.from(datalist.options).map(opt => opt.value);
-
-    if (opcionesValidas.includes(valorStr)) {
-        reg.conductor_desc = valorStr; 
-        let match = valorStr.match(/\[(.*?)\]/); 
-        reg.conductor = match ? match[1] : valorStr; 
-    } else {
-        inputElem.value = '';
-        reg.conductor_desc = '';
-        reg.conductor = '';
-        mostrarToast("⚠️ Conductor no válido o no habilitado para esta ruta.", "error");
-    }
+    lista.forEach((item, idx) => { 
+        let badgeColor = item.tipo.includes('BUS') ? 'var(--warning)' : 'var(--accent)'; 
+        let nombreDisplay = /^\d/.test(item.zona) ? `ZONA ${item.zona}` : item.zona; 
+        tbody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:center; font-weight:bold; color: var(--text-muted);">${idx+1}</td><td><b>${nombreDisplay}</b> <span style="font-size:0.75rem; color:${badgeColor}; font-weight: bold; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${item.tipo}</span></td><td style="text-align:center;"><input type="number" class="input-cant" value="${item.cant}" onchange="plantillasBD['${uiPl}']['${uiTu}'][${idx}].cant=parseInt(this.value)||1"></td><td style="text-align:right;"><button class="btn-icon" style="color:var(--danger);" onclick="plantillasBD['${uiPl}']['${uiTu}'].splice(${idx},1); renderizarGestorPlantillas();"><i class="fa-solid fa-trash"></i></button></td></tr>`); 
+    }); 
+    
+    if(!lista.length) tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Sin turnos asignados.</td></tr>`;
 }
 function sumar20Min(hStr) { let r = String(hStr).trim(); let m = r.match(/(\d{1,2}):(\d{2})/); if(!m) return r; let h = parseInt(m[1]), min = parseInt(m[2]); min += 20; if(min >= 60) { h++; min -= 60; } return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`; }
 function renderizarRosterOficial() {

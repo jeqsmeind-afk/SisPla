@@ -248,11 +248,14 @@
         <div id="vistaPlantillas" class="view-section">
             <div class="page-header">
                 <h2>Gestor de Plantillas</h2>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn btn-outline" onclick="descargarPlantillaMaestraZonas()"><i class="fa-solid fa-download"></i> Bajar Matriz</button>
-                    <input type="file" id="fileInputPlantilla" accept=".xlsx" style="display: none;" onchange="procesarArchivoPlantillaMaestra(event)">
-                    <button class="btn btn-success" onclick="document.getElementById('fileInputPlantilla').click()"><i class="fa-solid fa-upload"></i> Importar Excel</button>
-                    <button class="btn" onclick="guardarPlantillas()"><i class="fa-solid fa-floppy-disk"></i> Guardar Todo</button>
+                <!-- Botones Minimalistas Plantillas -->
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px;">
+                    <button id="btnGuardarPlantillas" class="btn btn-primary" onclick="sincronizarPlantillasConBD()" style="padding: 6px 12px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Guardar Cambios
+                    </button>
+                    <button class="btn-compact-seguro" onclick="descargarPlantillaMaestraZonas()" title="Descargar Copia (Excel)" style="padding: 6px 12px; border-radius: 6px; background: #10b981; color: #fff; cursor: pointer; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: all 0.2s; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-file-excel"></i>
+                    </button>
                 </div>
             </div>
             <div class="card" style="padding-top:15px;">

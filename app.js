@@ -640,9 +640,12 @@ function guardarCapacitacion() { let titulo = document.getElementById('txtTitulo
 function procesarCambioFechaProg() { let input = document.getElementById('fechaProgInput'); if(!input.value) input.value = new Date().toISOString().split('T')[0]; let d = new Date(input.value + 'T00:00:00'); document.getElementById('tipoPlantillaProg').value = (d.getDay() === 0 || d.getDay() === 6) ? 'SD' : 'LV'; if(!programacionDiaria[input.value]) programacionDiaria[input.value] = []; renderizarProgramacion(); }
 function guardarProgramacionDiaria() { localStorage.setItem('bd_prog_diaria_smcv', JSON.stringify(programacionDiaria)); alert("✓ Programación guardada correctamente."); }
 function renderizarProgramacion() {
-    let fechaSel = document.getElementById('fechaProgInput').value, tipoPlantilla = document.getElementById('tipoPlantillaProg').value, turnoSel = document.getElementById('filtroTurnoProg').value; let turnosLista = turnoSel !== 'TODOS' ? [turnoSel] : ['A1', 'A2', 'A2P', 'B1', 'B2', 'B2P'];
+    let fechaSel = document.getElementById('fechaProgInput').value, 
+        tipoPlantilla = document.getElementById('tipoPlantillaProg').value, 
+        turnoSel = document.getElementById('filtroTurnoProg').value; 
+    let turnosLista = turnoSel !== 'TODOS' ? [turnoSel] : ['A1', 'A2', 'A2P', 'B1', 'B2', 'B2P'];
     
-    // 1. CORRECCIÓN: Filtro de estado flexible para que jale a TODOS los conductores activos
+    // Conductores activos
     let condOptsBase = conductores.filter(c => { 
         let e = (getProp(c, "ESTADO") || c.estadoAbrev || '').toUpperCase(); 
         return !['CESADO', 'BAJA', 'INACTIVO'].includes(e); 
@@ -652,60 +655,85 @@ function renderizarProgramacion() {
     let regsFecha = programacionDiaria[fechaSel] || [];
     
     let totalFilas = 0, asignados = 0, htmlTabla = ''; 
-    let htmlOpcionesAdicionales = `<option value="">-- Normal --</option>`; Object.keys(DIC_ADICIONALES).forEach(k => htmlOpcionesAdicionales += `<option value="${k}">${k}</option>`); 
-    let htmlOpcionesCarril = ''; OPCIONES_CARRILES.forEach(c => htmlOpcionesCarril += `<option value="${c}">${c || '-- Carril --'}</option>`);
+    let htmlOpcionesAdicionales = `<option value="">-- Normal --</option>`; 
+    Object.keys(DIC_ADICIONALES).forEach(k => htmlOpcionesAdicionales += `<option value="${k}">${k}</option>`); 
+    let htmlOpcionesCarril = ''; 
+    OPCIONES_CARRILES.forEach(c => htmlOpcionesCarril += `<option value="${c}">${c || '-- Carril --'}</option>`);
     
     turnosLista.forEach(t => {
         let listaZonasTurno = plantillasBD[tipoPlantilla][t] || [];
         listaZonasTurno.forEach(itemPlantilla => {
-            let zData = zonasBD.find(z => z.zona === itemPlantilla.zona); if (!zData) return; let horaDinamica = '--:--';
-            if (t === 'A1') horaDinamica = zData.a1; else if (t === 'A2') horaDinamica = (tipoPlantilla === 'LV') ? zData.a2_lv : zData.a2_sd; else if (t === 'A2P') horaDinamica = (tipoPlantilla === 'LV') ? zData.a2p_lv : zData.a2p_sd; else if (t === 'B1') horaDinamica = zData.b1; else if (t === 'B2') horaDinamica = zData.b2; else if (t === 'B2P') horaDinamica = zData.b2p;
+            let zData = zonasBD.find(z => z.zona === itemPlantilla.zona); 
+            if (!zData) return; 
+            
+            let horaDinamica = '--:--';
+            if (t === 'A1') horaDinamica = zData.a1; 
+            else if (t === 'A2') horaDinamica = (tipoPlantilla === 'LV') ? zData.a2_lv : zData.a2_sd; 
+            else if (t === 'A2P') horaDinamica = (tipoPlantilla === 'LV') ? zData.a2p_lv : zData.a2p_sd; 
+            else if (t === 'B1') horaDinamica = zData.b1; 
+            else if (t === 'B2') horaDinamica = zData.b2; 
+            else if (t === 'B2P') horaDinamica = zData.b2p;
+            
             let cantidadRequerida = parseInt(itemPlantilla.cant) || 1;
             
             for (let i = 1; i <= cantidadRequerida; i++) {
-                totalFilas++; let key = `${itemPlantilla.zona}_${t}_${i}`; let regEx = regsFecha.find(r => r.key === key) || {}; if (regEx.unidad && regEx.conductor) asignados++;
-                let txtUnidadMult = cantidadRequerida > 1 ? `<br><small style="color:var(--text-muted)">Unidad ${i} de ${cantidadRequerida}</small>` : ''; let txtTipoReq = (itemPlantilla.tipo === 'CUALQUIERA' || !itemPlantilla.tipo) ? 'Cualquier Unidad' : itemPlantilla.tipo; let nombreDisplay = /^\d/.test(itemPlantilla.zona) ? `ZONA ${itemPlantilla.zona}` : itemPlantilla.zona;
+                totalFilas++; 
+                let key = `${itemPlantilla.zona}_${t}_${i}`; 
+                let regEx = regsFecha.find(r => r.key === key) || {}; 
+                if (regEx.unidad && regEx.conductor) asignados++;
                 
-                // 2. CORRECCIÓN: Autocompletado de UNIDADES y arreglo del bug de lectura de tipo
+                let txtUnidadMult = cantidadRequerida > 1 ? `<br><small style="color:var(--text-muted)">Unidad ${i} de ${cantidadRequerida}</small>` : ''; 
+                let reqTipo = itemPlantilla.tipo || 'CUALQUIERA';
+                let txtTipoReq = reqTipo === 'CUALQUIERA' ? 'Cualquier Unidad' : reqTipo; 
+                let nombreDisplay = /^\d/.test(itemPlantilla.zona) ? `ZONA ${itemPlantilla.zona}` : itemPlantilla.zona;
+                
+                // --- 1. FILTRADO ESTRICTO DE VEHÍCULOS ---
                 let uniOptsFiltradas = `<datalist id="dl_uni_${key}">`; 
                 unidadesBase.forEach(u => { 
                     let match = false; 
-                    let tVehiculo = (u.tipo || '').toUpperCase(); // Corrección clave (antes decía tipoVehiculo)
-                    let cap = parseInt(u.capacidad) || (tVehiculo.includes('BUS') ? 48 : 15);
-                    let reqTipo = itemPlantilla.tipo || '';
+                    let tVehiculo = (u.tipo || u.tipoVehiculo || '').toUpperCase(); 
+                    let cap = parseInt(u.capacidad) || 0;
                     
                     if (reqTipo === 'CUALQUIERA' || !reqTipo) match = true; 
                     else if (reqTipo.includes('BUS') && tVehiculo.includes('BUS')) match = true; 
-                    else if (reqTipo === 'VAN_15' && tVehiculo.includes('VAN') && cap >= 14) match = true; 
-                    else if (reqTipo === 'VAN_13' && tVehiculo.includes('VAN') && cap >= 12) match = true; 
+                    else if (reqTipo === 'VAN_15' && tVehiculo.includes('VAN') && (cap >= 14 || cap === 0)) match = true; 
+                    else if (reqTipo === 'VAN_13' && tVehiculo.includes('VAN') && (cap >= 12 || cap === 0)) match = true; 
                     else if (reqTipo.includes('VAN') && tVehiculo.includes('VAN')) match = true; 
                     
-                    if (match) uniOptsFiltradas += `<option value="${u.codigo || u.cod}">`; 
+                    let codU = u.codigo || u.cod;
+                    if (match && codU) {
+                        uniOptsFiltradas += `<option value="${codU}">`; 
+                    }
                 });
                 uniOptsFiltradas += `</datalist>`;
-                let inputUni = `<input list="dl_uni_${key}" class="select-prog" placeholder="- Escriba Vehículo -" value="${regEx.unidad || ''}" onchange="updMem('${key}', 'unidad', this.value.trim())" style="width:100%; box-sizing:border-box; cursor:text;"> ${uniOptsFiltradas}`;
+                let inputUni = `<input list="dl_uni_${key}" class="select-prog" placeholder="- Escriba Vehículo -" value="${regEx.unidad || ''}" onchange="updMemUni('${key}', this)" style="width:100%; box-sizing:border-box; cursor:text;"> ${uniOptsFiltradas}`;
 
-                // 3. CORRECCIÓN: Autocompletado de CONDUCTORES
+                // --- 2. FILTRADO ESTRICTO DE CONDUCTORES (JERARQUÍA BUS/VAN) ---
                 let condOptsFiltradas = `<datalist id="dl_cond_${key}">`; 
                 condOptsBase.forEach(c => { 
                     let tipoC = determinarTipoConductor(getProp(c, "CONTRATO") || c.CONTRATO);
                     let matchCond = false; 
-                    let reqTipo = itemPlantilla.tipo || ''; 
                     
-                    if (reqTipo === 'CUALQUIERA' || !reqTipo) matchCond = true; 
-                    else if (reqTipo.includes('VAN')) matchCond = true; // Todos pueden manejar Van
-                    else if (reqTipo.includes('BUS') && (tipoC === 'BUS' || tipoC === 'MINIBUS')) matchCond = true; 
+                    // REGLA CLAVE: Si la ruta exige BUS, solo entran conductores BUS o MINIBUS.
+                    // Si exige VAN o CUALQUIERA, entran todos (Vaneros y Buseros).
+                    if (reqTipo.includes('BUS')) {
+                        matchCond = (tipoC === 'BUS' || tipoC === 'MINIBUS');
+                    } else {
+                        matchCond = true; 
+                    }
                     
                     let cDni = getProp(c, "DNI") || c.DNI || ''; 
                     let cNom = getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || c.NOMBRE || ''; 
                     
-                    // Formato especial para buscar tanto por nombre como por DNI
-                    if (matchCond) condOptsFiltradas += `<option value="${cNom} [${cDni}]">`; 
+                    if (matchCond && cNom) {
+                        condOptsFiltradas += `<option value="${cNom} [${cDni}]">`; 
+                    }
                 });
                 condOptsFiltradas += `</datalist>`;
-                let inputCond = `<input list="dl_cond_${key}" class="select-prog" placeholder="- Escriba Conductor -" value="${regEx.conductor_desc || ''}" onchange="updMemCond('${key}', this.value.trim())" style="width:100%; box-sizing:border-box; cursor:text;"> ${condOptsFiltradas}`;
+                let inputCond = `<input list="dl_cond_${key}" class="select-prog" placeholder="- Escriba Conductor -" value="${regEx.conductor_desc || ''}" onchange="updMemCond('${key}', this)" style="width:100%; box-sizing:border-box; cursor:text;"> ${condOptsFiltradas}`;
                 
-                let repartoOpts = `<option value="">- N/A -</option>`; zonasBD.forEach(z => { repartoOpts += `<option value="${z.zona}" ${regEx.reparto === z.zona ? 'selected' : ''}>Rep. ${z.zona}</option>`; }); 
+                let repartoOpts = `<option value="">- N/A -</option>`; 
+                zonasBD.forEach(z => { repartoOpts += `<option value="${z.zona}" ${regEx.reparto === z.zona ? 'selected' : ''}>Rep. ${z.zona}</option>`; }); 
                 let carrilSelect = htmlOpcionesCarril.replace(`value="${regEx.carril || ''}"`, `value="${regEx.carril || ''}" selected`); 
                 let adicSelect = htmlOpcionesAdicionales.replace(`value="${regEx.adicional || ''}"`, `value="${regEx.adicional || ''}" selected`);
                 
@@ -713,24 +741,66 @@ function renderizarProgramacion() {
             }
         });
     });
-    let tbody = document.getElementById('tbodyProgramacion'); if(tbody) tbody.innerHTML = htmlTabla || `<tr><td colspan="8" class="empty-state">No hay rutas configuradas.</td></tr>`;
+    
+    let tbody = document.getElementById('tbodyProgramacion'); 
+    if(tbody) tbody.innerHTML = htmlTabla || `<tr><td colspan="8" class="empty-state">No hay rutas configuradas.</td></tr>`;
     if(document.getElementById('statAsignaciones')) document.getElementById('statAsignaciones').innerText = `${asignados} / ${totalFilas} Asignados`;
 }
 
-// 4. NUEVA FUNCIÓN: Extrae automáticamente el DNI cuando usas el autocompletado
-function updMemCond(key, valorStr) { 
+// --- VALIDACIÓN Y MEMORIA PARA VEHÍCULO ---
+function updMemUni(key, inputElem) {
+    let valorStr = inputElem.value.trim();
+    let fechaSel = document.getElementById('fechaProgInput').value; 
+    if (!programacionDiaria[fechaSel]) programacionDiaria[fechaSel] = []; 
+    let reg = programacionDiaria[fechaSel].find(r => r.key === key); 
+    if (!reg) { reg = { key: key }; programacionDiaria[fechaSel].push(reg); }
+
+    if (!valorStr) {
+        reg.unidad = '';
+        return;
+    }
+
+    // Verificar si el valor ingresado pertenece a la lista permitida
+    let datalist = document.getElementById(`dl_uni_${key}`);
+    let opcionesValidas = Array.from(datalist.options).map(opt => opt.value);
+
+    if (opcionesValidas.includes(valorStr)) {
+        reg.unidad = valorStr;
+    } else {
+        inputElem.value = '';
+        reg.unidad = '';
+        mostrarToast("⚠️ Vehículo no válido o no autorizado para esta ruta.", "error");
+    }
+}
+
+// --- VALIDACIÓN Y MEMORIA PARA CONDUCTOR ---
+function updMemCond(key, inputElem) { 
+    let valorStr = inputElem.value.trim();
     let fechaSel = document.getElementById('fechaProgInput').value; 
     if (!programacionDiaria[fechaSel]) programacionDiaria[fechaSel] = []; 
     let reg = programacionDiaria[fechaSel].find(r => r.key === key); 
     if (!reg) { reg = { key: key }; programacionDiaria[fechaSel].push(reg); } 
     
-    reg.conductor_desc = valorStr; // Guarda el nombre completo visible
-    let match = valorStr.match(/\[(.*?)\]/); // Extrae solo el DNI que está entre corchetes
-    if(match) { 
-        reg.conductor = match[1]; 
-    } else { 
-        reg.conductor = valorStr; 
-    } 
+    if (!valorStr) {
+        reg.conductor_desc = '';
+        reg.conductor = '';
+        return;
+    }
+
+    // Verificar si el valor ingresado pertenece a la lista permitida de esta ruta
+    let datalist = document.getElementById(`dl_cond_${key}`);
+    let opcionesValidas = Array.from(datalist.options).map(opt => opt.value);
+
+    if (opcionesValidas.includes(valorStr)) {
+        reg.conductor_desc = valorStr; 
+        let match = valorStr.match(/\[(.*?)\]/); 
+        reg.conductor = match ? match[1] : valorStr; 
+    } else {
+        inputElem.value = '';
+        reg.conductor_desc = '';
+        reg.conductor = '';
+        mostrarToast("⚠️ Conductor no válido o no habilitado para esta ruta.", "error");
+    }
 }
 function sumar20Min(hStr) { let r = String(hStr).trim(); let m = r.match(/(\d{1,2}):(\d{2})/); if(!m) return r; let h = parseInt(m[1]), min = parseInt(m[2]); min += 20; if(min >= 60) { h++; min -= 60; } return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`; }
 function renderizarRosterOficial() {

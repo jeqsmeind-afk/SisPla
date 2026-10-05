@@ -27,7 +27,7 @@ const OPCIONES_CARRILES = ["", "MOV. TIERR / CARR. 3", "TRUCKSHOP / CARR. 1", "T
 const URL_API_CONDUCTORES = "https://script.google.com/macros/s/AKfycbwYiiV2_-zSTcLUft_xcPTXl03LxcyTNcZ2l2u8RfTtPsrvyrzOcPR9NVJCd4AxhLfR/exec";
 const URL_API_UNIDADES = "https://script.google.com/macros/s/AKfycbz95bAXTt3TdLqWrHswVEtSWEjA1Qb5RCdb9QfUnRqsGOgilnNzrpcR8V6l4mkhZCBlZA/exec";
 const URL_API_ZONAS = "https://script.google.com/macros/s/AKfycbxwkga_TEexggYPg6a4kiRMmYHjW4JSdauGwjipDuXFXd_nVacl8KnzC74KZiAGsoGRSA/exec";
-const URL_API_PLANTILLAS = "https://script.google.com/macros/s/AKfycbxqor4UEnPQl8xGO0pJNxxEzbrQrRu7pzmYf89WGjya8Pm3uCcyRmd62i3_it6XAAbt/exec";
+const URL_API_PLANTILLAS = "https://script.google.com/macros/s/AKfycbxqor4UEnPQl8xGO0pJNxxEzbrQrRu7pzmYf89WGjya8Pm3uCcyRmd62i3_it6XAAbt/exec"; // <-- CONFIRMA QUE ESTA ES TU API NUEVA
 
 // CARGA DE DATOS SEGUROS
 function cargarDatosSeguros(k, fb) { try { let d = localStorage.getItem(k); return d ? JSON.parse(d) : fb; } catch(e) { return fb; } }
@@ -48,7 +48,6 @@ function aplicarTema(t) { document.body.setAttribute('data-theme', t); localStor
 
 // =========================================================
 // BUSCADOR INTELIGENTE V3 (A PRUEBA DE BALAS)
-// Elimina absolutamente todo lo que no sea letra para comparar
 // =========================================================
 function getProp(obj, keyword) {
     let cleanKeyword = keyword.toUpperCase().replace(/[^A-Z]/g, "");
@@ -78,15 +77,6 @@ function estilizarTitulosYContenedores() {
             wrapper.style.borderBottom = '2px solid #e5e7eb';
             wrapper.style.paddingBottom = '4px';
             wrapper.style.width = '100%';
-
-            //header.style.margin = '0';
-            //header.style.fontSize = '1.5rem';
-            //header.style.fontWeight = '900';
-            //header.style.color = '#1f2937';
-            //header.style.borderLeft = '6px solid #cc0000';
-            //header.style.paddingLeft = '12px';
-            //header.style.textTransform = 'uppercase';
-            //header.style.lineHeight = '1';
 
             header.parentNode.insertBefore(wrapper, header);
             wrapper.appendChild(header);
@@ -137,7 +127,7 @@ function parsearFechaGenerica(f) {
     if (typeof f === 'number') return new Date((f - 25569) * 86400 * 1000); 
     
     let s = String(f).trim(); 
-    if (/^\d{5}$/.test(s)) return new Date((parseInt(s) - 25569) * 86400 * 1000); // Por si lee seriales de Excel como texto
+    if (/^\d{5}$/.test(s)) return new Date((parseInt(s) - 25569) * 86400 * 1000); 
 
     let datePart = s;
     if (s.includes('T')) datePart = s.split('T')[0];
@@ -266,40 +256,43 @@ function actualizarSideKpisZonas() {
     safeKpiBox.innerHTML = html;
 }
 
+// =========================================================
+// SINCRONIZACIÓN DE SEGUNDO PLANO INTELIGENTE (SIN PERDER DATOS)
+// =========================================================
 async function sincronizarDatosSegundoPlano() {
     let btnGlobal = document.getElementById('btnSyncGlobal'); 
     if(btnGlobal) { btnGlobal.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...'; btnGlobal.disabled = true; } 
-    mostrarToast("Iniciando sincronización con Google Sheets. Puedes seguir trabajando.", "info", 5000);
+    mostrarToast("Sincronizando con Drive. Puedes seguir trabajando.", "info", 3000);
     
     try {
-        // 1. Agregamos el fetch de Zonas a la petición en paralelo
-        let [resCond, resUni, resZon] = await Promise.all([ 
+        let [resCond, resUni, resZon, resPlan] = await Promise.all([ 
             fetch(URL_API_CONDUCTORES + "?t=" + new Date().getTime()), 
             fetch(URL_API_UNIDADES + "?t=" + new Date().getTime()),
-            fetch(URL_API_ZONAS + "?t=" + new Date().getTime()) // <-- NUEVO
+            fetch(URL_API_ZONAS + "?t=" + new Date().getTime()),
+            fetch(URL_API_PLANTILLAS + "?t=" + new Date().getTime())
         ]);
         
         let actualizados = 0; 
         
         if (resCond.ok) { let dataCond = await resCond.json(); if (dataCond && dataCond.length > 0) { conductores = dataCond; guardarConductores(false); actualizados++; } }
-        
         if (resUni.ok) { let dataUni = await resUni.json(); if (dataUni && dataUni.length > 0) { dataUni.forEach(uNueva => { let uLocal = unidades.find(ul => ul.codigo === uNueva.codigo); if(uLocal) { if(uLocal.estado) uNueva.estado = uLocal.estado; if(uLocal.mantenimiento) uNueva.mantenimiento = uLocal.mantenimiento; } }); unidades = dataUni; guardarUnidades(false); actualizados++; } }
-        
-        // 2. Procesamos e inyectamos las zonas traídas de la nube
-        if (resZon && resZon.ok) { let dZ = await resZon.json(); if (dZ && !dZ.error && dZ.length > 0) { zonasBD = dZ; guardarZonas(); actualizados++; } }
+        if (resZon && resZon.ok) { let dZ = await resZon.json(); if (dZ && !dZ.error && dZ.length > 0) { zonasBD = dZ; guardarZonas(false); actualizados++; } }
+        if (resPlan && resPlan.ok) { let dPlan = await resPlan.json(); if (dPlan && !dPlan.error && dPlan.length > 0) { plantillasBD = procesarPlantillasPlanas(dPlan); localStorage.setItem('bd_plantillas_smcv', JSON.stringify(plantillasBD)); actualizados++; } }
         
         if (actualizados > 0) {
             actualizarFiltrosDinamicos(); actualizarFiltrosDinamicosUnidades(); actualizarFiltrosDinamicosConductores(); 
-            let vistaActiva = document.querySelector('.view-section.active').id; 
+            
+            let vistaActiva = document.querySelector('.view-section.active')?.id; 
+            
+            // SOLO re-renderizamos las pantallas informativas para NO interrumpir al usuario si está editando Programación o Plantillas
             if(vistaActiva === 'vistaDashboard') actualizarDashboard(); 
             if(vistaActiva === 'vistaConductores') renderizarConductores(); 
             if(vistaActiva === 'vistaUnidades') renderizarUnidades(); 
-            if(vistaActiva === 'vistaProgramacion') renderizarProgramacion(); 
-            if(vistaActiva === 'vistaZonas') renderizarZonas(); // <-- Refresca la vista de zonas si estás ahí
+            if(vistaActiva === 'vistaZonas') renderizarZonas();
             
             let lblUni = document.getElementById('lblLastSyncUnidades'); 
             if(lblUni) lblUni.innerText = "Última sincronización: Hoy, " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); 
-            mostrarToast("¡Bases de datos actualizadas con éxito!", "success");
+            mostrarToast("¡Bases actualizadas silenciosamente!", "success");
         } else { 
             mostrarToast("No se recibieron datos de Google Sheets.", "error"); 
         }
@@ -367,7 +360,6 @@ function renderizarConductores() {
     filtrados.forEach((c, index) => {
         let rawNac = getProp(c, "NACIMIENTO") || c.nacimiento || c.nac;
         
-        // AQUÍ ESTABA EL DETALLE: Agregamos "c.ing" al final para que atrape el dato de tu API
         let rawIng = getProp(c, "INGRESO") || getProp(c, "LABORANDO") || c.ingreso || c.tiempoLaborando || c.ing;
         
         let contrato = getProp(c, "CONTRATO") || c.contrato || '-';
@@ -575,6 +567,8 @@ function renderizarGestorPlantillas() {
     lista.forEach((item, idx) => { let badgeColor = item.tipo.includes('BUS') ? 'var(--warning)' : 'var(--accent)'; let nombreDisplay = /^\d/.test(item.zona) ? `ZONA ${item.zona}` : item.zona; tbody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:center;">${idx+1}</td><td><b>${nombreDisplay}</b> <span style="font-size:0.75rem; color:${badgeColor}; font-weight: bold; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${item.tipo}</span></td><td style="text-align:center;"><input type="number" class="input-cant" value="${item.cant}" onchange="plantillasBD['${uiPl}']['${uiTu}'][${idx}].cant=parseInt(this.value)||1"></td><td style="text-align:right;"><button class="btn-icon" style="color:var(--danger);" onclick="plantillasBD['${uiPl}']['${uiTu}'].splice(${idx},1); renderizarGestorPlantillas();"><i class="fa-solid fa-trash"></i></button></td></tr>`); }); if(!lista.length) tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Sin turnos asignados.</td></tr>`;
 }
 function agregarZonaPlantilla() { let z = document.getElementById('selAgregarZona').value, c = parseInt(document.getElementById('cantAgregarZona').value) || 1; if(!z) return; plantillasBD[uiPl][uiTu].push({ zona: z, cant: c, tipo: document.getElementById('selTipoUnidadAgregar').value }); renderizarGestorPlantillas(); }
+
+// CORRECCIÓN: Se actualiza para exportar desde la base viva de Zonas, no la de fábrica
 function descargarPlantillaMaestraZonas() { let ws = XLSX.utils.json_to_sheet(zonasBD.map(z => ({ "ZONA": z.zona, "REQ_BUS_48": "", "REQ_VAN_15": "", "REQ_VAN_13": "", "REQ_VAN_09": "" }))); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Demanda_Zonas"); XLSX.writeFile(wb, "Plantilla_Maestra.xlsx"); }
 function abrirModalCopiarPlantilla() { document.getElementById('lblDestinoCopia').innerText = `[${uiPl}] - [${uiTu}]`; abrirModal('modalCopiarPlantilla'); }
 function confirmarCopiaPlantilla() { let sp = document.getElementById('selCopiaPlantilla').value, st = document.getElementById('selCopiaTurno').value; if(plantillasBD[sp][st]?.length) { plantillasBD[uiPl][uiTu] = JSON.parse(JSON.stringify(plantillasBD[sp][st])); renderizarGestorPlantillas(); cerrarModal('modalCopiarPlantilla'); } else alert("Origen vacío."); }
@@ -661,24 +655,34 @@ window.onload = async function() {
     estilizarTitulosYContenedores();
 
     try { 
-        let [resCond, resUni, resZon] = await Promise.all([ 
+        let [resCond, resUni, resZon, resPlan] = await Promise.all([ 
             fetch(URL_API_CONDUCTORES + "?t=" + new Date().getTime()), 
             fetch(URL_API_UNIDADES + "?t=" + new Date().getTime()),
-            fetch(URL_API_ZONAS + "?t=" + new Date().getTime()) // <-- NUEVO FETCH DE ZONAS
+            fetch(URL_API_ZONAS + "?t=" + new Date().getTime()),
+            fetch(URL_API_PLANTILLAS + "?t=" + new Date().getTime()) // <-- NUEVO FETCH DE PLANTILLAS
         ]);
         
         if(resCond.ok) { let dC = await resCond.json(); if(dC && dC.length > 0) { conductores = dC; guardarConductores(false); } }
         if(resUni.ok) { let dU = await resUni.json(); if(dU && dU.length > 0) { unidades = dU; guardarUnidades(false); } }
         
         // INTERCEPTAMOS LAS ZONAS DE LA NUBE Y LAS GUARDAMOS EN MEMORIA
-        // INTERCEPTAMOS LAS ZONAS DE LA NUBE Y LAS GUARDAMOS EN MEMORIA
         if(resZon.ok) { 
             let dZ = await resZon.json(); 
             if(dZ && !dZ.error && dZ.length > 0) { 
-                zonasBD = dZ; // 1. Actualizamos la memoria RAM de tu app
-                guardarZonas(); // 2. Esto guarda con la clave correcta y refresca la tabla visualmente
+                zonasBD = dZ;
+                guardarZonas();
             } 
         }
+
+        // INTERCEPTAMOS LAS PLANTILLAS DE LA NUBE Y LAS GUARDAMOS EN MEMORIA
+        if(resPlan && resPlan.ok) { 
+            let dPlan = await resPlan.json(); 
+            if(dPlan && !dPlan.error && dPlan.length > 0) { 
+                plantillasBD = procesarPlantillasPlanas(dPlan);
+                localStorage.setItem('bd_plantillas_smcv', JSON.stringify(plantillasBD)); 
+            } 
+        }
+
     } catch(e) { console.log("Modo offline o error de red."); }
     
     actualizarFiltrosDinamicos(); 
@@ -687,7 +691,7 @@ window.onload = async function() {
     
     renderizarConductores(); 
     renderizarUnidades(); 
-    renderizarZonas(); // <--- ESTO EVITARÁ QUE LA PÁGINA SE VEA VACÍA
+    renderizarZonas(); 
     actualizarDashboard(); 
     cambiarVista('dashboard'); 
 };
@@ -715,67 +719,3 @@ function importarExcelMantenimiento(e) {
         } catch(err) { alert("Error al leer el Excel de mantenimiento: " + err.message); } e.target.value = '';
     }; r.readAsArrayBuffer(file);
 }
-
-// =========================================================
-// FUNCIÓN PARA ENVIAR ACTUALIZACIONES A GOOGLE SHEETS
-// =========================================================
-async function sincronizarZonaConBD(zonaData) {
-    try {
-        console.log("Enviando cambios de Zona a la nube...");
-        let response = await fetch(URL_API_ZONAS, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Clave para evitar errores de Google
-            body: JSON.stringify({ action: 'update', data: zonaData })
-        });
-        
-        let result = await response.json();
-        if(result.success) {
-            console.log(`¡La zona ${zonaData.zona} se actualizó correctamente en Excel!`);
-        } else {
-            console.error("Error al actualizar la BD:", result.error);
-        }
-    } catch(e) {
-        console.error("Error de conexión al enviar Zona:", e);
-    }
-}
-
-// =========================================================
-// GENERADOR DE PLANTILLA EXCEL PARA BASE DE DATOS DE ZONAS
-// =========================================================
-function descargarPlantillaZonasBD() {
-    let exportData = ZONAS_FABRICA.map(z => ({
-        "ZONA": z.zona || "",
-        "HORA_A1": z.a1 || "",
-        "RUTA_A1_OFIC": z.rec_a1_ofic || "",
-        "RUTA_A1_DESV1": z.rec_a1_desv1 || "",
-        "RUTA_A1_DESV2": z.rec_a1_desv2 || "",
-        "HORA_A2_LV": z.a2_lv || "",
-        "HORA_A2_SDFER": z.a2_sd || "",
-        "RUTA_A2_OFIC": z.rec_a2_ofic || "",
-        "RUTA_A2_DESV1": z.rec_a2_desv1 || "",
-        "RUTA_A2_DESV2": z.rec_a2_desv2 || "",
-        "HORA_A2P_LV": z.a2p_lv || "",
-        "HORA_A2P_SDFER": z.a2p_sd || "",
-        "RUTA_A2P_OFIC": z.rec_a2p_ofic || "",
-        "RUTA_A2P_DESV1": z.rec_a2p_desv1 || "",
-        "RUTA_A2P_DESV2": z.rec_a2p_desv2 || "",
-        "HORA_B1": z.b1 || "",
-        "RUTA_B1_OFIC": z.rec_b1_ofic || "",
-        "RUTA_B1_DESV1": z.rec_b1_desv1 || "",
-        "RUTA_B1_DESV2": z.rec_b1_desv2 || "",
-        "HORA_B2": z.b2 || "",
-        "RUTA_B2_OFIC": z.rec_b2_ofic || "",
-        "RUTA_B2_DESV1": z.rec_b2_desv1 || "",
-        "RUTA_B2_DESV2": z.rec_b2_desv2 || "",
-        "HORA_B2P": z.b2p || "",
-        "RUTA_B2P_OFIC": z.rec_b2p_ofic || "",
-        "RUTA_B2P_DESV1": z.rec_b2p_desv1 || "",
-        "RUTA_B2P_DESV2": z.rec_b2p_desv2 || ""
-    }));
-
-    let ws = XLSX.utils.json_to_sheet(exportData);
-    let wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Zonas_SMCV");
-    XLSX.writeFile(wb, "Plantilla_BD_Zonas_SMCV.xlsx");
-}
-

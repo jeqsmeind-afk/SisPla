@@ -598,7 +598,36 @@ function renderizarGestorPlantillas() {
     
     if(!lista.length) tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Sin turnos asignados.</td></tr>`;
 }
-function agregarZonaPlantilla() { let z = document.getElementById('selAgregarZona').value, c = parseInt(document.getElementById('cantAgregarZona').value) || 1; if(!z) return; plantillasBD[uiPl][uiTu].push({ zona: z, cant: c, tipo: document.getElementById('selTipoUnidadAgregar').value }); renderizarGestorPlantillas(); }
+function agregarZonaPlantilla() { 
+    let z = document.getElementById('selAgregarZona').value; 
+    let c = parseInt(document.getElementById('cantAgregarZona').value) || 1; 
+    let tipoVehiculo = document.getElementById('selTipoUnidadAgregar').value;
+    
+    if(!z) return alert("Por favor selecciona una zona."); 
+    
+    // 1. Agregamos el registro a la plantilla actual
+    plantillasBD[uiPl][uiTu].push({ zona: z, cant: c, tipo: tipoVehiculo }); 
+    
+    // 2. MAGIA DE ORDENAMIENTO AUTOMÁTICO: 
+    // Ordenamos la lista basándonos estrictamente en el índice de la matriz zonasBD
+    plantillasBD[uiPl][uiTu].sort((a, b) => {
+        let idxA = zonasBD.findIndex(item => item.zona === a.zona);
+        let idxB = zonasBD.findIndex(item => item.zona === b.zona);
+        
+        // Si por alguna razón una zona no estuviera en la BD, la mandamos al fondo temporalmente
+        if (idxA === -1) idxA = 9999;
+        if (idxB === -1) idxB = 9999;
+        
+        return idxA - idxB;
+    });
+
+    // 3. Renderizamos de nuevo para mostrarlo ordenado en pantalla
+    renderizarGestorPlantillas(); 
+    
+    // Limpiamos el selector de cantidad opcionalmente si deseas
+    document.getElementById('cantAgregarZona').value = '1';
+    document.getElementById('selAgregarZona').value = '';
+}
 
 // CORRECCIÓN: Se actualiza para exportar desde la base viva de Zonas, no la de fábrica
 function descargarPlantillaMaestraZonas() { let ws = XLSX.utils.json_to_sheet(zonasBD.map(z => ({ "ZONA": z.zona, "REQ_BUS_48": "", "REQ_VAN_15": "", "REQ_VAN_13": "", "REQ_VAN_09": "" }))); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Demanda_Zonas"); XLSX.writeFile(wb, "Plantilla_Maestra.xlsx"); }

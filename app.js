@@ -641,29 +641,97 @@ function procesarCambioFechaProg() { let input = document.getElementById('fechaP
 function guardarProgramacionDiaria() { localStorage.setItem('bd_prog_diaria_smcv', JSON.stringify(programacionDiaria)); alert("✓ Programación guardada correctamente."); }
 function renderizarProgramacion() {
     let fechaSel = document.getElementById('fechaProgInput').value, tipoPlantilla = document.getElementById('tipoPlantillaProg').value, turnoSel = document.getElementById('filtroTurnoProg').value; let turnosLista = turnoSel !== 'TODOS' ? [turnoSel] : ['A1', 'A2', 'A2P', 'B1', 'B2', 'B2P'];
-    let condOptsBase = conductores.filter(c => { let e = (getProp(c, "ESTADO") || c.estadoAbrev || '').toUpperCase(); return e==='A'||e==='B'||e==='AL'; }); let unidadesBase = unidades.filter(u => u.estado === 'OPERATIVO'); let regsFecha = programacionDiaria[fechaSel] || [];
-    let totalFilas = 0, asignados = 0, htmlTabla = ''; let htmlOpcionesAdicionales = `<option value="">-- Normal --</option>`; Object.keys(DIC_ADICIONALES).forEach(k => htmlOpcionesAdicionales += `<option value="${k}">${k}</option>`); let htmlOpcionesCarril = ''; OPCIONES_CARRILES.forEach(c => htmlOpcionesCarril += `<option value="${c}">${c || '-- Carril --'}</option>`);
+    
+    // 1. CORRECCIÓN: Filtro de estado flexible para que jale a TODOS los conductores activos
+    let condOptsBase = conductores.filter(c => { 
+        let e = (getProp(c, "ESTADO") || c.estadoAbrev || '').toUpperCase(); 
+        return !['CESADO', 'BAJA', 'INACTIVO'].includes(e); 
+    }); 
+    
+    let unidadesBase = unidades.filter(u => u.estado === 'OPERATIVO'); 
+    let regsFecha = programacionDiaria[fechaSel] || [];
+    
+    let totalFilas = 0, asignados = 0, htmlTabla = ''; 
+    let htmlOpcionesAdicionales = `<option value="">-- Normal --</option>`; Object.keys(DIC_ADICIONALES).forEach(k => htmlOpcionesAdicionales += `<option value="${k}">${k}</option>`); 
+    let htmlOpcionesCarril = ''; OPCIONES_CARRILES.forEach(c => htmlOpcionesCarril += `<option value="${c}">${c || '-- Carril --'}</option>`);
+    
     turnosLista.forEach(t => {
         let listaZonasTurno = plantillasBD[tipoPlantilla][t] || [];
         listaZonasTurno.forEach(itemPlantilla => {
             let zData = zonasBD.find(z => z.zona === itemPlantilla.zona); if (!zData) return; let horaDinamica = '--:--';
             if (t === 'A1') horaDinamica = zData.a1; else if (t === 'A2') horaDinamica = (tipoPlantilla === 'LV') ? zData.a2_lv : zData.a2_sd; else if (t === 'A2P') horaDinamica = (tipoPlantilla === 'LV') ? zData.a2p_lv : zData.a2p_sd; else if (t === 'B1') horaDinamica = zData.b1; else if (t === 'B2') horaDinamica = zData.b2; else if (t === 'B2P') horaDinamica = zData.b2p;
             let cantidadRequerida = parseInt(itemPlantilla.cant) || 1;
+            
             for (let i = 1; i <= cantidadRequerida; i++) {
                 totalFilas++; let key = `${itemPlantilla.zona}_${t}_${i}`; let regEx = regsFecha.find(r => r.key === key) || {}; if (regEx.unidad && regEx.conductor) asignados++;
                 let txtUnidadMult = cantidadRequerida > 1 ? `<br><small style="color:var(--text-muted)">Unidad ${i} de ${cantidadRequerida}</small>` : ''; let txtTipoReq = (itemPlantilla.tipo === 'CUALQUIERA' || !itemPlantilla.tipo) ? 'Cualquier Unidad' : itemPlantilla.tipo; let nombreDisplay = /^\d/.test(itemPlantilla.zona) ? `ZONA ${itemPlantilla.zona}` : itemPlantilla.zona;
-                let uniOptsFiltradas = `<option value="">-- Vehículo --</option>`; unidadesBase.forEach(u => { let match = false, tVehiculo = (u.tipoVehiculo || '').toUpperCase(), cap = parseInt(u.capacidad) || 0; if (itemPlantilla.tipo === 'CUALQUIERA' || !itemPlantilla.tipo) match = true; else if ((itemPlantilla.tipo === 'BUS_48' || itemPlantilla.tipo === 'BUS') && tVehiculo.includes('BUS')) match = true; else if (itemPlantilla.tipo === 'VAN_15' && tVehiculo.includes('VAN') && cap >= 14) match = true; else if (itemPlantilla.tipo === 'VAN_13' && tVehiculo.includes('VAN') && cap >= 12) match = true; else if ((itemPlantilla.tipo === 'VAN_09' || itemPlantilla.tipo === 'VAN') && tVehiculo.includes('VAN')) match = true; if (match) uniOptsFiltradas += `<option value="${u.cod}" ${regEx.unidad === u.cod ? 'selected' : ''}>${u.cod}</option>`; });
-                let condOptsFiltradas = `<option value="">-- Conductor --</option>`; condOptsBase.forEach(c => { let tipoC = determinarTipoConductor(getProp(c, "CONTRATO") || c.CONTRATO), matchCond = false, reqTipo = itemPlantilla.tipo || ''; if (reqTipo === 'CUALQUIERA' || !reqTipo) matchCond = true; else if (reqTipo.includes('VAN') && (tipoC === 'VAN' || tipoC === 'MINIBUS')) matchCond = true; else if (reqTipo.includes('BUS') && (tipoC === 'BUS' || tipoC === 'MINIBUS')) matchCond = true; let cDni = getProp(c, "DNI") || c.DNI; let cNom = getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || c.NOMBRE; if (matchCond) condOptsFiltradas += `<option value="${cDni}" ${regEx.conductor === cDni ? 'selected' : ''}>${cNom}</option>`; });
-                let repartoOpts = `<option value="">- N/A -</option>`; zonasBD.forEach(z => { repartoOpts += `<option value="${z.zona}" ${regEx.reparto === z.zona ? 'selected' : ''}>Rep. ${z.zona}</option>`; }); let carrilSelect = htmlOpcionesCarril.replace(`value="${regEx.carril || ''}"`, `value="${regEx.carril || ''}" selected`); let adicSelect = htmlOpcionesAdicionales.replace(`value="${regEx.adicional || ''}"`, `value="${regEx.adicional || ''}" selected`);
-                htmlTabla += `<tr><td style="font-weight: bold;">${nombreDisplay} ${txtUnidadMult}</td><td><span class="badge-status status-activo">${t}</span> <br> <span style="font-weight:600; font-size:0.75rem;">${horaDinamica}</span></td><td><span style="font-size: 0.7rem; font-weight: 800; padding: 2px 4px; border-radius: 4px; background: rgba(0,0,0,0.05); color: var(--accent);">${txtTipoReq}</span></td><td><select id="uni_${key}" class="select-prog" onchange="updMem('${key}', 'unidad', this.value)">${uniOptsFiltradas}</select></td><td><select id="cond_${key}" class="select-prog" onchange="updMem('${key}', 'conductor', this.value)">${condOptsFiltradas}</select></td><td><select class="select-prog" onchange="updMem('${key}', 'reparto', this.value)">${repartoOpts}</select></td><td><select class="select-prog" onchange="updMem('${key}', 'carril', this.value)">${carrilSelect}</select></td><td><select class="select-prog" onchange="updMem('${key}', 'adicional', this.value)">${adicSelect}</select></td></tr>`;
+                
+                // 2. CORRECCIÓN: Autocompletado de UNIDADES y arreglo del bug de lectura de tipo
+                let uniOptsFiltradas = `<datalist id="dl_uni_${key}">`; 
+                unidadesBase.forEach(u => { 
+                    let match = false; 
+                    let tVehiculo = (u.tipo || '').toUpperCase(); // Corrección clave (antes decía tipoVehiculo)
+                    let cap = parseInt(u.capacidad) || (tVehiculo.includes('BUS') ? 48 : 15);
+                    let reqTipo = itemPlantilla.tipo || '';
+                    
+                    if (reqTipo === 'CUALQUIERA' || !reqTipo) match = true; 
+                    else if (reqTipo.includes('BUS') && tVehiculo.includes('BUS')) match = true; 
+                    else if (reqTipo === 'VAN_15' && tVehiculo.includes('VAN') && cap >= 14) match = true; 
+                    else if (reqTipo === 'VAN_13' && tVehiculo.includes('VAN') && cap >= 12) match = true; 
+                    else if (reqTipo.includes('VAN') && tVehiculo.includes('VAN')) match = true; 
+                    
+                    if (match) uniOptsFiltradas += `<option value="${u.codigo || u.cod}">`; 
+                });
+                uniOptsFiltradas += `</datalist>`;
+                let inputUni = `<input list="dl_uni_${key}" class="select-prog" placeholder="- Escriba Vehículo -" value="${regEx.unidad || ''}" onchange="updMem('${key}', 'unidad', this.value.trim())" style="width:100%; box-sizing:border-box; cursor:text;"> ${uniOptsFiltradas}`;
+
+                // 3. CORRECCIÓN: Autocompletado de CONDUCTORES
+                let condOptsFiltradas = `<datalist id="dl_cond_${key}">`; 
+                condOptsBase.forEach(c => { 
+                    let tipoC = determinarTipoConductor(getProp(c, "CONTRATO") || c.CONTRATO);
+                    let matchCond = false; 
+                    let reqTipo = itemPlantilla.tipo || ''; 
+                    
+                    if (reqTipo === 'CUALQUIERA' || !reqTipo) matchCond = true; 
+                    else if (reqTipo.includes('VAN')) matchCond = true; // Todos pueden manejar Van
+                    else if (reqTipo.includes('BUS') && (tipoC === 'BUS' || tipoC === 'MINIBUS')) matchCond = true; 
+                    
+                    let cDni = getProp(c, "DNI") || c.DNI || ''; 
+                    let cNom = getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || c.NOMBRE || ''; 
+                    
+                    // Formato especial para buscar tanto por nombre como por DNI
+                    if (matchCond) condOptsFiltradas += `<option value="${cNom} [${cDni}]">`; 
+                });
+                condOptsFiltradas += `</datalist>`;
+                let inputCond = `<input list="dl_cond_${key}" class="select-prog" placeholder="- Escriba Conductor -" value="${regEx.conductor_desc || ''}" onchange="updMemCond('${key}', this.value.trim())" style="width:100%; box-sizing:border-box; cursor:text;"> ${condOptsFiltradas}`;
+                
+                let repartoOpts = `<option value="">- N/A -</option>`; zonasBD.forEach(z => { repartoOpts += `<option value="${z.zona}" ${regEx.reparto === z.zona ? 'selected' : ''}>Rep. ${z.zona}</option>`; }); 
+                let carrilSelect = htmlOpcionesCarril.replace(`value="${regEx.carril || ''}"`, `value="${regEx.carril || ''}" selected`); 
+                let adicSelect = htmlOpcionesAdicionales.replace(`value="${regEx.adicional || ''}"`, `value="${regEx.adicional || ''}" selected`);
+                
+                htmlTabla += `<tr><td style="font-weight: bold;">${nombreDisplay} ${txtUnidadMult}</td><td><span class="badge-status status-activo">${t}</span> <br> <span style="font-weight:600; font-size:0.75rem;">${horaDinamica}</span></td><td><span style="font-size: 0.7rem; font-weight: 800; padding: 2px 4px; border-radius: 4px; background: rgba(0,0,0,0.05); color: var(--accent);">${txtTipoReq}</span></td><td>${inputUni}</td><td>${inputCond}</td><td><select class="select-prog" onchange="updMem('${key}', 'reparto', this.value)">${repartoOpts}</select></td><td><select class="select-prog" onchange="updMem('${key}', 'carril', this.value)">${carrilSelect}</select></td><td><select class="select-prog" onchange="updMem('${key}', 'adicional', this.value)">${adicSelect}</select></td></tr>`;
             }
         });
     });
     let tbody = document.getElementById('tbodyProgramacion'); if(tbody) tbody.innerHTML = htmlTabla || `<tr><td colspan="8" class="empty-state">No hay rutas configuradas.</td></tr>`;
     if(document.getElementById('statAsignaciones')) document.getElementById('statAsignaciones').innerText = `${asignados} / ${totalFilas} Asignados`;
 }
-function updMem(key, campo, valor) { let fechaSel = document.getElementById('fechaProgInput').value; if (!programacionDiaria[fechaSel]) programacionDiaria[fechaSel] = []; let reg = programacionDiaria[fechaSel].find(r => r.key === key); if (!reg) { reg = { key: key }; programacionDiaria[fechaSel].push(reg); } reg[campo] = valor; }
 
+// 4. NUEVA FUNCIÓN: Extrae automáticamente el DNI cuando usas el autocompletado
+function updMemCond(key, valorStr) { 
+    let fechaSel = document.getElementById('fechaProgInput').value; 
+    if (!programacionDiaria[fechaSel]) programacionDiaria[fechaSel] = []; 
+    let reg = programacionDiaria[fechaSel].find(r => r.key === key); 
+    if (!reg) { reg = { key: key }; programacionDiaria[fechaSel].push(reg); } 
+    
+    reg.conductor_desc = valorStr; // Guarda el nombre completo visible
+    let match = valorStr.match(/\[(.*?)\]/); // Extrae solo el DNI que está entre corchetes
+    if(match) { 
+        reg.conductor = match[1]; 
+    } else { 
+        reg.conductor = valorStr; 
+    } 
+}
 function sumar20Min(hStr) { let r = String(hStr).trim(); let m = r.match(/(\d{1,2}):(\d{2})/); if(!m) return r; let h = parseInt(m[1]), min = parseInt(m[2]); min += 20; if(min >= 60) { h++; min -= 60; } return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`; }
 function renderizarRosterOficial() {
     let fechaSel = document.getElementById('fechaProgInput').value; let dObj = new Date(fechaSel + 'T00:00:00'); let fechaAyerObj = new Date(dObj); fechaAyerObj.setDate(fechaAyerObj.getDate() - 1); let ayerStr = fechaAyerObj.toISOString().split('T')[0];

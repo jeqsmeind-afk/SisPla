@@ -560,11 +560,43 @@ function procesarPlantillasPlanas(dFlat) {
             p[r.DIA][r.TURNO].push({ zona: r.ZONA, cant: parseInt(r.CANTIDAD)||1, tipo: r.TIPO_VEHICULO });
         }
     });
+    
+    // NUEVO: Ordenar cada turno estrictamente según el orden del Maestro de Zonas
+    for(let dia in p) {
+        for(let turno in p[dia]) {
+            p[dia][turno].sort((a, b) => {
+                let idxA = zonasBD.findIndex(z => z.zona === a.zona);
+                let idxB = zonasBD.findIndex(z => z.zona === b.zona);
+                // Si la zona es nueva y aún no está en la BD, la mandamos al final
+                if (idxA === -1) idxA = 9999; 
+                if (idxB === -1) idxB = 9999;
+                return idxA - idxB;
+            });
+        }
+    }
     return p;
 }
+
 function renderizarGestorPlantillas() {
-    let tbody = document.getElementById('tbodyPlantillaList'); if(!tbody) return; tbody.innerHTML = ''; let lista = plantillasBD[uiPl][uiTu] || [];
-    lista.forEach((item, idx) => { let badgeColor = item.tipo.includes('BUS') ? 'var(--warning)' : 'var(--accent)'; let nombreDisplay = /^\d/.test(item.zona) ? `ZONA ${item.zona}` : item.zona; tbody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:center;">${idx+1}</td><td><b>${nombreDisplay}</b> <span style="font-size:0.75rem; color:${badgeColor}; font-weight: bold; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${item.tipo}</span></td><td style="text-align:center;"><input type="number" class="input-cant" value="${item.cant}" onchange="plantillasBD['${uiPl}']['${uiTu}'][${idx}].cant=parseInt(this.value)||1"></td><td style="text-align:right;"><button class="btn-icon" style="color:var(--danger);" onclick="plantillasBD['${uiPl}']['${uiTu}'].splice(${idx},1); renderizarGestorPlantillas();"><i class="fa-solid fa-trash"></i></button></td></tr>`); }); if(!lista.length) tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Sin turnos asignados.</td></tr>`;
+    let tbody = document.getElementById('tbodyPlantillaList'); if(!tbody) return; tbody.innerHTML = ''; 
+    let lista = plantillasBD[uiPl][uiTu] || [];
+    
+    // NUEVO: Re-ordenar en vivo por si agregas una zona manualmente desde el sistema
+    lista.sort((a, b) => {
+        let idxA = zonasBD.findIndex(z => z.zona === a.zona);
+        let idxB = zonasBD.findIndex(z => z.zona === b.zona);
+        if (idxA === -1) idxA = 9999;
+        if (idxB === -1) idxB = 9999;
+        return idxA - idxB;
+    });
+
+    lista.forEach((item, idx) => { 
+        let badgeColor = item.tipo.includes('BUS') ? 'var(--warning)' : 'var(--accent)'; 
+        let nombreDisplay = /^\d/.test(item.zona) ? `ZONA ${item.zona}` : item.zona; 
+        tbody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:center; font-weight:bold; color: var(--text-muted);">${idx+1}</td><td><b>${nombreDisplay}</b> <span style="font-size:0.75rem; color:${badgeColor}; font-weight: bold; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${item.tipo}</span></td><td style="text-align:center;"><input type="number" class="input-cant" value="${item.cant}" onchange="plantillasBD['${uiPl}']['${uiTu}'][${idx}].cant=parseInt(this.value)||1"></td><td style="text-align:right;"><button class="btn-icon" style="color:var(--danger);" onclick="plantillasBD['${uiPl}']['${uiTu}'].splice(${idx},1); renderizarGestorPlantillas();"><i class="fa-solid fa-trash"></i></button></td></tr>`); 
+    }); 
+    
+    if(!lista.length) tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Sin turnos asignados.</td></tr>`;
 }
 function agregarZonaPlantilla() { let z = document.getElementById('selAgregarZona').value, c = parseInt(document.getElementById('cantAgregarZona').value) || 1; if(!z) return; plantillasBD[uiPl][uiTu].push({ zona: z, cant: c, tipo: document.getElementById('selTipoUnidadAgregar').value }); renderizarGestorPlantillas(); }
 

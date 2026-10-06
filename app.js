@@ -636,7 +636,9 @@ function renderizarProgramacion() {
         return !['CESADO', 'BAJA', 'INACTIVO'].includes(e); 
     }); 
     
-    let unidadesBase = unidades.filter(u => u.estado === 'OPERATIVO'); 
+    // 🔥 AHORA CARGA TODA LA FLOTA, SIN DISCRIMINAR ESTADO
+    let unidadesBase = unidades; 
+    
     let regsFecha = programacionDiaria[fechaSel] || [];
     
     let totalFilas = 0, asignados = 0, htmlTabla = ''; 
@@ -672,31 +674,34 @@ function renderizarProgramacion() {
                 let txtTipoReq = reqTipo === 'CUALQUIERA' ? 'Cualquier Unidad' : reqTipo; 
                 let nombreDisplay = /^\d/.test(itemPlantilla.zona) ? `ZONA ${itemPlantilla.zona}` : itemPlantilla.zona;
                 
-                // --- 1. UNIDADES: FILTRADO SEGURO + COLORES DINÁMICOS ---
+                // --- 1. UNIDADES: SE MUESTRAN TODAS PERO SE ETIQUETAN LAS DE TALLER ---
                 let uniOptsFiltradas = `<datalist id="dl_uni_${key}">`; 
                 unidadesBase.forEach(u => { 
                     let match = false; 
-                    let tVehiculo = (u.tipo || u.tipoVehiculo || '').toUpperCase().trim(); 
+                    let tVehiculo = (u.tipo || u.tipoVehiculo || u.TIPO_VEHICULO || u.TIPO || '').toUpperCase().trim(); 
+                    let estU = (u.estado || 'OPERATIVO').toUpperCase();
+                    let etiquetaTaller = estU === 'TALLER' ? ' [TALLER]' : '';
                     
                     if (reqTipo === 'CUALQUIERA' || !reqTipo) match = true; 
                     else if (reqTipo.includes('BUS') && tVehiculo.includes('BUS')) match = true; 
-                    // RELAJADO: Si pide VAN, muestra cualquier VAN o CAMIONETA sin discriminar por la capacidad vacía
                     else if (reqTipo.includes('VAN') && (tVehiculo.includes('VAN') || tVehiculo.includes('CAMIONETA'))) match = true; 
                     
-                    let codU = u.codigo || u.cod;
-                    if (match && codU) { uniOptsFiltradas += `<option value="${codU} [${tVehiculo}]">`; }
+                    let codU = u.codigo || u.cod || u.CODIGO;
+                    if (match && codU) { uniOptsFiltradas += `<option value="${codU} [${tVehiculo}]${etiquetaTaller}">`; }
                 });
                 uniOptsFiltradas += `</datalist>`;
                 
-                // Aplicamos colores base para que cargue bonito desde el principio
-                let bgUni = '#ffffff', colUni = 'inherit';
+                let bgUni = '#ffffff', colUni = 'inherit', styleExtra = '';
                 let descU = regEx.unidad_desc || regEx.unidad || '';
                 if (descU.includes('[BUS')) { bgUni = '#fef3c7'; colUni = '#92400e'; }
                 else if (descU.includes('[VAN') || descU.includes('[CAMIONETA')) { bgUni = '#e0f2fe'; colUni = '#0369a1'; }
+                
+                // Si la unidad guardada estaba en taller, la marcamos en rojo
+                if (descU.includes('[TALLER]')) { styleExtra = 'border: 2px solid #ef4444;'; }
 
-                let inputUni = `<input list="dl_uni_${key}" class="select-prog" placeholder="- Escriba Vehículo -" value="${descU}" onchange="updMemUni('${key}', this)" style="width:100%; box-sizing:border-box; cursor:text; background-color:${bgUni}; color:${colUni}; font-weight:bold; border-radius:4px; padding-left:5px;"> ${uniOptsFiltradas}`;
+                let inputUni = `<input list="dl_uni_${key}" class="select-prog" placeholder="- Escriba Vehículo -" value="${descU}" onchange="updMemUni('${key}', this)" style="width:100%; box-sizing:border-box; cursor:text; background-color:${bgUni}; color:${colUni}; font-weight:bold; border-radius:4px; padding-left:5px; ${styleExtra}"> ${uniOptsFiltradas}`;
 
-                // --- 2. CONDUCTORES: FILTRADO SEGURO ---
+                // --- 2. CONDUCTORES ---
                 let condOptsFiltradas = `<datalist id="dl_cond_${key}">`; 
                 condOptsBase.forEach(c => { 
                     let tipoC = determinarTipoConductor(getProp(c, "CONTRATO") || c.CONTRATO);
@@ -727,7 +732,7 @@ function renderizarProgramacion() {
     if(document.getElementById('statAsignaciones')) document.getElementById('statAsignaciones').innerText = `${asignados} / ${totalFilas} Asignados`;
 }
 
-// --- ACTUALIZADO: UNIDADES (SNAP AUTOCOMPLETADO Y COLOR DINÁMICO) ---
+// --- ACTUALIZADO: PERMITE ASIGNAR UNIDAD EN TALLER CON ADVERTENCIA ---
 function updMemUni(key, inputElem) {
     let valorStr = inputElem.value.trim().toUpperCase();
     let fechaSel = document.getElementById('fechaProgInput').value; 
@@ -738,13 +743,13 @@ function updMemUni(key, inputElem) {
     if (!valorStr) {
         reg.unidad_desc = ''; reg.unidad = '';
         inputElem.style.backgroundColor = '#ffffff'; inputElem.style.color = 'inherit';
+        inputElem.style.border = '1px solid #d1d5db';
         return;
     }
 
     let datalist = document.getElementById(`dl_uni_${key}`);
     let opcionesValidas = Array.from(datalist.options).map(opt => opt.value.toUpperCase());
 
-    // Buscamos si hay coincidencia exacta o si al menos inicia con el código ("V120")
     let matchExacto = opcionesValidas.find(opt => opt === valorStr);
     let matchParcial = opcionesValidas.find(opt => opt.startsWith(valorStr + " ["));
     let opcionFinal = matchExacto || matchParcial;
@@ -752,6 +757,7 @@ function updMemUni(key, inputElem) {
     if (opcionFinal) {
         inputElem.value = opcionFinal; 
         reg.unidad_desc = opcionFinal; 
+        // Extrae limpiamente el código (Ej: "V120 [VAN] [TALLER]" -> "V120")
         let match = opcionFinal.match(/^(.*?)\s*\[/);  
         reg.unidad = match ? match[1].trim() : opcionFinal; 
 
@@ -760,9 +766,19 @@ function updMemUni(key, inputElem) {
         } else {
             inputElem.style.backgroundColor = '#e0f2fe'; inputElem.style.color = '#0369a1';
         }
+
+        // Si la unidad está en taller, lo permitimos pero advertimos visualmente
+        if (opcionFinal.includes('[TALLER]')) {
+            inputElem.style.border = '2px solid #ef4444'; // Borde rojo fuerte
+            mostrarToast("⚠️ ADVERTENCIA: Has asignado una unidad que figura en TALLER.", "error", 5000);
+        } else {
+            inputElem.style.border = '1px solid transparent'; // reset
+        }
+        
     } else {
         inputElem.value = ''; reg.unidad_desc = ''; reg.unidad = '';
         inputElem.style.backgroundColor = '#ffffff'; inputElem.style.color = 'inherit';
+        inputElem.style.border = '1px solid #d1d5db';
         mostrarToast("⚠️ Vehículo no válido o no autorizado para esta ruta.", "error");
     }
 }

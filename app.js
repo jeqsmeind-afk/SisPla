@@ -71,6 +71,24 @@ function estilizarTitulosYContenedores() {
 
             header.parentNode.insertBefore(wrapper, header);
             wrapper.appendChild(header);
+
+            // 🔥 MAGIA DE DISEÑO: Agrupamos botones sueltos y los movemos a la derecha
+            let actionBox = document.createElement('div');
+            actionBox.style.display = 'flex';
+            actionBox.style.gap = '8px';
+            actionBox.style.alignItems = 'center';
+
+            // Buscamos si la vista tiene botones directamente debajo del título
+            Array.from(vista.children).forEach(el => {
+                if (el.tagName === 'BUTTON' || (el.tagName === 'A' && el.className.includes('btn'))) {
+                    actionBox.appendChild(el);
+                }
+            });
+
+            // Si encontró botones (como el de Guardar y Excel), los pega a la derecha
+            if (actionBox.children.length > 0) {
+                wrapper.appendChild(actionBox);
+            }
             
             let card = vista.querySelector('.card');
             if(card) { card.style.marginTop = '0px'; }
@@ -80,7 +98,6 @@ function estilizarTitulosYContenedores() {
     if(!document.getElementById('css-limpiador')) {
         let style = document.createElement('style');
         style.id = 'css-limpiador';
-        // AQUÍ INYECTAMOS LOS ESTILOS PARA LA FLECHA DE BÚSQUEDA Y COLORES
         style.innerHTML = `
             #vistaUnidades > div[style*="fixed"], 
             #vistaUnidades > div[style*="absolute"],

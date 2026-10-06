@@ -246,9 +246,9 @@
         <!-- VISTA PLANTILLAS                               -->
         <!-- ============================================== -->
         <div id="vistaPlantillas" class="view-section">
-            <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+            <!-- Le añadimos 'header-flex-wrapper' para evitar que el app.js rompa la alineación -->
+            <div class="page-header header-flex-wrapper" style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 15px;">
                 <h2 style="margin: 0;">Gestor de Plantillas</h2>
-                <!-- Botones Limpios y Alineados -->
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <button id="btnGuardarPlantillas" class="btn btn-success" onclick="sincronizarPlantillasConBD()">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Guardar Cambios
@@ -273,21 +273,21 @@
                     <button class="sub-tab-btn" id="stB2" onclick="switchTurnoPlantilla('B2')">Turno B2</button>
                     <button class="sub-tab-btn" id="stB2P" onclick="switchTurnoPlantilla('B2P')">Turno B2P</button>
                 </div>
-                <div style="background: var(--main-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <select id="selAgregarZona" class="select-prog" style="max-width: 200px; padding:8px;"><option value="">-- Zona --</option></select>
-                        <select id="selTipoUnidadAgregar" class="select-prog" style="width: 140px; padding:8px;">
-                            <option value="CUALQUIERA">CUALQUIERA</option>
-                            <option value="BUS_48">BUS 48</option>
-                            <option value="VAN_15">VAN 15</option>
-                            <option value="VAN_13">VAN 13</option>
-                            <option value="VAN_09">VAN 09</option>
-                        </select>
-                        <input type="number" id="cantAgregarZona" class="input-cant" value="1" min="1" style="padding:8px;">
-                        <button class="btn btn-success" onclick="agregarZonaPlantilla()"><i class="fa-solid fa-plus"></i></button>
-                    </div>
-                    <button class="btn btn-outline" onclick="abrirModalCopiarPlantilla()"><i class="fa-solid fa-clone"></i> Copiar...</button>
+                
+                <!-- Eliminamos el botón Copiar y ajustamos la barra gris -->
+                <div style="background: var(--main-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                    <select id="selAgregarZona" class="select-prog" style="max-width: 200px; padding:8px;"><option value="">-- Zona --</option></select>
+                    <select id="selTipoUnidadAgregar" class="select-prog" style="width: 140px; padding:8px;">
+                        <option value="CUALQUIERA">CUALQUIERA</option>
+                        <option value="BUS_48">BUS 48</option>
+                        <option value="VAN_15">VAN 15</option>
+                        <option value="VAN_13">VAN 13</option>
+                        <option value="VAN_09">VAN 09</option>
+                    </select>
+                    <input type="number" id="cantAgregarZona" class="input-cant" value="1" min="1" style="padding:8px;">
+                    <button class="btn btn-success" onclick="agregarZonaPlantilla()"><i class="fa-solid fa-plus"></i></button>
                 </div>
+                
                 <div class="table-container">
                     <table>
                         <thead>

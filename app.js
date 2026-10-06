@@ -125,8 +125,12 @@ function cambiarVista(vista) {
     if(document.getElementById(btnId)) document.getElementById(btnId).classList.add('active');
     if(parentBtnId && document.getElementById(parentBtnId)) document.getElementById(parentBtnId).classList.add('active');
     
+    // 🔥 CORRECCIÓN: Disparador automático para que las pantallas nunca carguen vacías
     if (vista === 'conductores') { actualizarFiltrosDinamicosConductores(); renderizarConductores(); }
     if (vista === 'unidades') { actualizarFiltrosDinamicosUnidades(); renderizarUnidades(); }
+    if (vista === 'plantillas') { renderizarGestorPlantillas(); }
+    if (vista === 'programacion') { renderizarProgramacion(); }
+    if (vista === 'zonas') { renderizarZonas(); }
 }
 
 function parsearFechaGenerica(f) {
@@ -510,8 +514,18 @@ function guardarNuevaZona() {
 let uiPl = 'LV', uiTu = 'A1';
 function switchPlantilla(p) { uiPl = p; document.querySelectorAll('#vistaPlantillas .tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tabPl' + p).classList.add('active'); renderizarGestorPlantillas(); }
 function switchTurnoPlantilla(tu) { uiTu = tu; document.querySelectorAll('#vistaPlantillas .sub-tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('st' + tu).classList.add('active'); renderizarGestorPlantillas(); }
-function cargarOpcionesZonasSelect() { let sel = document.getElementById('selAgregarZona'); if(!sel) return; sel.innerHTML = '<option value="">-- Seleccionar --</option>'; zonasBD.forEach(z => sel.innerHTML += `<option value="${z.zona}">ZONA ${z.zona}</option>`); }
-
+function cargarOpcionesZonasSelect() { 
+    let sel = document.getElementById('selAgregarZona'); 
+    if(!sel) return; 
+    
+    // 🔥 CORRECCIÓN: Armamos todo el HTML de forma segura y lo inyectamos de golpe
+    let opcionesHTML = '<option value="">-- Zona --</option>'; 
+    zonasBD.forEach(z => {
+        let nombreMostrar = /^\d/.test(z.zona) ? `ZONA ${z.zona}` : z.zona;
+        opcionesHTML += `<option value="${z.zona}">${nombreMostrar}</option>`;
+    });
+    sel.innerHTML = opcionesHTML;
+}
 async function sincronizarPlantillasConBD() {
     let btnGuardar = document.getElementById('btnGuardarPlantillas');
     if(btnGuardar) { btnGuardar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...'; btnGuardar.disabled = true; }

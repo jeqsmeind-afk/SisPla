@@ -72,20 +72,17 @@ function estilizarTitulosYContenedores() {
             header.parentNode.insertBefore(wrapper, header);
             wrapper.appendChild(header);
 
-            // 🔥 MAGIA DE DISEÑO: Agrupamos botones sueltos y los movemos a la derecha
             let actionBox = document.createElement('div');
             actionBox.style.display = 'flex';
             actionBox.style.gap = '8px';
             actionBox.style.alignItems = 'center';
 
-            // Buscamos si la vista tiene botones directamente debajo del título
             Array.from(vista.children).forEach(el => {
                 if (el.tagName === 'BUTTON' || (el.tagName === 'A' && el.className.includes('btn'))) {
                     actionBox.appendChild(el);
                 }
             });
 
-            // Si encontró botones (como el de Guardar y Excel), los pega a la derecha
             if (actionBox.children.length > 0) {
                 wrapper.appendChild(actionBox);
             }
@@ -142,11 +139,10 @@ function cambiarVista(vista) {
     if(document.getElementById(btnId)) document.getElementById(btnId).classList.add('active');
     if(parentBtnId && document.getElementById(parentBtnId)) document.getElementById(parentBtnId).classList.add('active');
     
-    // 🔥 CORRECCIÓN: Disparador automático para que las pantallas nunca carguen vacías
     if (vista === 'conductores') { actualizarFiltrosDinamicosConductores(); renderizarConductores(); }
     if (vista === 'unidades') { actualizarFiltrosDinamicosUnidades(); renderizarUnidades(); }
     if (vista === 'plantillas') { renderizarGestorPlantillas(); }
-    if (vista === 'programacion') { renderizarProgramacion(); }
+    if (vista === 'programacion') { window.renderizarProgramacion(); }
     if (vista === 'zonas') { renderizarZonas(); }
 }
 
@@ -534,8 +530,6 @@ function switchTurnoPlantilla(tu) { uiTu = tu; document.querySelectorAll('#vista
 function cargarOpcionesZonasSelect() { 
     let sel = document.getElementById('selAgregarZona'); 
     if(!sel) return; 
-    
-    // 🔥 CORRECCIÓN: Armamos todo el HTML de forma segura y lo inyectamos de golpe
     let opcionesHTML = '<option value="">-- Zona --</option>'; 
     zonasBD.forEach(z => {
         let nombreMostrar = /^\d/.test(z.zona) ? `ZONA ${z.zona}` : z.zona;
@@ -650,28 +644,23 @@ function confirmarCopiaPlantilla() { let sp = document.getElementById('selCopiaP
 function limpiarCapacitacion() { document.getElementById('txtTituloCapacitacion').value = ''; document.getElementById('txtListaCapacitacion').value = ''; }
 function guardarCapacitacion() { let titulo = document.getElementById('txtTituloCapacitacion').value.trim(); let listaLimpia = document.getElementById('txtListaCapacitacion').value.split('\n').map(n => normalizarTexto(n)).filter(n => n !== ""); datosCapacitacion = { titulo: titulo, lista: listaLimpia }; localStorage.setItem('bd_capacitaciones_smcv', JSON.stringify(datosCapacitacion)); cerrarModal('modalCapacitacion'); alert(`✓ Registrados ${listaLimpia.length} conductores.`); }
 
-function procesarCambioFechaProg() { let input = document.getElementById('fechaProgInput'); if(!input.value) input.value = new Date().toISOString().split('T')[0]; let d = new Date(input.value + 'T00:00:00'); document.getElementById('tipoPlantillaProg').value = (d.getDay() === 0 || d.getDay() === 6) ? 'SD' : 'LV'; if(!programacionDiaria[input.value]) programacionDiaria[input.value] = []; renderizarProgramacion(); }
+function procesarCambioFechaProg() { let input = document.getElementById('fechaProgInput'); if(!input.value) input.value = new Date().toISOString().split('T')[0]; let d = new Date(input.value + 'T00:00:00'); document.getElementById('tipoPlantillaProg').value = (d.getDay() === 0 || d.getDay() === 6) ? 'SD' : 'LV'; if(!programacionDiaria[input.value]) programacionDiaria[input.value] = []; window.renderizarProgramacion(); }
 function guardarProgramacionDiaria() { localStorage.setItem('bd_prog_diaria_smcv', JSON.stringify(programacionDiaria)); alert("✓ Programación guardada correctamente."); }
 
+
 // ====================================================================================
-// PROGRAMACIÓN DIARIA 2026: INTELIGENCIA Y DISEÑO
+// PROGRAMACIÓN DIARIA 2026: INTELIGENCIA Y DISEÑO 
 // ====================================================================================
 
-// Función auxiliar para restar 20 minutos a la hora de ingreso
-function calcularSalidaBase(horaIngreso) {
-    if (!horaIngreso || horaIngreso === '--:--') return '--:--';
-    let partes = horaIngreso.split(':');
-    if (partes.length < 2) return horaIngreso;
-    let d = new Date();
-    d.setHours(parseInt(partes[0], 10));
-    d.setMinutes(parseInt(partes[1], 10) - 20); // Restamos 20 min
-    return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
-}
+// 1. Cargamos los horarios base (Global para asegurar que funcione)
+window.horariosBaseConfig = JSON.parse(localStorage.getItem('horariosBaseConfig')) || {
+    'LV': { 'A1': '04:00', 'A2': '04:00', 'B1': '16:00', 'B2': '16:00' },
+    'SD': { 'A1': '04:00', 'A2': '04:00', 'B1': '15:00', 'B2': '15:00' },
+    'FER':{ 'A1': '04:00', 'A2': '04:00', 'B1': '15:00', 'B2': '15:00' }
+};
 
-// --- FUNCIONES DE TIEMPO (Colócalas arriba de renderizarProgramacion) ---
-let horariosBaseConfig = JSON.parse(localStorage.getItem('horariosBaseConfig')) || {};
-
-function sumarMinutos(horaStr, minutos) {
+// 2. Función matemática de tiempo (+ 20 minutos)
+window.sumarMinutos = function(horaStr, minutos) {
     if (!horaStr || !horaStr.includes(':')) return '--:--';
     let [h, m] = horaStr.split(':').map(Number);
     if(isNaN(h) || isNaN(m)) return '--:--';
@@ -679,34 +668,43 @@ function sumarMinutos(horaStr, minutos) {
     let newH = Math.floor(totalMin / 60) % 24;
     let newM = totalMin % 60;
     return String(newH).padStart(2, '0') + ':' + String(newM).padStart(2, '0');
-}
+};
 
-function guardarHorariosBaseGlobal() {
+// 3. Función para Guardar los Horarios del Modal (Forzada a Global)
+window.guardarHorariosBaseGlobal = function() {
     let grupos = ['LV', 'SD', 'FER'];
     let turnos = ['A1', 'A2', 'B1', 'B2'];
     grupos.forEach(g => {
-        if(!horariosBaseConfig[g]) horariosBaseConfig[g] = {};
+        if(!window.horariosBaseConfig[g]) window.horariosBaseConfig[g] = {};
         turnos.forEach(t => {
-            let val = document.getElementById(`hb_${g}_${t}`)?.value;
-            if(val) horariosBaseConfig[g][t] = val;
+            let elem = document.getElementById(`hb_${g}_${t}`);
+            if(elem && elem.value) {
+                window.horariosBaseConfig[g][t] = elem.value;
+            }
         });
     });
-    localStorage.setItem('horariosBaseConfig', JSON.stringify(horariosBaseConfig));
+    localStorage.setItem('horariosBaseConfig', JSON.stringify(window.horariosBaseConfig));
     cerrarModal('modalHorariosBase');
-    renderizarProgramacion();
-    mostrarToast("✅ Horarios de ingreso actualizados", "success");
-}
+    window.renderizarProgramacion(); // Recarga la tabla al instante
+    mostrarToast("✅ Horarios de ingreso configurados con éxito", "success");
+};
 
-function obtenerRutaTextoMaster(zData, turno, tipo) {
-    // Busca en la base de datos de Zonas los textos ingresados en el modal "Configuración 360"
-    let idPosible = 'ruta' + turno + tipo; // Ej. rutaA1Ofic
-    let idAlterno = 'zRuta' + turno + tipo; // Ej. zRutaA1Ofic
-    let val = zData[idPosible] || zData[idAlterno] || '';
-    return val ? val.trim() : `(Sin configurar en maestro)`;
-}
+// 4. Función para buscar el texto REAL de la ruta en la Base de Zonas
+window.obtenerRutaTextoMaster = function(zData, turno, tipo) {
+    if(!zData) return '';
+    let keys = Object.keys(zData);
+    let search1 = (`ruta${turno}${tipo}`).toLowerCase(); 
+    let search2 = (`zruta${turno}${tipo}`).toLowerCase(); 
+    for (let k of keys) {
+        if (k.toLowerCase() === search1 || k.toLowerCase() === search2) {
+            return zData[k] || '';
+        }
+    }
+    return '';
+};
 
-// --- ACTUALIZACIÓN PRINCIPAL ---
-function renderizarProgramacion() {
+// 5. RENDERIZADO PRINCIPAL
+window.renderizarProgramacion = function() {
     let fechaSel = document.getElementById('fechaProgInput').value, 
         tipoPlantilla = document.getElementById('tipoPlantillaProg').value, 
         turnoSel = document.getElementById('filtroTurnoProg').value; 
@@ -734,14 +732,11 @@ function renderizarProgramacion() {
             let zData = zonasBD.find(z => z.zona === itemPlantilla.zona); 
             if (!zData) return; 
             
-            // 1. Hora Ingreso Base (configurable)
-            let turnoBase = t.replace('P', ''); // A2P hereda de A2
-            let horaIngresoConfigurada = (horariosBaseConfig[tipoPlantilla] && horariosBaseConfig[tipoPlantilla][turnoBase]) ? horariosBaseConfig[tipoPlantilla][turnoBase] : '--:--';
+            let turnoBase = t.replace('P', ''); 
+            let horaIngresoConfigurada = (window.horariosBaseConfig[tipoPlantilla] && window.horariosBaseConfig[tipoPlantilla][turnoBase]) ? window.horariosBaseConfig[tipoPlantilla][turnoBase] : '--:--';
             
-            // 2. Salida Base (+20 min)
-            let salidaBaseCalculada = horaIngresoConfigurada !== '--:--' ? sumarMinutos(horaIngresoConfigurada, 20) : '--:--';
+            let salidaBaseCalculada = horaIngresoConfigurada !== '--:--' ? window.sumarMinutos(horaIngresoConfigurada, 20) : '--:--';
 
-            // 3. Inicio Recojo (del maestro de Zonas)
             let horaRecojoZonas = '--:--';
             if (t === 'A1') horaRecojoZonas = zData.a1; 
             else if (t === 'A2') horaRecojoZonas = (tipoPlantilla === 'LV') ? zData.a2_lv : zData.a2_sd; 
@@ -764,7 +759,6 @@ function renderizarProgramacion() {
                 let badgeTipoReq = `<span style="font-size:0.7rem; font-weight:800; padding:4px 8px; border-radius:12px; ${colorBadgeTipo}">${reqTipo === 'CUALQUIERA' ? 'CUALQUIERA' : reqTipo}</span>`; 
                 let nombreDisplay = /^\d/.test(itemPlantilla.zona) ? `ZONA ${itemPlantilla.zona}` : itemPlantilla.zona;
                 
-                // UNIDADES
                 let uniOptsFiltradas = `<datalist id="dl_uni_${key}">`; 
                 unidadesBase.forEach(u => { 
                     let match = false; 
@@ -784,7 +778,6 @@ function renderizarProgramacion() {
                 let infoUnidadHtml = `<div class="col-extra" style="font-size: 0.7rem; margin-top: 4px;">${textInfoUnidad}</div>`;
                 let inputUni = `<input list="dl_uni_${key}" class="modern-input select-prog" placeholder="Tipear o seleccionar..." value="${regEx.unidad_desc || ''}" onchange="updMemUni('${key}', this)" style="${styleExtraUni}"> ${uniOptsFiltradas} ${infoUnidadHtml}`;
 
-                // CONDUCTORES
                 let condOptsFiltradas = `<datalist id="dl_cond_${key}">`; 
                 condOptsBase.forEach(c => { 
                     let tipoC = determinarTipoConductor(getProp(c, "CONTRATO") || c.CONTRATO);
@@ -793,7 +786,7 @@ function renderizarProgramacion() {
                     if (reqTipo.includes('BUS')) matchCond = (tipoC === 'BUS' || tipoC === 'MINIBUS');
                     else matchCond = true; 
                     let iconoCond = '👤';
-                    if(srv.includes('RETEN')) iconoCond = '🟡';
+                    if(srv.includes('RETEN') || srv.includes('DESCANS')) iconoCond = '🟡';
                     if(srv.includes('ADMIN') || tipoC.includes('PARTIDO')) iconoCond = '🟣';
                     let cDni = getProp(c, "DNI") || c.DNI || ''; 
                     let cNom = getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || c.NOMBRE || ''; 
@@ -801,26 +794,25 @@ function renderizarProgramacion() {
                 });
                 condOptsFiltradas += `</datalist>`;
                 
-                let extraStyleCond = ''; let textoExperiencia = 'Sin perfil asignado';
+                let extraStyleCond = ''; let textoExperiencia = 'Perfil: Conductor Titular';
                 if(regEx.conductor_desc) {
-                    if(regEx.conductor_desc.includes('🟣')) { extraStyleCond = 'background-color:#fdf2f8; color:#be185d; border-color:#fbcfe8;'; textoExperiencia = 'Perfil: Turno Partido'; }
-                    else if(regEx.conductor_desc.includes('🟡')) { extraStyleCond = 'background-color:#fefce8; color:#a16207; border-color:#fef08a;'; textoExperiencia = 'Perfil: Descansero'; }
-                    else { extraStyleCond = 'background-color:#f0fdf4; color:#15803d; border-color:#bbf7d0;'; textoExperiencia = 'Perfil: Regular'; }
+                    if(regEx.conductor_desc.includes('🟣')) { extraStyleCond = 'background-color:#fdf2f8; color:#be185d; border-color:#fbcfe8;'; textoExperiencia = 'Perfil: Turno Partido / Admin'; }
+                    else if(regEx.conductor_desc.includes('🟡')) { extraStyleCond = 'background-color:#fefce8; color:#a16207; border-color:#fef08a;'; textoExperiencia = 'Perfil: Descansero / Retén'; }
+                    else { extraStyleCond = 'background-color:#f0fdf4; color:#15803d; border-color:#bbf7d0;'; }
                 }
                 let infoCondHtml = `<div class="col-extra" style="font-size: 0.7rem; margin-top: 4px; color:#64748b;"><i class="fa-solid fa-id-badge"></i> ${textoExperiencia}</div>`;
                 let inputCond = `<input list="dl_cond_${key}" class="modern-input select-prog" style="${extraStyleCond}" placeholder="Buscar nombre o DNI..." value="${regEx.conductor_desc || ''}" onchange="updMemCond('${key}', this)"> ${condOptsFiltradas} ${infoCondHtml}`;
                 
-                // RUTAS REALES (Leídas de la Base Zonas)
-                let rOfic = obtenerRutaTextoMaster(zData, t, 'Ofic');
-                let rDesv1 = obtenerRutaTextoMaster(zData, t, 'Desv1');
-                let rDesv2 = obtenerRutaTextoMaster(zData, t, 'Desv2');
+                let rOfic = window.obtenerRutaTextoMaster(zData, t, 'Ofic') || 'Sin ruta oficial';
+                let rDesv1 = window.obtenerRutaTextoMaster(zData, t, 'Desv1') || 'Sin desvío 1';
+                let rDesv2 = window.obtenerRutaTextoMaster(zData, t, 'Desv2') || 'Sin desvío 2';
                 
                 let truncar = (str) => str.length > 35 ? str.substring(0, 35) + '...' : str;
 
                 let rutaSelectOpts = `
-                    <option value="OFICIAL" ${regEx.rutaAsignada === 'OFICIAL' ? 'selected' : ''} title="${rOfic}">Oficial: ${truncar(rOfic)}</option>
-                    <option value="DESVIO1" ${regEx.rutaAsignada === 'DESVIO1' ? 'selected' : ''} title="${rDesv1}">Desvío 1: ${truncar(rDesv1)}</option>
-                    <option value="DESVIO2" ${regEx.rutaAsignada === 'DESVIO2' ? 'selected' : ''} title="${rDesv2}">Desvío 2: ${truncar(rDesv2)}</option>
+                    <option value="OFICIAL" ${regEx.rutaAsignada === 'OFICIAL' || !regEx.rutaAsignada ? 'selected' : ''} title="${rOfic}">Ofic: ${truncar(rOfic)}</option>
+                    <option value="DESVIO1" ${regEx.rutaAsignada === 'DESVIO1' ? 'selected' : ''} title="${rDesv1}">D1: ${truncar(rDesv1)}</option>
+                    <option value="DESVIO2" ${regEx.rutaAsignada === 'DESVIO2' ? 'selected' : ''} title="${rDesv2}">D2: ${truncar(rDesv2)}</option>
                 `;
 
                 let repartoOpts = `<option value="">- N/A -</option>`; 
@@ -832,13 +824,17 @@ function renderizarProgramacion() {
                 <tr>
                     <td style="font-weight: 800; color:#1e293b; font-size: 0.9rem;">${nombreDisplay} ${txtUnidadMult}</td>
                     
-                    <td style="min-width: 120px; font-size: 0.75rem; color:#475569;">
+                    <td style="min-width: 140px; font-size: 0.75rem; color:#475569;">
                         <span class="badge-status status-activo" style="margin-bottom:4px; display:inline-block;">${t}</span><br>
-                        <strong>ING BASE:</strong> <span style="color:#2563eb;">${horaIngresoConfigurada}</span><br>
-                        <span class="col-extra">
-                            <strong>SAL BASE:</strong> <span style="color:#ea580c;">${salidaBaseCalculada}</span><br>
-                            <strong>RECOJO:</strong> <span style="color:#16a34a;">${horaRecojoZonas}</span>
-                        </span>
+                        <div style="background:#f8fafc; padding:6px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:4px;">
+                            <strong>ING BASE:</strong> <span style="color:#2563eb; font-weight:bold; font-size:0.85rem;">${horaIngresoConfigurada}</span><br>
+                            <span class="col-extra">
+                                <strong>SAL BASE:</strong> <span style="color:#ea580c; font-weight:bold; font-size:0.85rem;">${salidaBaseCalculada}</span>
+                            </span>
+                        </div>
+                        <div class="col-extra">
+                            <strong>RECOJO:</strong> <span style="color:#16a34a; font-weight:bold;">${horaRecojoZonas}</span>
+                        </div>
                     </td>
 
                     <td>${badgeTipoReq}</td>
@@ -864,10 +860,8 @@ function renderizarProgramacion() {
     
     if(document.getElementById('statAsignaciones')) document.getElementById('statAsignaciones').innerText = `${asignados} / ${totalFilas} Asignados`;
     actualizarMetricasProgramacion();
-}
-// ------------------------------------------------------------------------------------
-// EL CEREBRO DE LOS CONDUCTORES: ANTI-CLONACIÓN Y ETIQUETAS INTELIGENTES (SMART BADGES)
-// ------------------------------------------------------------------------------------
+};
+
 function updMemCond(key, inputElem) {
     let valorStr = inputElem.value.trim().toUpperCase();
     let fechaSel = document.getElementById('fechaProgInput').value; 
@@ -875,7 +869,6 @@ function updMemCond(key, inputElem) {
     let reg = programacionDiaria[fechaSel].find(r => r.key === key); 
     if (!reg) { reg = { key: key }; programacionDiaria[fechaSel].push(reg); }
 
-    // Limpiar estilos de advertencias previas
     inputElem.classList.remove('error-shake');
     inputElem.style.backgroundColor = '#f1f5f9';
     inputElem.style.color = 'inherit';
@@ -892,9 +885,8 @@ function updMemCond(key, inputElem) {
     let opcionFinal = matchExacto || matchParcial;
 
     if (opcionFinal) {
-        // 🔥 MAGIA 1: SEMÁFORO ANTI-CLONACIÓN (Busca si ya está programado en ese mismo turno hoy)
-        let turnoActual = key.split('_')[1]; // Extrae "A1", "A2", etc.
-        let nombrePuro = opcionFinal.split(' [')[0]; // Ej: "ABARCA SALAS"
+        let turnoActual = key.split('_')[1]; 
+        let nombrePuro = opcionFinal.split(' [')[0]; 
         
         let cruceDetectado = programacionDiaria[fechaSel].find(r => 
             r.conductor_desc && 
@@ -905,14 +897,13 @@ function updMemCond(key, inputElem) {
 
         if (cruceDetectado) {
             let zonaCruce = cruceDetectado.key.split('_')[0];
-            inputElem.classList.add('error-shake'); // Hace vibrar la celda
+            inputElem.classList.add('error-shake');
             mostrarToast(`⚠️ ¡CRUCE DE TURNO! ${nombrePuro} ya está asignado en la ZONA ${zonaCruce} a esta hora.`, "error", 5000);
-            inputElem.value = ''; // Borra lo escrito para evitar el error
+            inputElem.value = ''; 
             reg.conductor_desc = ''; reg.conductor = '';
-            return; // Detiene el código aquí
+            return; 
         }
 
-        // 🔥 MAGIA 2: SMART BADGES AUTOMÁTICOS (Pinta colores como en tu Excel)
         let condData = conductores.find(c => (getProp(c, "CONDUCTOR") || c.NOMBRE || '').toUpperCase() === nombrePuro);
         let txtFinal = opcionFinal;
         
@@ -921,17 +912,13 @@ function updMemCond(key, inputElem) {
             let contrato = (getProp(condData, "CONTRATO") || condData.CONTRATO || '').toUpperCase();
             
             if (contrato.includes('PARTIDO') || servicio.includes('ADMIN')) {
-                // ROSADO: Turno Partido / Administrativo
                 inputElem.style.backgroundColor = '#fdf2f8'; inputElem.style.color = '#be185d'; inputElem.style.borderColor = '#fbcfe8';
                 txtFinal = `${nombrePuro} [🟣 Turno Partido]`;
             } else if (servicio.includes('RETEN') || servicio.includes('DESCANS')) {
-                // AMARILLO: Descansero o Retén
                 inputElem.style.backgroundColor = '#fefce8'; inputElem.style.color = '#a16207'; inputElem.style.borderColor = '#fef08a';
                 txtFinal = `${nombrePuro} [🟡 Descansero]`;
             } else {
-                // VERDE: Conductor Oficial / Regular (Asumimos OK)
                 inputElem.style.backgroundColor = '#f0fdf4'; inputElem.style.color = '#15803d'; inputElem.style.borderColor = '#bbf7d0';
-                // Si quieres que el verde sea "Día 1", aquí iría lógica leyendo días anteriores. Por ahora lo dejamos como Regular.
             }
         }
 
@@ -945,15 +932,8 @@ function updMemCond(key, inputElem) {
         mostrarToast("⚠️ Conductor no válido o no pertenece a la flota.", "error");
     }
     
-    // Al final, refrescamos el contador de Auditoría
     actualizarMetricasProgramacion();
 }
-
-
-// ====================================================================================
-// FUNCIONES EXTRA: MODO ENFOQUE Y AUDITORÍA EN VIVO
-// (Agrégalas al final de tu app.js)
-// ====================================================================================
 
 function toggleModoEnfoque() {
     let tablaWrapper = document.getElementById('vistaProgramacion');
@@ -971,15 +951,12 @@ function toggleModoEnfoque() {
 }
 
 function actualizarMetricasProgramacion() {
-    // Cuenta cuántos conductores hemos asignado HOY
     let fechaSel = document.getElementById('fechaProgInput').value; 
     let regs = programacionDiaria[fechaSel] || [];
     let asignadosHoy = regs.filter(r => r.conductor).length;
     
-    // Cuenta total de fuerza laboral que debería trabajar
     let activosTotales = conductores.filter(c => { 
         let e = (getProp(c, "ESTADO") || c.estadoAbrev || '').toUpperCase(); 
-        // Excluimos a los que de por sí ya están de vacaciones, descansos médicos, cesados
         return !['CESADO', 'BAJA', 'INACTIVO', 'VACACIONES', 'DESC. MED.', 'SUSPENDIDO'].includes(e); 
     });
 
@@ -999,7 +976,7 @@ function actualizarMetricasProgramacion() {
 }
 
 function abrirAuditoria() {
-    actualizarMetricasProgramacion(); // Recalcula
+    actualizarMetricasProgramacion(); 
     
     let fechaSel = document.getElementById('fechaProgInput').value; 
     let regs = programacionDiaria[fechaSel] || [];
@@ -1010,7 +987,6 @@ function abrirAuditoria() {
         return !['CESADO', 'BAJA', 'INACTIVO', 'VACACIONES', 'DESC. MED.', 'SUSPENDIDO'].includes(e); 
     });
 
-    // Filtra quiénes de la lista oficial AUN NO están en la tabla
     let noAsignados = activosTotales.filter(c => {
         let nombre = (getProp(c, "CONDUCTOR") || c.NOMBRE || '');
         return !conductoresAsignadosArray.includes(nombre);
@@ -1038,7 +1014,6 @@ function cerrarAuditoria() {
     document.getElementById('auditOverlay').classList.remove('open');
 }
 
-// --- ACTUALIZADO: PERMITE ASIGNAR UNIDAD EN TALLER CON ADVERTENCIA ---
 function updMemUni(key, inputElem) {
     let valorStr = inputElem.value.trim().toUpperCase();
     let fechaSel = document.getElementById('fechaProgInput').value; 
@@ -1063,7 +1038,6 @@ function updMemUni(key, inputElem) {
     if (opcionFinal) {
         inputElem.value = opcionFinal; 
         reg.unidad_desc = opcionFinal; 
-        // Extrae limpiamente el código (Ej: "V120 [VAN] [TALLER]" -> "V120")
         let match = opcionFinal.match(/^(.*?)\s*\[/);  
         reg.unidad = match ? match[1].trim() : opcionFinal; 
 
@@ -1073,12 +1047,11 @@ function updMemUni(key, inputElem) {
             inputElem.style.backgroundColor = '#e0f2fe'; inputElem.style.color = '#0369a1';
         }
 
-        // Si la unidad está en taller, lo permitimos pero advertimos visualmente
         if (opcionFinal.includes('[TALLER]')) {
-            inputElem.style.border = '2px solid #ef4444'; // Borde rojo fuerte
+            inputElem.style.border = '2px solid #ef4444'; 
             mostrarToast("⚠️ ADVERTENCIA: Has asignado una unidad que figura en TALLER.", "error", 5000);
         } else {
-            inputElem.style.border = '1px solid transparent'; // reset
+            inputElem.style.border = '1px solid transparent'; 
         }
         
     } else {
@@ -1097,7 +1070,6 @@ function updMem(key, campo, valor) {
     reg[campo] = valor;
 }
 
-function sumar20Min(hStr) { let r = String(hStr).trim(); let m = r.match(/(\d{1,2}):(\d{2})/); if(!m) return r; let h = parseInt(m[1]), min = parseInt(m[2]); min += 20; if(min >= 60) { h++; min -= 60; } return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`; }
 function renderizarRosterOficial() {
     let fechaSel = document.getElementById('fechaProgInput').value; let dObj = new Date(fechaSel + 'T00:00:00'); let fechaAyerObj = new Date(dObj); fechaAyerObj.setDate(fechaAyerObj.getDate() - 1); let ayerStr = fechaAyerObj.toISOString().split('T')[0];
     let progHoy = programacionDiaria[fechaSel] || []; let progAyer = programacionDiaria[ayerStr] || null; let hayCapacitacion = (datosCapacitacion.titulo !== "" && datosCapacitacion.lista.length > 0); let headCap = hayCapacitacion ? `<th style="width: 120px; background:#8e44ad;">CAPACITACIÓN</th>` : '';
@@ -1106,7 +1078,7 @@ function renderizarRosterOficial() {
     progHoy.forEach(reg => {
         let zName = reg.key.split('_')[0], turno = reg.key.split('_')[1]; let zObj = zonasBD.find(z => z.zona === zName) || {}; let condObj = conductores.find(c => (getProp(c, "DNI") || c.DNI) === reg.conductor) || { nombre: '--', contrato: '' }; let uniObj = unidades.find(u => u.cod === reg.unidad || u.codigo === reg.unidad) || { cod: '', tipoVehiculo: '' };
         let hrInicioServicio = '--:--'; if (turno === 'A1') hrInicioServicio = zObj.a1; else if (turno === 'A2') hrInicioServicio = zObj.a2_lv; else if (turno === 'A2P') hrInicioServicio = zObj.a2p_lv; else if (turno === 'B1') hrInicioServicio = zObj.b1; else if (turno === 'B2') hrInicioServicio = zObj.b2; else if (turno === 'B2P') hrInicioServicio = zObj.b2p;
-        let hrIngresoFinal = hrInicioServicio; if(reg.adicional && DIC_ADICIONALES[reg.adicional] && DIC_ADICIONALES[reg.adicional].h) { hrIngresoFinal = DIC_ADICIONALES[reg.adicional].h; } let hrSalidaFinal = sumar20Min(hrIngresoFinal);
+        let hrIngresoFinal = hrInicioServicio; if(reg.adicional && DIC_ADICIONALES[reg.adicional] && DIC_ADICIONALES[reg.adicional].h) { hrIngresoFinal = DIC_ADICIONALES[reg.adicional].h; } let hrSalidaFinal = window.sumarMinutos(hrIngresoFinal, 20);
         let bgConductor = ""; if (reg.adicional === "DESCANSO") { bgConductor = "background: #f1c40f;"; } else if (progAyer !== null && reg.conductor) { let hizoAyer = progAyer.find(a => a.conductor === reg.conductor); let zonaAyer = hizoAyer ? hizoAyer.key.split('_')[0] : null; if(zonaAyer && zonaAyer !== zName) { bgConductor = "background: #2ecc71; color: #000; font-weight: bold;"; } }
         let typeU = (uniObj.tipoVehiculo || uniObj.tipo || '').toUpperCase();
         let tdUnidad = (typeU.includes('BUS')) ? `<td style="background:#95a5a6; color:#fff; font-weight:bold;">BUS / VOLV <br><small>${uniObj.cod || uniObj.codigo || reg.unidad}</small></td>` : `<td style="background:#f39c12; color:#fff; font-weight:bold;">VAN / MERC <br><small>${uniObj.cod || uniObj.codigo || reg.unidad}</small></td>`;

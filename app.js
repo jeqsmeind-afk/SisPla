@@ -653,9 +653,10 @@ function guardarCapacitacion() { let titulo = document.getElementById('txtTitulo
 function procesarCambioFechaProg() { let input = document.getElementById('fechaProgInput'); if(!input.value) input.value = new Date().toISOString().split('T')[0]; let d = new Date(input.value + 'T00:00:00'); document.getElementById('tipoPlantillaProg').value = (d.getDay() === 0 || d.getDay() === 6) ? 'SD' : 'LV'; if(!programacionDiaria[input.value]) programacionDiaria[input.value] = []; renderizarProgramacion(); }
 function guardarProgramacionDiaria() { localStorage.setItem('bd_prog_diaria_smcv', JSON.stringify(programacionDiaria)); alert("✓ Programación guardada correctamente."); }
 
-// =========================================================================
-// MÚCLEO DE PROGRAMACIÓN DIARIA (CON COLORES VIVOS Y FILTROS RELAJADOS)
-// =========================================================================
+// ====================================================================================
+// PROGRAMACIÓN DIARIA 2026: INTELIGENCIA Y DISEÑO
+// ====================================================================================
+
 function renderizarProgramacion() {
     let fechaSel = document.getElementById('fechaProgInput').value, 
         tipoPlantilla = document.getElementById('tipoPlantillaProg').value, 
@@ -666,17 +667,14 @@ function renderizarProgramacion() {
         let e = (getProp(c, "ESTADO") || c.estadoAbrev || '').toUpperCase(); 
         return !['CESADO', 'BAJA', 'INACTIVO'].includes(e); 
     }); 
-    
-    // 🔥 AHORA CARGA TODA LA FLOTA, SIN DISCRIMINAR ESTADO
     let unidadesBase = unidades; 
-    
     let regsFecha = programacionDiaria[fechaSel] || [];
     
     let totalFilas = 0, asignados = 0, htmlTabla = ''; 
-    let htmlOpcionesAdicionales = `<option value="">-- Normal --</option>`; 
+    let htmlOpcionesAdicionales = `<option value="">-- Sin Adicional --</option>`; 
     Object.keys(DIC_ADICIONALES).forEach(k => htmlOpcionesAdicionales += `<option value="${k}">${k}</option>`); 
     let htmlOpcionesCarril = ''; 
-    OPCIONES_CARRILES.forEach(c => htmlOpcionesCarril += `<option value="${c}">${c || '-- Carril --'}</option>`);
+    OPCIONES_CARRILES.forEach(c => htmlOpcionesCarril += `<option value="${c}">${c || '-- Sin Carril --'}</option>`);
     
     turnosLista.forEach(t => {
         let listaZonasTurno = plantillasBD[tipoPlantilla][t] || [];
@@ -700,67 +698,251 @@ function renderizarProgramacion() {
                 let regEx = regsFecha.find(r => r.key === key) || {}; 
                 if (regEx.unidad && regEx.conductor) asignados++;
                 
-                let txtUnidadMult = cantidadRequerida > 1 ? `<br><small style="color:var(--text-muted)">Unidad ${i} de ${cantidadRequerida}</small>` : ''; 
+                let txtUnidadMult = cantidadRequerida > 1 ? `<br><small style="color:#94a3b8; font-weight:normal;">Und. ${i} de ${cantidadRequerida}</small>` : ''; 
                 let reqTipo = itemPlantilla.tipo || 'CUALQUIERA';
-                let txtTipoReq = reqTipo === 'CUALQUIERA' ? 'Cualquier Unidad' : reqTipo; 
+                let colorBadgeTipo = reqTipo.includes('BUS') ? 'background:#fef3c7; color:#b45309;' : 'background:#e0f2fe; color:#0369a1;';
+                let badgeTipoReq = `<span style="font-size:0.7rem; font-weight:800; padding:4px 8px; border-radius:12px; ${colorBadgeTipo}">${reqTipo === 'CUALQUIERA' ? 'CUALQUIERA' : reqTipo}</span>`; 
                 let nombreDisplay = /^\d/.test(itemPlantilla.zona) ? `ZONA ${itemPlantilla.zona}` : itemPlantilla.zona;
                 
-                // --- 1. UNIDADES: SE MUESTRAN TODAS PERO SE ETIQUETAN LAS DE TALLER ---
+                // UNIDADES
                 let uniOptsFiltradas = `<datalist id="dl_uni_${key}">`; 
                 unidadesBase.forEach(u => { 
                     let match = false; 
                     let tVehiculo = (u.tipo || u.tipoVehiculo || u.TIPO_VEHICULO || u.TIPO || '').toUpperCase().trim(); 
                     let estU = (u.estado || 'OPERATIVO').toUpperCase();
                     let etiquetaTaller = estU === 'TALLER' ? ' [TALLER]' : '';
-                    
                     if (reqTipo === 'CUALQUIERA' || !reqTipo) match = true; 
                     else if (reqTipo.includes('BUS') && tVehiculo.includes('BUS')) match = true; 
                     else if (reqTipo.includes('VAN') && (tVehiculo.includes('VAN') || tVehiculo.includes('CAMIONETA'))) match = true; 
-                    
                     let codU = u.codigo || u.cod || u.CODIGO;
-                    if (match && codU) { uniOptsFiltradas += `<option value="${codU} [${tVehiculo}]${etiquetaTaller}">`; }
+                    if (match && codU) uniOptsFiltradas += `<option value="${codU} [${tVehiculo}]${etiquetaTaller}">`; 
                 });
                 uniOptsFiltradas += `</datalist>`;
-                
-                let bgUni = '#ffffff', colUni = 'inherit', styleExtra = '';
-                let descU = regEx.unidad_desc || regEx.unidad || '';
-                if (descU.includes('[BUS')) { bgUni = '#fef3c7'; colUni = '#92400e'; }
-                else if (descU.includes('[VAN') || descU.includes('[CAMIONETA')) { bgUni = '#e0f2fe'; colUni = '#0369a1'; }
-                
-                // Si la unidad guardada estaba en taller, la marcamos en rojo
-                if (descU.includes('[TALLER]')) { styleExtra = 'border: 2px solid #ef4444;'; }
+                let styleExtraUni = regEx.unidad_desc && regEx.unidad_desc.includes('[TALLER]') ? 'border: 2px solid #ef4444; background: #fef2f2; color: #b91c1c;' : '';
+                let inputUni = `<input list="dl_uni_${key}" class="modern-input select-prog" placeholder="Tipear o seleccionar..." value="${regEx.unidad_desc || ''}" onchange="updMemUni('${key}', this)" style="${styleExtraUni}"> ${uniOptsFiltradas}`;
 
-                let inputUni = `<input list="dl_uni_${key}" class="select-prog" placeholder="- Escriba Vehículo -" value="${descU}" onchange="updMemUni('${key}', this)" style="width:100%; box-sizing:border-box; cursor:text; background-color:${bgUni}; color:${colUni}; font-weight:bold; border-radius:4px; padding-left:5px; ${styleExtra}"> ${uniOptsFiltradas}`;
-
-                // --- 2. CONDUCTORES ---
+                // CONDUCTORES CON DATALIST
                 let condOptsFiltradas = `<datalist id="dl_cond_${key}">`; 
                 condOptsBase.forEach(c => { 
                     let tipoC = determinarTipoConductor(getProp(c, "CONTRATO") || c.CONTRATO);
                     let matchCond = false; 
                     if (reqTipo.includes('BUS')) matchCond = (tipoC === 'BUS' || tipoC === 'MINIBUS');
                     else matchCond = true; 
-                    
                     let cDni = getProp(c, "DNI") || c.DNI || ''; 
                     let cNom = getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || c.NOMBRE || ''; 
-                    
-                    if (matchCond && cNom) { condOptsFiltradas += `<option value="${cNom} [${cDni}]">`; }
+                    if (matchCond && cNom) condOptsFiltradas += `<option value="${cNom} [${cDni}]">`; 
                 });
                 condOptsFiltradas += `</datalist>`;
-                let inputCond = `<input list="dl_cond_${key}" class="select-prog" placeholder="- Escriba Conductor -" value="${regEx.conductor_desc || ''}" onchange="updMemCond('${key}', this)" style="width:100%; box-sizing:border-box; cursor:text; border-radius:4px; padding-left:5px;"> ${condOptsFiltradas}`;
+                
+                // Color heredado si es que ya tiene un badge de la base (Turno partido, descansero)
+                let extraClassCond = '';
+                let extraStyleCond = '';
+                if(regEx.conductor_desc) {
+                    if(regEx.conductor_desc.includes('[🟣')) extraStyleCond = 'background-color:#fdf2f8; color:#be185d; border-color:#fbcfe8;';
+                    else if(regEx.conductor_desc.includes('[🟡')) extraStyleCond = 'background-color:#fefce8; color:#a16207; border-color:#fef08a;';
+                    else if(regEx.conductor_desc.includes('[🟢')) extraStyleCond = 'background-color:#f0fdf4; color:#15803d; border-color:#bbf7d0;';
+                }
+
+                let inputCond = `<input list="dl_cond_${key}" class="modern-input select-prog ${extraClassCond}" style="${extraStyleCond}" placeholder="Buscar nombre o DNI..." value="${regEx.conductor_desc || ''}" onchange="updMemCond('${key}', this)"> ${condOptsFiltradas}`;
                 
                 let repartoOpts = `<option value="">- N/A -</option>`; 
-                zonasBD.forEach(z => { repartoOpts += `<option value="${z.zona}" ${regEx.reparto === z.zona ? 'selected' : ''}>Rep. ${z.zona}</option>`; }); 
+                zonasBD.forEach(z => { repartoOpts += `<option value="${z.zona}" ${regEx.reparto === z.zona ? 'selected' : ''}>Reparto ${z.zona}</option>`; }); 
                 let carrilSelect = htmlOpcionesCarril.replace(`value="${regEx.carril || ''}"`, `value="${regEx.carril || ''}" selected`); 
                 let adicSelect = htmlOpcionesAdicionales.replace(`value="${regEx.adicional || ''}"`, `value="${regEx.adicional || ''}" selected`);
                 
-                htmlTabla += `<tr><td style="font-weight: bold;">${nombreDisplay} ${txtUnidadMult}</td><td><span class="badge-status status-activo">${t}</span> <br> <span style="font-weight:600; font-size:0.75rem;">${horaDinamica}</span></td><td><span style="font-size: 0.7rem; font-weight: 800; padding: 2px 4px; border-radius: 4px; background: rgba(0,0,0,0.05); color: var(--accent);">${txtTipoReq}</span></td><td>${inputUni}</td><td>${inputCond}</td><td><select class="select-prog" onchange="updMem('${key}', 'reparto', this.value)">${repartoOpts}</select></td><td><select class="select-prog" onchange="updMem('${key}', 'carril', this.value)">${carrilSelect}</select></td><td><select class="select-prog" onchange="updMem('${key}', 'adicional', this.value)">${adicSelect}</select></td></tr>`;
+                htmlTabla += `
+                <tr>
+                    <td style="font-weight: 800; color:#1e293b; font-size: 0.9rem;">${nombreDisplay} ${txtUnidadMult}</td>
+                    <td><span class="badge-status status-activo" style="margin-bottom:4px; display:inline-block;">${t}</span> <br> <span style="font-weight:700; font-size:0.8rem; color:#64748b;">${horaDinamica}</span></td>
+                    <td>${badgeTipoReq}</td>
+                    <td>${inputUni}</td>
+                    <td>${inputCond}</td>
+                    <td class="col-extra"><select class="modern-input select-prog" onchange="updMem('${key}', 'reparto', this.value)">${repartoOpts}</select></td>
+                    <td class="col-extra"><select class="modern-input select-prog" onchange="updMem('${key}', 'carril', this.value)">${carrilSelect}</select></td>
+                    <td class="col-extra"><select class="modern-input select-prog" onchange="updMem('${key}', 'adicional', this.value)">${adicSelect}</select></td>
+                </tr>`;
             }
         });
     });
     
     let tbody = document.getElementById('tbodyProgramacion'); 
-    if(tbody) tbody.innerHTML = htmlTabla || `<tr><td colspan="8" class="empty-state">No hay rutas configuradas.</td></tr>`;
+    if(tbody) tbody.innerHTML = htmlTabla || `<tr><td colspan="8" style="text-align:center; padding: 40px; color:#94a3b8;"><i class="fa-solid fa-folder-open fa-2x"></i><br><br>No hay zonas configuradas en esta plantilla.</td></tr>`;
+    
     if(document.getElementById('statAsignaciones')) document.getElementById('statAsignaciones').innerText = `${asignados} / ${totalFilas} Asignados`;
+    actualizarMetricasProgramacion();
+}
+
+// ------------------------------------------------------------------------------------
+// EL CEREBRO DE LOS CONDUCTORES: ANTI-CLONACIÓN Y ETIQUETAS INTELIGENTES (SMART BADGES)
+// ------------------------------------------------------------------------------------
+function updMemCond(key, inputElem) {
+    let valorStr = inputElem.value.trim().toUpperCase();
+    let fechaSel = document.getElementById('fechaProgInput').value; 
+    if (!programacionDiaria[fechaSel]) programacionDiaria[fechaSel] = []; 
+    let reg = programacionDiaria[fechaSel].find(r => r.key === key); 
+    if (!reg) { reg = { key: key }; programacionDiaria[fechaSel].push(reg); }
+
+    // Limpiar estilos de advertencias previas
+    inputElem.classList.remove('error-shake');
+    inputElem.style.backgroundColor = '#f1f5f9';
+    inputElem.style.color = 'inherit';
+    inputElem.style.borderColor = 'transparent';
+
+    if (!valorStr) {
+        reg.conductor_desc = ''; reg.conductor = ''; return;
+    }
+
+    let datalist = document.getElementById(`dl_cond_${key}`);
+    let opcionesValidas = Array.from(datalist.options).map(opt => opt.value.toUpperCase());
+    let matchExacto = opcionesValidas.find(opt => opt === valorStr);
+    let matchParcial = opcionesValidas.find(opt => opt.startsWith(valorStr + " ["));
+    let opcionFinal = matchExacto || matchParcial;
+
+    if (opcionFinal) {
+        // 🔥 MAGIA 1: SEMÁFORO ANTI-CLONACIÓN (Busca si ya está programado en ese mismo turno hoy)
+        let turnoActual = key.split('_')[1]; // Extrae "A1", "A2", etc.
+        let nombrePuro = opcionFinal.split(' [')[0]; // Ej: "ABARCA SALAS"
+        
+        let cruceDetectado = programacionDiaria[fechaSel].find(r => 
+            r.conductor_desc && 
+            r.conductor_desc.includes(nombrePuro) && 
+            r.key !== key && 
+            r.key.includes(`_${turnoActual}_`) 
+        );
+
+        if (cruceDetectado) {
+            let zonaCruce = cruceDetectado.key.split('_')[0];
+            inputElem.classList.add('error-shake'); // Hace vibrar la celda
+            mostrarToast(`⚠️ ¡CRUCE DE TURNO! ${nombrePuro} ya está asignado en la ZONA ${zonaCruce} a esta hora.`, "error", 5000);
+            inputElem.value = ''; // Borra lo escrito para evitar el error
+            reg.conductor_desc = ''; reg.conductor = '';
+            return; // Detiene el código aquí
+        }
+
+        // 🔥 MAGIA 2: SMART BADGES AUTOMÁTICOS (Pinta colores como en tu Excel)
+        let condData = conductores.find(c => (getProp(c, "CONDUCTOR") || c.NOMBRE || '').toUpperCase() === nombrePuro);
+        let txtFinal = opcionFinal;
+        
+        if (condData) {
+            let servicio = (getProp(condData, "SERVICIO") || condData.SERVICIO || '').toUpperCase();
+            let contrato = (getProp(condData, "CONTRATO") || condData.CONTRATO || '').toUpperCase();
+            
+            if (contrato.includes('PARTIDO') || servicio.includes('ADMIN')) {
+                // ROSADO: Turno Partido / Administrativo
+                inputElem.style.backgroundColor = '#fdf2f8'; inputElem.style.color = '#be185d'; inputElem.style.borderColor = '#fbcfe8';
+                txtFinal = `${nombrePuro} [🟣 Turno Partido]`;
+            } else if (servicio.includes('RETEN') || servicio.includes('DESCANS')) {
+                // AMARILLO: Descansero o Retén
+                inputElem.style.backgroundColor = '#fefce8'; inputElem.style.color = '#a16207'; inputElem.style.borderColor = '#fef08a';
+                txtFinal = `${nombrePuro} [🟡 Descansero]`;
+            } else {
+                // VERDE: Conductor Oficial / Regular (Asumimos OK)
+                inputElem.style.backgroundColor = '#f0fdf4'; inputElem.style.color = '#15803d'; inputElem.style.borderColor = '#bbf7d0';
+                // Si quieres que el verde sea "Día 1", aquí iría lógica leyendo días anteriores. Por ahora lo dejamos como Regular.
+            }
+        }
+
+        inputElem.value = txtFinal; 
+        reg.conductor_desc = txtFinal; 
+        reg.conductor = nombrePuro;
+        
+    } else {
+        inputElem.classList.add('error-shake');
+        inputElem.value = ''; reg.conductor_desc = ''; reg.conductor = '';
+        mostrarToast("⚠️ Conductor no válido o no pertenece a la flota.", "error");
+    }
+    
+    // Al final, refrescamos el contador de Auditoría
+    actualizarMetricasProgramacion();
+}
+
+
+// ====================================================================================
+// FUNCIONES EXTRA: MODO ENFOQUE Y AUDITORÍA EN VIVO
+// (Agrégalas al final de tu app.js)
+// ====================================================================================
+
+function toggleModoEnfoque() {
+    let tablaWrapper = document.getElementById('vistaProgramacion');
+    let chk = document.getElementById('chkModoEnfoque');
+    let lbl = document.getElementById('lblModoEnfoque');
+    if (chk.checked) {
+        tablaWrapper.classList.add('vista-enfocada');
+        lbl.innerText = "Expandir";
+        lbl.style.color = "#8b5cf6";
+    } else {
+        tablaWrapper.classList.remove('vista-enfocada');
+        lbl.innerText = "Modo Enfoque";
+        lbl.style.color = "var(--text-muted)";
+    }
+}
+
+function actualizarMetricasProgramacion() {
+    // Cuenta cuántos conductores hemos asignado HOY
+    let fechaSel = document.getElementById('fechaProgInput').value; 
+    let regs = programacionDiaria[fechaSel] || [];
+    let asignadosHoy = regs.filter(r => r.conductor).length;
+    
+    // Cuenta total de fuerza laboral que debería trabajar
+    let activosTotales = conductores.filter(c => { 
+        let e = (getProp(c, "ESTADO") || c.estadoAbrev || '').toUpperCase(); 
+        // Excluimos a los que de por sí ya están de vacaciones, descansos médicos, cesados
+        return !['CESADO', 'BAJA', 'INACTIVO', 'VACACIONES', 'DESC. MED.', 'SUSPENDIDO'].includes(e); 
+    });
+
+    let faltantes = activosTotales.length - asignadosHoy;
+    if(faltantes < 0) faltantes = 0;
+
+    let spanSin = document.getElementById('countSinAsignar');
+    if(spanSin) {
+        spanSin.innerText = faltantes;
+        spanSin.style.color = faltantes > 0 ? "#ef4444" : "inherit";
+    }
+    
+    let lblAudActivos = document.getElementById('audTotalActivos');
+    let lblAudAsignados = document.getElementById('audAsignados');
+    if(lblAudActivos) lblAudActivos.innerText = activosTotales.length;
+    if(lblAudAsignados) lblAudAsignados.innerText = asignadosHoy;
+}
+
+function abrirAuditoria() {
+    actualizarMetricasProgramacion(); // Recalcula
+    
+    let fechaSel = document.getElementById('fechaProgInput').value; 
+    let regs = programacionDiaria[fechaSel] || [];
+    let conductoresAsignadosArray = regs.map(r => r.conductor);
+
+    let activosTotales = conductores.filter(c => { 
+        let e = (getProp(c, "ESTADO") || c.estadoAbrev || '').toUpperCase(); 
+        return !['CESADO', 'BAJA', 'INACTIVO', 'VACACIONES', 'DESC. MED.', 'SUSPENDIDO'].includes(e); 
+    });
+
+    // Filtra quiénes de la lista oficial AUN NO están en la tabla
+    let noAsignados = activosTotales.filter(c => {
+        let nombre = (getProp(c, "CONDUCTOR") || c.NOMBRE || '');
+        return !conductoresAsignadosArray.includes(nombre);
+    });
+
+    let listaDiv = document.getElementById('listaLibres');
+    if (noAsignados.length === 0) {
+        listaDiv.innerHTML = '<span style="color:#15803d; font-weight:bold;"><i class="fa-solid fa-check-double"></i> ¡Excelente! Todos han sido programados.</span>';
+    } else {
+        let htmlLista = `<ul style="padding-left: 20px; margin:0;">`;
+        noAsignados.forEach(c => {
+            let nombre = getProp(c, "CONDUCTOR") || c.NOMBRE;
+            htmlLista += `<li style="margin-bottom: 5px;">${nombre}</li>`;
+        });
+        htmlLista += `</ul>`;
+        listaDiv.innerHTML = htmlLista;
+    }
+
+    document.getElementById('auditPanel').classList.add('open');
+    document.getElementById('auditOverlay').classList.add('open');
+}
+
+function cerrarAuditoria() {
+    document.getElementById('auditPanel').classList.remove('open');
+    document.getElementById('auditOverlay').classList.remove('open');
 }
 
 // --- ACTUALIZADO: PERMITE ASIGNAR UNIDAD EN TALLER CON ADVERTENCIA ---
@@ -811,41 +993,6 @@ function updMemUni(key, inputElem) {
         inputElem.style.backgroundColor = '#ffffff'; inputElem.style.color = 'inherit';
         inputElem.style.border = '1px solid #d1d5db';
         mostrarToast("⚠️ Vehículo no válido o no autorizado para esta ruta.", "error");
-    }
-}
-
-// --- ACTUALIZADO: CONDUCTORES (SNAP AUTOCOMPLETADO) ---
-function updMemCond(key, inputElem) { 
-    let valorStr = inputElem.value.trim().toUpperCase();
-    let fechaSel = document.getElementById('fechaProgInput').value; 
-    if (!programacionDiaria[fechaSel]) programacionDiaria[fechaSel] = []; 
-    let reg = programacionDiaria[fechaSel].find(r => r.key === key); 
-    if (!reg) { reg = { key: key }; programacionDiaria[fechaSel].push(reg); } 
-    
-    if (!valorStr) {
-        reg.conductor_desc = ''; reg.conductor = '';
-        return;
-    }
-
-    let datalist = document.getElementById(`dl_cond_${key}`);
-    let opcionesValidas = Array.from(datalist.options).map(opt => opt.value.toUpperCase());
-
-    let matchExacto = opcionesValidas.find(opt => opt === valorStr);
-    let matchDni = opcionesValidas.find(opt => opt.includes(`[${valorStr}]`));
-    let opcionFinal = matchExacto || matchDni;
-
-    if (!opcionFinal && valorStr.length >= 3) {
-        opcionFinal = opcionesValidas.find(opt => opt.includes(valorStr));
-    }
-
-    if (opcionFinal) {
-        inputElem.value = opcionFinal;
-        reg.conductor_desc = opcionFinal; 
-        let match = opcionFinal.match(/\[(.*?)\]/); 
-        reg.conductor = match ? match[1].trim() : opcionFinal; 
-    } else {
-        inputElem.value = ''; reg.conductor_desc = ''; reg.conductor = '';
-        mostrarToast("⚠️ Conductor no válido o no habilitado para esta ruta.", "error");
     }
 }
 

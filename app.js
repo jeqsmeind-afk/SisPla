@@ -668,6 +668,44 @@ function calcularSalidaBase(horaIngreso) {
     return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
 }
 
+// --- FUNCIONES DE TIEMPO (Colócalas arriba de renderizarProgramacion) ---
+let horariosBaseConfig = JSON.parse(localStorage.getItem('horariosBaseConfig')) || {};
+
+function sumarMinutos(horaStr, minutos) {
+    if (!horaStr || !horaStr.includes(':')) return '--:--';
+    let [h, m] = horaStr.split(':').map(Number);
+    if(isNaN(h) || isNaN(m)) return '--:--';
+    let totalMin = h * 60 + m + minutos;
+    let newH = Math.floor(totalMin / 60) % 24;
+    let newM = totalMin % 60;
+    return String(newH).padStart(2, '0') + ':' + String(newM).padStart(2, '0');
+}
+
+function guardarHorariosBaseGlobal() {
+    let grupos = ['LV', 'SD', 'FER'];
+    let turnos = ['A1', 'A2', 'B1', 'B2'];
+    grupos.forEach(g => {
+        if(!horariosBaseConfig[g]) horariosBaseConfig[g] = {};
+        turnos.forEach(t => {
+            let val = document.getElementById(`hb_${g}_${t}`)?.value;
+            if(val) horariosBaseConfig[g][t] = val;
+        });
+    });
+    localStorage.setItem('horariosBaseConfig', JSON.stringify(horariosBaseConfig));
+    cerrarModal('modalHorariosBase');
+    renderizarProgramacion();
+    mostrarToast("✅ Horarios de ingreso actualizados", "success");
+}
+
+function obtenerRutaTextoMaster(zData, turno, tipo) {
+    // Busca en la base de datos de Zonas los textos ingresados en el modal "Configuración 360"
+    let idPosible = 'ruta' + turno + tipo; // Ej. rutaA1Ofic
+    let idAlterno = 'zRuta' + turno + tipo; // Ej. zRutaA1Ofic
+    let val = zData[idPosible] || zData[idAlterno] || '';
+    return val ? val.trim() : `(Sin configurar en maestro)`;
+}
+
+// --- ACTUALIZACIÓN PRINCIPAL ---
 function renderizarProgramacion() {
     let fechaSel = document.getElementById('fechaProgInput').value, 
         tipoPlantilla = document.getElementById('tipoPlantillaProg').value, 
@@ -687,9 +725,8 @@ function renderizarProgramacion() {
     let htmlOpcionesCarril = ''; 
     OPCIONES_CARRILES.forEach(c => htmlOpcionesCarril += `<option value="${c}">${c || '-- Sin Carril --'}</option>`);
     
-    // Configuramos el ancho del CSS para la tabla expandida
     let cssTabla = document.getElementById('tablaProg2026');
-    if(cssTabla) cssTabla.style.minWidth = '1400px'; // Más ancha para acomodar todo
+    if(cssTabla) cssTabla.style.minWidth = '1450px'; 
     
     turnosLista.forEach(t => {
         let listaZonasTurno = plantillasBD[tipoPlantilla][t] || [];
@@ -697,15 +734,22 @@ function renderizarProgramacion() {
             let zData = zonasBD.find(z => z.zona === itemPlantilla.zona); 
             if (!zData) return; 
             
-            let horaDinamica = '--:--';
-            if (t === 'A1') horaDinamica = zData.a1; 
-            else if (t === 'A2') horaDinamica = (tipoPlantilla === 'LV') ? zData.a2_lv : zData.a2_sd; 
-            else if (t === 'A2P') horaDinamica = (tipoPlantilla === 'LV') ? zData.a2p_lv : zData.a2p_sd; 
-            else if (t === 'B1') horaDinamica = zData.b1; 
-            else if (t === 'B2') horaDinamica = zData.b2; 
-            else if (t === 'B2P') horaDinamica = zData.b2p;
+            // 1. Hora Ingreso Base (configurable)
+            let turnoBase = t.replace('P', ''); // A2P hereda de A2
+            let horaIngresoConfigurada = (horariosBaseConfig[tipoPlantilla] && horariosBaseConfig[tipoPlantilla][turnoBase]) ? horariosBaseConfig[tipoPlantilla][turnoBase] : '--:--';
             
-            let salidaBaseCalculada = calcularSalidaBase(horaDinamica);
+            // 2. Salida Base (+20 min)
+            let salidaBaseCalculada = horaIngresoConfigurada !== '--:--' ? sumarMinutos(horaIngresoConfigurada, 20) : '--:--';
+
+            // 3. Inicio Recojo (del maestro de Zonas)
+            let horaRecojoZonas = '--:--';
+            if (t === 'A1') horaRecojoZonas = zData.a1; 
+            else if (t === 'A2') horaRecojoZonas = (tipoPlantilla === 'LV') ? zData.a2_lv : zData.a2_sd; 
+            else if (t === 'A2P') horaRecojoZonas = (tipoPlantilla === 'LV') ? zData.a2p_lv : zData.a2p_sd; 
+            else if (t === 'B1') horaRecojoZonas = zData.b1; 
+            else if (t === 'B2') horaRecojoZonas = zData.b2; 
+            else if (t === 'B2P') horaRecojoZonas = zData.b2p;
+            
             let cantidadRequerida = parseInt(itemPlantilla.cant) || 1;
             
             for (let i = 1; i <= cantidadRequerida; i++) {
@@ -720,7 +764,7 @@ function renderizarProgramacion() {
                 let badgeTipoReq = `<span style="font-size:0.7rem; font-weight:800; padding:4px 8px; border-radius:12px; ${colorBadgeTipo}">${reqTipo === 'CUALQUIERA' ? 'CUALQUIERA' : reqTipo}</span>`; 
                 let nombreDisplay = /^\d/.test(itemPlantilla.zona) ? `ZONA ${itemPlantilla.zona}` : itemPlantilla.zona;
                 
-                // UNIDADES (Con Iconos y mejor visualización)
+                // UNIDADES
                 let uniOptsFiltradas = `<datalist id="dl_uni_${key}">`; 
                 unidadesBase.forEach(u => { 
                     let match = false; 
@@ -728,24 +772,19 @@ function renderizarProgramacion() {
                     let estU = (u.estado || 'OPERATIVO').toUpperCase();
                     let etiquetaTaller = estU === 'TALLER' ? ' 🔧 [TALLER]' : ' ✔️';
                     let icono = tVehiculo.includes('BUS') ? '🚌' : '🚐';
-                    
                     if (reqTipo === 'CUALQUIERA' || !reqTipo) match = true; 
                     else if (reqTipo.includes('BUS') && tVehiculo.includes('BUS')) match = true; 
                     else if (reqTipo.includes('VAN') && (tVehiculo.includes('VAN') || tVehiculo.includes('CAMIONETA'))) match = true; 
-                    
                     let codU = u.codigo || u.cod || u.CODIGO;
                     if (match && codU) uniOptsFiltradas += `<option value="${icono} ${codU} [${tVehiculo}]${etiquetaTaller}">`; 
                 });
                 uniOptsFiltradas += `</datalist>`;
                 let styleExtraUni = regEx.unidad_desc && regEx.unidad_desc.includes('[TALLER]') ? 'border: 2px solid #ef4444; background: #fef2f2; color: #b91c1c;' : '';
-                
-                // Info extra Unidad (Visible solo en expandido)
                 let textInfoUnidad = regEx.unidad_desc && regEx.unidad_desc.includes('TALLER') ? '<span style="color:#ef4444;"><i class="fa-solid fa-wrench"></i> En Taller</span>' : '<span style="color:#10b981;"><i class="fa-solid fa-check-circle"></i> Operativa</span>';
                 let infoUnidadHtml = `<div class="col-extra" style="font-size: 0.7rem; margin-top: 4px;">${textInfoUnidad}</div>`;
-
                 let inputUni = `<input list="dl_uni_${key}" class="modern-input select-prog" placeholder="Tipear o seleccionar..." value="${regEx.unidad_desc || ''}" onchange="updMemUni('${key}', this)" style="${styleExtraUni}"> ${uniOptsFiltradas} ${infoUnidadHtml}`;
 
-                // CONDUCTORES (Con Iconos de Estado)
+                // CONDUCTORES
                 let condOptsFiltradas = `<datalist id="dl_cond_${key}">`; 
                 condOptsBase.forEach(c => { 
                     let tipoC = determinarTipoConductor(getProp(c, "CONTRATO") || c.CONTRATO);
@@ -753,54 +792,53 @@ function renderizarProgramacion() {
                     let matchCond = false; 
                     if (reqTipo.includes('BUS')) matchCond = (tipoC === 'BUS' || tipoC === 'MINIBUS');
                     else matchCond = true; 
-                    
                     let iconoCond = '👤';
                     if(srv.includes('RETEN')) iconoCond = '🟡';
                     if(srv.includes('ADMIN') || tipoC.includes('PARTIDO')) iconoCond = '🟣';
-
                     let cDni = getProp(c, "DNI") || c.DNI || ''; 
                     let cNom = getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || c.NOMBRE || ''; 
                     if (matchCond && cNom) condOptsFiltradas += `<option value="${iconoCond} ${cNom} [${cDni}]">`; 
                 });
                 condOptsFiltradas += `</datalist>`;
                 
-                let extraStyleCond = '';
-                let textoExperiencia = 'Sin perfil asignado';
+                let extraStyleCond = ''; let textoExperiencia = 'Sin perfil asignado';
                 if(regEx.conductor_desc) {
-                    if(regEx.conductor_desc.includes('🟣')) { extraStyleCond = 'background-color:#fdf2f8; color:#be185d; border-color:#fbcfe8;'; textoExperiencia = 'Perfil: Turno Partido/Admin'; }
-                    else if(regEx.conductor_desc.includes('🟡')) { extraStyleCond = 'background-color:#fefce8; color:#a16207; border-color:#fef08a;'; textoExperiencia = 'Perfil: Descansero / Retén'; }
-                    else { extraStyleCond = 'background-color:#f0fdf4; color:#15803d; border-color:#bbf7d0;'; textoExperiencia = 'Perfil: Conductor Regular'; }
+                    if(regEx.conductor_desc.includes('🟣')) { extraStyleCond = 'background-color:#fdf2f8; color:#be185d; border-color:#fbcfe8;'; textoExperiencia = 'Perfil: Turno Partido'; }
+                    else if(regEx.conductor_desc.includes('🟡')) { extraStyleCond = 'background-color:#fefce8; color:#a16207; border-color:#fef08a;'; textoExperiencia = 'Perfil: Descansero'; }
+                    else { extraStyleCond = 'background-color:#f0fdf4; color:#15803d; border-color:#bbf7d0;'; textoExperiencia = 'Perfil: Regular'; }
                 }
-
-                // Info extra Conductor (Visible solo en expandido)
                 let infoCondHtml = `<div class="col-extra" style="font-size: 0.7rem; margin-top: 4px; color:#64748b;"><i class="fa-solid fa-id-badge"></i> ${textoExperiencia}</div>`;
                 let inputCond = `<input list="dl_cond_${key}" class="modern-input select-prog" style="${extraStyleCond}" placeholder="Buscar nombre o DNI..." value="${regEx.conductor_desc || ''}" onchange="updMemCond('${key}', this)"> ${condOptsFiltradas} ${infoCondHtml}`;
                 
-                // Nuevos Selectores Expandidos
+                // RUTAS REALES (Leídas de la Base Zonas)
+                let rOfic = obtenerRutaTextoMaster(zData, t, 'Ofic');
+                let rDesv1 = obtenerRutaTextoMaster(zData, t, 'Desv1');
+                let rDesv2 = obtenerRutaTextoMaster(zData, t, 'Desv2');
+                
+                let truncar = (str) => str.length > 35 ? str.substring(0, 35) + '...' : str;
+
+                let rutaSelectOpts = `
+                    <option value="OFICIAL" ${regEx.rutaAsignada === 'OFICIAL' ? 'selected' : ''} title="${rOfic}">Oficial: ${truncar(rOfic)}</option>
+                    <option value="DESVIO1" ${regEx.rutaAsignada === 'DESVIO1' ? 'selected' : ''} title="${rDesv1}">Desvío 1: ${truncar(rDesv1)}</option>
+                    <option value="DESVIO2" ${regEx.rutaAsignada === 'DESVIO2' ? 'selected' : ''} title="${rDesv2}">Desvío 2: ${truncar(rDesv2)}</option>
+                `;
+
                 let repartoOpts = `<option value="">- N/A -</option>`; 
                 zonasBD.forEach(z => { repartoOpts += `<option value="${z.zona}" ${regEx.reparto === z.zona ? 'selected' : ''}>Reparto ${z.zona}</option>`; }); 
-                
                 let carrilSelect = htmlOpcionesCarril.replace(`value="${regEx.carril || ''}"`, `value="${regEx.carril || ''}" selected`); 
                 let adicSelect = htmlOpcionesAdicionales.replace(`value="${regEx.adicional || ''}"`, `value="${regEx.adicional || ''}" selected`);
-                
-                // Selector de Ruta Oficial o Desvíos
-                let rutaSelectOpts = `
-                    <option value="OFICIAL" ${regEx.rutaAsignada === 'OFICIAL' ? 'selected' : ''}>Ruta Oficial</option>
-                    <option value="DESVIO1" ${regEx.rutaAsignada === 'DESVIO1' ? 'selected' : ''}>Desvío 1</option>
-                    <option value="DESVIO2" ${regEx.rutaAsignada === 'DESVIO2' ? 'selected' : ''}>Desvío 2</option>
-                `;
 
                 htmlTabla += `
                 <tr>
                     <td style="font-weight: 800; color:#1e293b; font-size: 0.9rem;">${nombreDisplay} ${txtUnidadMult}</td>
                     
-                    <td style="min-width: 90px;">
-                        <span class="badge-status status-activo" style="margin-bottom:4px; display:inline-block;">${t}</span> <br> 
-                        <span style="font-weight:700; font-size:0.8rem; color:#0f172a;" title="Ingreso">ING: ${horaDinamica}</span>
-                    </td>
-                    
-                    <td class="col-extra" style="min-width: 80px;">
-                        <span style="font-weight:700; font-size:0.8rem; color:#ea580c; background:#ffedd5; padding: 2px 6px; border-radius:4px;" title="Salida Base calculada (-20min)">SAL: ${salidaBaseCalculada}</span>
+                    <td style="min-width: 120px; font-size: 0.75rem; color:#475569;">
+                        <span class="badge-status status-activo" style="margin-bottom:4px; display:inline-block;">${t}</span><br>
+                        <strong>ING BASE:</strong> <span style="color:#2563eb;">${horaIngresoConfigurada}</span><br>
+                        <span class="col-extra">
+                            <strong>SAL BASE:</strong> <span style="color:#ea580c;">${salidaBaseCalculada}</span><br>
+                            <strong>RECOJO:</strong> <span style="color:#16a34a;">${horaRecojoZonas}</span>
+                        </span>
                     </td>
 
                     <td>${badgeTipoReq}</td>
@@ -808,7 +846,7 @@ function renderizarProgramacion() {
                     <td>${inputCond}</td>
                     
                     <td class="col-extra">
-                        <select class="modern-input select-prog" style="font-weight:bold; color:#4338ca; background:#e0e7ff; border-color:#c7d2fe;" onchange="updMem('${key}', 'rutaAsignada', this.value)">
+                        <select class="modern-input select-prog" style="font-size:0.75rem; color:#4338ca; background:#e0e7ff; border-color:#c7d2fe;" onchange="updMem('${key}', 'rutaAsignada', this.value)">
                             ${rutaSelectOpts}
                         </select>
                     </td>
@@ -827,7 +865,6 @@ function renderizarProgramacion() {
     if(document.getElementById('statAsignaciones')) document.getElementById('statAsignaciones').innerText = `${asignados} / ${totalFilas} Asignados`;
     actualizarMetricasProgramacion();
 }
-
 // ------------------------------------------------------------------------------------
 // EL CEREBRO DE LOS CONDUCTORES: ANTI-CLONACIÓN Y ETIQUETAS INTELIGENTES (SMART BADGES)
 // ------------------------------------------------------------------------------------

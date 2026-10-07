@@ -302,40 +302,145 @@
         </div>
 
         <!-- ============================================== -->
-        <!-- VISTA PROGRAMACION DIARIA                      -->
+        <!-- VISTA PROGRAMACION DIARIA (EDICIÓN 2026)       -->
         <!-- ============================================== -->
         <div id="vistaProgramacion" class="view-section">
-            <div class="page-header">
-                <h2>Programación Diaria</h2>
-                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                    <input type="date" id="fechaProgInput" style="padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); font-weight: bold;" onchange="procesarCambioFechaProg()">
-                    <select id="tipoPlantillaProg" onchange="renderizarProgramacion()" class="select-prog" style="width:auto; padding:8px;">
-                        <option value="LV">Plantilla L-V</option>
-                        <option value="SD">Plantilla S-D</option>
-                        <option value="FER">Plantilla FER</option>
-                    </select>
-                    <select id="filtroTurnoProg" onchange="renderizarProgramacion()" class="select-prog" style="width:auto; padding:8px;">
-                        <option value="TODOS">Todos Turnos</option>
-                        <option value="A1">A1</option><option value="A2">A2</option><option value="A2P">A2P</option>
-                        <option value="B1">B1</option><option value="B2">B2</option><option value="B2P">B2P</option>
-                    </select>
-                    <button class="btn btn-outline" style="border-color: #8e44ad; color: #8e44ad;" onclick="abrirModal('modalCapacitacion')"><i class="fa-solid fa-graduation-cap"></i> Buzón Capacitación</button>
-                    <button class="btn btn-success" onclick="guardarProgramacionDiaria()"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+            <style>
+                /* Estilos 2026 para Programación */
+                .prog-header-actions { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; background: #fff; padding: 12px 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+                
+                /* Switch Animado para Modo Enfoque */
+                .switch-container { display: flex; align-items: center; gap: 8px; font-weight: bold; color: var(--text-muted); font-size: 0.9rem; }
+                .switch { position: relative; display: inline-block; width: 42px; height: 24px; }
+                .switch input { opacity: 0; width: 0; height: 0; }
+                .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
+                .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+                input:checked + .slider { background-color: #8b5cf6; }
+                input:checked + .slider:before { transform: translateX(18px); }
+
+                /* Inputs Modernos */
+                .modern-input { width: 100%; box-sizing: border-box; border: 1px solid transparent; background-color: #f1f5f9; color: var(--text-main); font-weight: 600; border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; transition: all 0.3s ease; }
+                .modern-input:focus { border: 2px solid #3b82f6; background-color: #fff; outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+                .modern-input::placeholder { color: #94a3b8; font-weight: normal; }
+
+                /* Animación de Error (Temblor) */
+                @keyframes shake {
+                    0% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    50% { transform: translateX(5px); }
+                    75% { transform: translateX(-5px); }
+                    100% { transform: translateX(0); }
+                }
+                .error-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; border: 2px solid #ef4444 !important; background-color: #fef2f2 !important; color: #b91c1c !important; }
+
+                /* Ocultar en Modo Enfoque */
+                .vista-enfocada .col-extra { display: none !important; transition: all 0.3s; }
+
+                /* Tabla de Programación Limpia */
+                #tablaProg2026 { width: 100%; border-collapse: separate; border-spacing: 0 8px; min-width: 1100px; }
+                #tablaProg2026 th { background: transparent; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; padding: 0 10px 10px 10px; border: none; }
+                #tablaProg2026 td { background: #fff; padding: 12px 10px; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+                #tablaProg2026 td:first-child { border-left: 1px solid #f1f5f9; border-top-left-radius: 8px; border-bottom-left-radius: 8px; box-shadow: -3px 0 0px var(--accent) inset; }
+                #tablaProg2026 td:last-child { border-right: 1px solid #f1f5f9; border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
+                #tablaProg2026 tr:hover td { background: #f8fafc; }
+
+                /* Offcanvas Auditoría */
+                .audit-panel { position: fixed; top: 0; right: -400px; width: 360px; height: 100vh; background: #fff; box-shadow: -5px 0 25px rgba(0,0,0,0.15); transition: right 0.3s ease; z-index: 9999; padding: 25px; display: flex; flex-direction: column; overflow-y: auto; }
+                .audit-panel.open { right: 0; }
+                .audit-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 9998; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+                .audit-overlay.open { opacity: 1; pointer-events: all; }
+            </style>
+
+            <div class="page-header" style="margin-bottom: 15px; border-bottom: none;">
+                <h2>Panel de Despacho Operativo</h2>
+            </div>
+
+            <!-- Controles 2026 -->
+            <div class="prog-header-actions" style="margin-bottom: 20px;">
+                <input type="date" id="fechaProgInput" class="modern-input" style="width: auto; background: #fff; border: 1px solid #cbd5e1;" onchange="procesarCambioFechaProg()">
+                
+                <select id="tipoPlantillaProg" onchange="renderizarProgramacion()" class="modern-input" style="width:auto; cursor: pointer;">
+                    <option value="LV">Plantilla Lunes-Viernes</option>
+                    <option value="SD">Plantilla Sábado-Domingo</option>
+                    <option value="FER">Plantilla Feriados</option>
+                </select>
+                
+                <select id="filtroTurnoProg" onchange="renderizarProgramacion()" class="modern-input" style="width:auto; cursor: pointer;">
+                    <option value="TODOS">Todos los Turnos</option>
+                    <option value="A1">Turno A1</option><option value="A2">Turno A2</option><option value="A2P">Turno A2P</option>
+                    <option value="B1">Turno B1</option><option value="B2">Turno B2</option><option value="B2P">Turno B2P</option>
+                </select>
+
+                <div style="flex-grow: 1;"></div> <!-- Empuja lo siguiente a la derecha -->
+
+                <!-- SWITCH DE MODO ENFOQUE -->
+                <div class="switch-container" title="Oculta detalles adicionales para enfocarte en la programación base">
+                    <label class="switch">
+                        <input type="checkbox" id="chkModoEnfoque" onchange="toggleModoEnfoque()">
+                        <span class="slider"></span>
+                    </label>
+                    <span id="lblModoEnfoque">Modo Enfoque</span>
+                </div>
+
+                <!-- BOTÓN AUDITORÍA EN VIVO -->
+                <button class="btn btn-outline" style="border-color: #3b82f6; color: #3b82f6;" onclick="abrirAuditoria()">
+                    <i class="fa-solid fa-clipboard-check"></i> Auditoría (<span id="countSinAsignar">0</span> libres)
+                </button>
+
+                <button class="btn btn-success" onclick="guardarProgramacionDiaria()" style="box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Programación
+                </button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span id="statAsignaciones" style="font-size:0.9rem; font-weight:800; color:var(--accent); background: rgba(0,0,0,0.05); padding: 5px 12px; border-radius: 20px;">0 / 0 Unidades Asignadas</span>
+            </div>
+
+            <!-- TABLA DE PROGRAMACIÓN -->
+            <div class="table-container" style="background: transparent; box-shadow: none; padding: 0;">
+                <table id="tablaProg2026">
+                    <thead>
+                        <tr>
+                            <th>ZONA (SUBIDA)</th>
+                            <th style="width: 80px;">HORA</th>
+                            <th style="width: 100px;">REQ. TIPO</th>
+                            <th style="width: 25%;">FLOTA ASIGNADA</th>
+                            <th style="width: 25%;">CONDUCTOR</th>
+                            <th class="col-extra" style="width: 15%;">REPARTO</th>
+                            <th class="col-extra" style="width: 12%;">CARRIL</th>
+                            <th class="col-extra" style="width: 15%;">ADICIONAL / OBS.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyProgramacion"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- OVERLAY Y PANEL DE AUDITORÍA -->
+        <div class="audit-overlay" id="auditOverlay" onclick="cerrarAuditoria()"></div>
+        <div class="audit-panel" id="auditPanel">
+            <h2 style="color: var(--accent); margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Auditoría en Vivo</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Análisis en tiempo real de la fuerza laboral y flota del día.</p>
+            
+            <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <h4 style="color: #0369a1; margin: 0 0 5px 0;">Total Fuerza Laboral Activa</h4>
+                <p id="audTotalActivos" style="font-size: 1.5rem; font-weight: bold; margin: 0; color: #0284c7;">0</p>
+            </div>
+
+            <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <h4 style="color: #15803d; margin: 0 0 5px 0;">Asignados a Ruta hoy</h4>
+                <p id="audAsignados" style="font-size: 1.5rem; font-weight: bold; margin: 0; color: #166534;">0</p>
+            </div>
+
+            <div style="background: #fef2f2; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444;">
+                <h4 style="color: #b91c1c; margin: 0 0 10px 0;"><i class="fa-solid fa-triangle-exclamation"></i> Personal Libre / Sin Asignar</h4>
+                <div id="listaLibres" style="font-size: 0.8rem; color: #7f1d1d; max-height: 250px; overflow-y: auto;">
+                    <!-- Se llena con JS -->
                 </div>
             </div>
-            <div class="card" style="padding: 10px;">
-                <div class="toolbar"><span id="statAsignaciones" style="font-size:0.85rem;font-weight:bold;color:var(--text-muted);">0 / 0 Asignados</span></div>
-                <div class="table-container">
-                    <table style="min-width: 1100px;">
-                        <thead>
-                            <tr>
-                                <th>Zona (Subida)</th><th>Turno / Hora</th><th>Req.</th><th>Unidad</th><th>Conductor</th><th>Zona (Reparto)</th><th>Carril</th><th>Obs. / Adicional</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbodyProgramacion"></tbody>
-                    </table>
-                </div>
-            </div>
+
+            <div style="flex-grow: 1;"></div>
+            <button class="btn btn-outline" style="width: 100%; justify-content: center; margin-top: 20px;" onclick="cerrarAuditoria()">Cerrar Panel</button>
         </div>
 
         <!-- ============================================== -->

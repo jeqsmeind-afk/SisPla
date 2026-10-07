@@ -382,18 +382,16 @@
                     <span id="lblModoEnfoque">Modo Enfoque</span>
                 </div>
 
-                <!-- BOTÓN AUDITORÍA EN VIVO -->
+                <!-- BOTÓN HORARIOS Y AUDITORÍA -->
+                <button class="btn btn-outline" style="border-color: #8b5cf6; color: #8b5cf6;" onclick="abrirModal('modalHorariosBase')">
+                    <i class="fa-solid fa-clock"></i> Horarios
+                </button>
                 <button class="btn btn-outline" style="border-color: #3b82f6; color: #3b82f6;" onclick="abrirAuditoria()">
                     <i class="fa-solid fa-clipboard-check"></i> Auditoría (<span id="countSinAsignar">0</span> libres)
                 </button>
-
                 <button class="btn btn-success" onclick="guardarProgramacionDiaria()" style="box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);">
                     <i class="fa-solid fa-floppy-disk"></i> Guardar Programación
                 </button>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span id="statAsignaciones" style="font-size:0.9rem; font-weight:800; color:var(--accent); background: rgba(0,0,0,0.05); padding: 5px 12px; border-radius: 20px;">0 / 0 Unidades Asignadas</span>
             </div>
 
             <!-- TABLA DE PROGRAMACIÓN -->
@@ -402,12 +400,11 @@
                     <thead>
                         <tr>
                             <th>ZONA (SUBIDA)</th>
-                            <th style="width: 90px;">INGRESO</th>
-                            <th class="col-extra" style="width: 80px;">SAL. BASE</th>
+                            <th style="width: 130px;">Tiempos Operativos</th>
                             <th style="width: 90px;">REQ. TIPO</th>
                             <th style="width: 20%;">FLOTA ASIGNADA</th>
                             <th style="width: 20%;">CONDUCTOR</th>
-                            <th class="col-extra" style="width: 12%;">RUTA/DESVÍO</th>
+                            <th class="col-extra" style="width: 18%;">RUTA / DESVÍO</th>
                             <th class="col-extra" style="width: 12%;">REPARTO</th>
                             <th class="col-extra" style="width: 10%;">CARRIL</th>
                             <th class="col-extra" style="width: 12%;">ADICIONAL / OBS.</th>
@@ -534,6 +531,49 @@
             <div id="tabB2" class="tab-content"><div class="form-group"><label>Hora B2:</label><input type="text" id="zHoraB2"></div><div class="form-group"><label>Ruta:</label><textarea id="zRutaB2Ofic" rows="2"></textarea></div><div class="form-group"><label>Desv 1:</label><textarea id="zRutaB2Desv1" rows="2"></textarea></div><div class="form-group"><label>Desv 2:</label><textarea id="zRutaB2Desv2" rows="2"></textarea></div></div>
             <div id="tabB2P" class="tab-content"><div class="form-group"><label>Hora B2P:</label><input type="text" id="zHoraB2P"></div><div class="form-group"><label>Ruta:</label><textarea id="zRutaB2POfic" rows="2"></textarea></div><div class="form-group"><label>Desv 1:</label><textarea id="zRutaB2PDesv1" rows="2"></textarea></div><div class="form-group"><label>Desv 2:</label><textarea id="zRutaB2PDesv2" rows="2"></textarea></div></div>
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;"><button class="btn btn-outline" onclick="cerrarModal('modalEditZona')">Cancelar</button><button class="btn btn-success" onclick="guardarCambiosZonaConfirmado()">Guardar Zona</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIGURACIÓN DE HORARIOS BASE -->
+    <div class="modal" id="modalHorariosBase">
+        <div class="modal-content" style="width: 550px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">
+                <h3 style="color:var(--accent); margin:0;"><i class="fa-solid fa-clock"></i> Horarios de Ingreso a Base</h3>
+                <button class="btn btn-outline" style="border:none; padding:4px 8px;" onclick="cerrarModal('modalHorariosBase')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Define la hora de ingreso (marcación) para cada turno. La salida de base se calculará automáticamente (+20 min).</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; background: #f8fafc; padding: 15px; border-radius: 8px;">
+                <!-- Columna Lunes a Viernes -->
+                <div>
+                    <h4 style="margin: 0 0 10px 0; color: #334155; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;">Lunes - Viernes</h4>
+                    <div class="form-group" style="margin-bottom:8px;"><label style="font-size:0.75rem;">Turno A1:</label><input type="time" id="hb_LV_A1" value="04:00" class="modern-input"></div>
+                    <div class="form-group" style="margin-bottom:8px;"><label style="font-size:0.75rem;">Turno A2:</label><input type="time" id="hb_LV_A2" value="04:00" class="modern-input"></div>
+                    <div class="form-group" style="margin-bottom:8px;"><label style="font-size:0.75rem;">Turno B1:</label><input type="time" id="hb_LV_B1" value="16:00" class="modern-input"></div>
+                    <div class="form-group" style="margin-bottom:8px;"><label style="font-size:0.75rem;">Turno B2:</label><input type="time" id="hb_LV_B2" value="16:00" class="modern-input"></div>
+                </div>
+                <!-- Columna Sábados y Domingos -->
+                <div>
+                    <h4 style="margin: 0 0 10px 0; color: #334155; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;">Sábados y Domingos</h4>
+                    <div class="form-group" style="margin-bottom:8px;"><label style="font-size:0.75rem;">Turno A1:</label><input type="time" id="hb_SD_A1" value="04:00" class="modern-input"></div>
+                    <div class="form-group" style="margin-bottom:8px;"><label style="font-size:0.75rem;">Turno A2:</label><input type="time" id="hb_SD_A2" value="04:00" class="modern-input"></div>
+                    <div class="form-group" style="margin-bottom:8px;"><label style="font-size:0.75rem;">Turno B1:</label><input type="time" id="hb_SD_B1" value="15:00" class="modern-input"></div>
+                    <div class="form-group" style="margin-bottom:8px;"><label style="font-size:0.75rem;">Turno B2:</label><input type="time" id="hb_SD_B2" value="15:00" class="modern-input"></div>
+                </div>
+                <!-- Columna Feriados -->
+                <div>
+                    <h4 style="margin: 0 0 10px 0; color: #334155; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;">Feriados</h4>
+                    <div class="form-group" style="margin-bottom:8px;"><label style="font-size:0.75rem;">Turno A1:</label><input type="time" id="hb_FER_A1" value="04:00" class="modern-input"></div>
+                    <div class="form-group" style="margin-bottom:8px;"><label style="font-size:0.75rem;">Turno A2:</label><input type="time" id="hb_FER_A2" value="04:00" class="modern-input"></div>
+                    <div class="form-group" style="margin-bottom:8px;"><label style="font-size:0.75rem;">Turno B1:</label><input type="time" id="hb_FER_B1" value="15:00" class="modern-input"></div>
+                    <div class="form-group" style="margin-bottom:8px;"><label style="font-size:0.75rem;">Turno B2:</label><input type="time" id="hb_FER_B2" value="15:00" class="modern-input"></div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-outline" onclick="cerrarModal('modalHorariosBase')">Cancelar</button>
+                <button class="btn btn-success" onclick="guardarHorariosBaseGlobal()"><i class="fa-solid fa-check"></i> Aplicar Horarios</button>
+            </div>
         </div>
     </div>
 

@@ -657,6 +657,17 @@ function guardarProgramacionDiaria() { localStorage.setItem('bd_prog_diaria_smcv
 // PROGRAMACIÓN DIARIA 2026: INTELIGENCIA Y DISEÑO
 // ====================================================================================
 
+// Función auxiliar para restar 20 minutos a la hora de ingreso
+function calcularSalidaBase(horaIngreso) {
+    if (!horaIngreso || horaIngreso === '--:--') return '--:--';
+    let partes = horaIngreso.split(':');
+    if (partes.length < 2) return horaIngreso;
+    let d = new Date();
+    d.setHours(parseInt(partes[0], 10));
+    d.setMinutes(parseInt(partes[1], 10) - 20); // Restamos 20 min
+    return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+}
+
 function renderizarProgramacion() {
     let fechaSel = document.getElementById('fechaProgInput').value, 
         tipoPlantilla = document.getElementById('tipoPlantillaProg').value, 
@@ -676,6 +687,10 @@ function renderizarProgramacion() {
     let htmlOpcionesCarril = ''; 
     OPCIONES_CARRILES.forEach(c => htmlOpcionesCarril += `<option value="${c}">${c || '-- Sin Carril --'}</option>`);
     
+    // Configuramos el ancho del CSS para la tabla expandida
+    let cssTabla = document.getElementById('tablaProg2026');
+    if(cssTabla) cssTabla.style.minWidth = '1400px'; // Más ancha para acomodar todo
+    
     turnosLista.forEach(t => {
         let listaZonasTurno = plantillasBD[tipoPlantilla][t] || [];
         listaZonasTurno.forEach(itemPlantilla => {
@@ -690,6 +705,7 @@ function renderizarProgramacion() {
             else if (t === 'B2') horaDinamica = zData.b2; 
             else if (t === 'B2P') horaDinamica = zData.b2p;
             
+            let salidaBaseCalculada = calcularSalidaBase(horaDinamica);
             let cantidadRequerida = parseInt(itemPlantilla.cant) || 1;
             
             for (let i = 1; i <= cantidadRequerida; i++) {
@@ -698,65 +714,105 @@ function renderizarProgramacion() {
                 let regEx = regsFecha.find(r => r.key === key) || {}; 
                 if (regEx.unidad && regEx.conductor) asignados++;
                 
-                let txtUnidadMult = cantidadRequerida > 1 ? `<br><small style="color:#94a3b8; font-weight:normal;">Und. ${i} de ${cantidadRequerida}</small>` : ''; 
+                let txtUnidadMult = cantidadRequerida > 1 ? `<br><small style="color:#94a3b8;">Und. ${i} de ${cantidadRequerida}</small>` : ''; 
                 let reqTipo = itemPlantilla.tipo || 'CUALQUIERA';
                 let colorBadgeTipo = reqTipo.includes('BUS') ? 'background:#fef3c7; color:#b45309;' : 'background:#e0f2fe; color:#0369a1;';
                 let badgeTipoReq = `<span style="font-size:0.7rem; font-weight:800; padding:4px 8px; border-radius:12px; ${colorBadgeTipo}">${reqTipo === 'CUALQUIERA' ? 'CUALQUIERA' : reqTipo}</span>`; 
                 let nombreDisplay = /^\d/.test(itemPlantilla.zona) ? `ZONA ${itemPlantilla.zona}` : itemPlantilla.zona;
                 
-                // UNIDADES
+                // UNIDADES (Con Iconos y mejor visualización)
                 let uniOptsFiltradas = `<datalist id="dl_uni_${key}">`; 
                 unidadesBase.forEach(u => { 
                     let match = false; 
                     let tVehiculo = (u.tipo || u.tipoVehiculo || u.TIPO_VEHICULO || u.TIPO || '').toUpperCase().trim(); 
                     let estU = (u.estado || 'OPERATIVO').toUpperCase();
-                    let etiquetaTaller = estU === 'TALLER' ? ' [TALLER]' : '';
+                    let etiquetaTaller = estU === 'TALLER' ? ' 🔧 [TALLER]' : ' ✔️';
+                    let icono = tVehiculo.includes('BUS') ? '🚌' : '🚐';
+                    
                     if (reqTipo === 'CUALQUIERA' || !reqTipo) match = true; 
                     else if (reqTipo.includes('BUS') && tVehiculo.includes('BUS')) match = true; 
                     else if (reqTipo.includes('VAN') && (tVehiculo.includes('VAN') || tVehiculo.includes('CAMIONETA'))) match = true; 
+                    
                     let codU = u.codigo || u.cod || u.CODIGO;
-                    if (match && codU) uniOptsFiltradas += `<option value="${codU} [${tVehiculo}]${etiquetaTaller}">`; 
+                    if (match && codU) uniOptsFiltradas += `<option value="${icono} ${codU} [${tVehiculo}]${etiquetaTaller}">`; 
                 });
                 uniOptsFiltradas += `</datalist>`;
                 let styleExtraUni = regEx.unidad_desc && regEx.unidad_desc.includes('[TALLER]') ? 'border: 2px solid #ef4444; background: #fef2f2; color: #b91c1c;' : '';
-                let inputUni = `<input list="dl_uni_${key}" class="modern-input select-prog" placeholder="Tipear o seleccionar..." value="${regEx.unidad_desc || ''}" onchange="updMemUni('${key}', this)" style="${styleExtraUni}"> ${uniOptsFiltradas}`;
+                
+                // Info extra Unidad (Visible solo en expandido)
+                let textInfoUnidad = regEx.unidad_desc && regEx.unidad_desc.includes('TALLER') ? '<span style="color:#ef4444;"><i class="fa-solid fa-wrench"></i> En Taller</span>' : '<span style="color:#10b981;"><i class="fa-solid fa-check-circle"></i> Operativa</span>';
+                let infoUnidadHtml = `<div class="col-extra" style="font-size: 0.7rem; margin-top: 4px;">${textInfoUnidad}</div>`;
 
-                // CONDUCTORES CON DATALIST
+                let inputUni = `<input list="dl_uni_${key}" class="modern-input select-prog" placeholder="Tipear o seleccionar..." value="${regEx.unidad_desc || ''}" onchange="updMemUni('${key}', this)" style="${styleExtraUni}"> ${uniOptsFiltradas} ${infoUnidadHtml}`;
+
+                // CONDUCTORES (Con Iconos de Estado)
                 let condOptsFiltradas = `<datalist id="dl_cond_${key}">`; 
                 condOptsBase.forEach(c => { 
                     let tipoC = determinarTipoConductor(getProp(c, "CONTRATO") || c.CONTRATO);
+                    let srv = (getProp(c, "SERVICIO") || c.SERVICIO || '').toUpperCase();
                     let matchCond = false; 
                     if (reqTipo.includes('BUS')) matchCond = (tipoC === 'BUS' || tipoC === 'MINIBUS');
                     else matchCond = true; 
+                    
+                    let iconoCond = '👤';
+                    if(srv.includes('RETEN')) iconoCond = '🟡';
+                    if(srv.includes('ADMIN') || tipoC.includes('PARTIDO')) iconoCond = '🟣';
+
                     let cDni = getProp(c, "DNI") || c.DNI || ''; 
                     let cNom = getProp(c, "CONDUCTOR") || getProp(c, "NOMBRE") || c.NOMBRE || ''; 
-                    if (matchCond && cNom) condOptsFiltradas += `<option value="${cNom} [${cDni}]">`; 
+                    if (matchCond && cNom) condOptsFiltradas += `<option value="${iconoCond} ${cNom} [${cDni}]">`; 
                 });
                 condOptsFiltradas += `</datalist>`;
                 
-                // Color heredado si es que ya tiene un badge de la base (Turno partido, descansero)
-                let extraClassCond = '';
                 let extraStyleCond = '';
+                let textoExperiencia = 'Sin perfil asignado';
                 if(regEx.conductor_desc) {
-                    if(regEx.conductor_desc.includes('[🟣')) extraStyleCond = 'background-color:#fdf2f8; color:#be185d; border-color:#fbcfe8;';
-                    else if(regEx.conductor_desc.includes('[🟡')) extraStyleCond = 'background-color:#fefce8; color:#a16207; border-color:#fef08a;';
-                    else if(regEx.conductor_desc.includes('[🟢')) extraStyleCond = 'background-color:#f0fdf4; color:#15803d; border-color:#bbf7d0;';
+                    if(regEx.conductor_desc.includes('🟣')) { extraStyleCond = 'background-color:#fdf2f8; color:#be185d; border-color:#fbcfe8;'; textoExperiencia = 'Perfil: Turno Partido/Admin'; }
+                    else if(regEx.conductor_desc.includes('🟡')) { extraStyleCond = 'background-color:#fefce8; color:#a16207; border-color:#fef08a;'; textoExperiencia = 'Perfil: Descansero / Retén'; }
+                    else { extraStyleCond = 'background-color:#f0fdf4; color:#15803d; border-color:#bbf7d0;'; textoExperiencia = 'Perfil: Conductor Regular'; }
                 }
 
-                let inputCond = `<input list="dl_cond_${key}" class="modern-input select-prog ${extraClassCond}" style="${extraStyleCond}" placeholder="Buscar nombre o DNI..." value="${regEx.conductor_desc || ''}" onchange="updMemCond('${key}', this)"> ${condOptsFiltradas}`;
+                // Info extra Conductor (Visible solo en expandido)
+                let infoCondHtml = `<div class="col-extra" style="font-size: 0.7rem; margin-top: 4px; color:#64748b;"><i class="fa-solid fa-id-badge"></i> ${textoExperiencia}</div>`;
+                let inputCond = `<input list="dl_cond_${key}" class="modern-input select-prog" style="${extraStyleCond}" placeholder="Buscar nombre o DNI..." value="${regEx.conductor_desc || ''}" onchange="updMemCond('${key}', this)"> ${condOptsFiltradas} ${infoCondHtml}`;
                 
+                // Nuevos Selectores Expandidos
                 let repartoOpts = `<option value="">- N/A -</option>`; 
                 zonasBD.forEach(z => { repartoOpts += `<option value="${z.zona}" ${regEx.reparto === z.zona ? 'selected' : ''}>Reparto ${z.zona}</option>`; }); 
+                
                 let carrilSelect = htmlOpcionesCarril.replace(`value="${regEx.carril || ''}"`, `value="${regEx.carril || ''}" selected`); 
                 let adicSelect = htmlOpcionesAdicionales.replace(`value="${regEx.adicional || ''}"`, `value="${regEx.adicional || ''}" selected`);
                 
+                // Selector de Ruta Oficial o Desvíos
+                let rutaSelectOpts = `
+                    <option value="OFICIAL" ${regEx.rutaAsignada === 'OFICIAL' ? 'selected' : ''}>Ruta Oficial</option>
+                    <option value="DESVIO1" ${regEx.rutaAsignada === 'DESVIO1' ? 'selected' : ''}>Desvío 1</option>
+                    <option value="DESVIO2" ${regEx.rutaAsignada === 'DESVIO2' ? 'selected' : ''}>Desvío 2</option>
+                `;
+
                 htmlTabla += `
                 <tr>
                     <td style="font-weight: 800; color:#1e293b; font-size: 0.9rem;">${nombreDisplay} ${txtUnidadMult}</td>
-                    <td><span class="badge-status status-activo" style="margin-bottom:4px; display:inline-block;">${t}</span> <br> <span style="font-weight:700; font-size:0.8rem; color:#64748b;">${horaDinamica}</span></td>
+                    
+                    <td style="min-width: 90px;">
+                        <span class="badge-status status-activo" style="margin-bottom:4px; display:inline-block;">${t}</span> <br> 
+                        <span style="font-weight:700; font-size:0.8rem; color:#0f172a;" title="Ingreso">ING: ${horaDinamica}</span>
+                    </td>
+                    
+                    <td class="col-extra" style="min-width: 80px;">
+                        <span style="font-weight:700; font-size:0.8rem; color:#ea580c; background:#ffedd5; padding: 2px 6px; border-radius:4px;" title="Salida Base calculada (-20min)">SAL: ${salidaBaseCalculada}</span>
+                    </td>
+
                     <td>${badgeTipoReq}</td>
                     <td>${inputUni}</td>
                     <td>${inputCond}</td>
+                    
+                    <td class="col-extra">
+                        <select class="modern-input select-prog" style="font-weight:bold; color:#4338ca; background:#e0e7ff; border-color:#c7d2fe;" onchange="updMem('${key}', 'rutaAsignada', this.value)">
+                            ${rutaSelectOpts}
+                        </select>
+                    </td>
+
                     <td class="col-extra"><select class="modern-input select-prog" onchange="updMem('${key}', 'reparto', this.value)">${repartoOpts}</select></td>
                     <td class="col-extra"><select class="modern-input select-prog" onchange="updMem('${key}', 'carril', this.value)">${carrilSelect}</select></td>
                     <td class="col-extra"><select class="modern-input select-prog" onchange="updMem('${key}', 'adicional', this.value)">${adicSelect}</select></td>
@@ -766,7 +822,7 @@ function renderizarProgramacion() {
     });
     
     let tbody = document.getElementById('tbodyProgramacion'); 
-    if(tbody) tbody.innerHTML = htmlTabla || `<tr><td colspan="8" style="text-align:center; padding: 40px; color:#94a3b8;"><i class="fa-solid fa-folder-open fa-2x"></i><br><br>No hay zonas configuradas en esta plantilla.</td></tr>`;
+    if(tbody) tbody.innerHTML = htmlTabla || `<tr><td colspan="10" style="text-align:center; padding: 40px; color:#94a3b8;"><i class="fa-solid fa-folder-open fa-2x"></i><br><br>No hay zonas configuradas en esta plantilla.</td></tr>`;
     
     if(document.getElementById('statAsignaciones')) document.getElementById('statAsignaciones').innerText = `${asignados} / ${totalFilas} Asignados`;
     actualizarMetricasProgramacion();
